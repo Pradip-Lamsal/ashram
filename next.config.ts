@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    optimizePackageImports: ["recharts", "lucide-react", "antd"],
+  },
+  // Fix the workspace root warning
+  outputFileTracingRoot: __dirname,
 };
 
 export default nextConfig;
