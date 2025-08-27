@@ -17,10 +17,10 @@ import {
   Smartphone,
 } from "lucide-react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -78,15 +78,19 @@ const paymentModeData = [
   },
 ];
 
-const monthlyData = [
-  { name: "Jan", amount: 45000, donations: 12 },
-  { name: "Feb", amount: 52000, donations: 15 },
-  { name: "Mar", amount: 48000, donations: 13 },
-  { name: "Apr", amount: 61000, donations: 18 },
-  { name: "May", amount: 55000, donations: 16 },
-  { name: "Jun", amount: 67000, donations: 19 },
-  { name: "Jul", amount: 72000, donations: 22 },
-  { name: "Aug", amount: 84000, donations: 25 },
+const yearlyData = [
+  { name: "Jan 2024", amount: 45000, donations: 12 },
+  { name: "Feb 2024", amount: 52000, donations: 15 },
+  { name: "Mar 2024", amount: 48000, donations: 13 },
+  { name: "Apr 2024", amount: 61000, donations: 18 },
+  { name: "May 2024", amount: 55000, donations: 16 },
+  { name: "Jun 2024", amount: 67000, donations: 19 },
+  { name: "Jul 2024", amount: 72000, donations: 22 },
+  { name: "Aug 2024", amount: 84000, donations: 25 },
+  { name: "Sep 2024", amount: 78000, donations: 23 },
+  { name: "Oct 2024", amount: 91000, donations: 28 },
+  { name: "Nov 2024", amount: 96000, donations: 31 },
+  { name: "Dec 2024", amount: 105000, donations: 35 },
 ];
 
 export default function DashboardPage() {
@@ -125,19 +129,25 @@ export default function DashboardPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Monthly Donations Chart */}
+        {/* Yearly Donations Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Donations</CardTitle>
+            <CardTitle>Yearly Donations Trend</CardTitle>
             <CardDescription>
-              Donation trends over the past 8 months
+              Donation trends over the past 12 months (2024)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
+              <LineChart data={yearlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis />
                 <Tooltip
                   formatter={(value, name) => [
@@ -145,8 +155,23 @@ export default function DashboardPage() {
                     name === "amount" ? "Amount" : "Donations",
                   ]}
                 />
-                <Bar dataKey="amount" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: "#f59e0b", strokeWidth: 2 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="donations"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#8b5cf6", strokeWidth: 2 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
