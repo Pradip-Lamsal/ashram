@@ -70,7 +70,7 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -90,7 +90,7 @@ export default function DashboardLayout({
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-orange-500" />
+            <Heart className="w-8 h-8 text-orange-500" />
             <h1 className="text-xl font-bold text-gray-900">Ashram</h1>
           </div>
           <Button
@@ -99,11 +99,11 @@ export default function DashboardLayout({
             className="lg:hidden"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="h-6 w-6" />
+            <X className="w-6 h-6" />
           </Button>
         </div>
 
-        <nav className="mt-6 px-3">
+        <nav className="px-3 mt-6">
           <div className="space-y-1">
             {filteredNavigation.map((item) => {
               const isActive = pathname === item.href;
@@ -137,8 +137,8 @@ export default function DashboardLayout({
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-orange-100 text-orange-700">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="text-orange-700 bg-orange-100">
                   {userRole === "Admin"
                     ? "AD"
                     : userRole === "Billing Staff"
@@ -153,18 +153,18 @@ export default function DashboardLayout({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Settings className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="w-8 h-8">
+                  <Settings className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -174,9 +174,9 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Top navigation */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between h-16 px-6">
             <Button
               variant="ghost"
@@ -184,13 +184,13 @@ export default function DashboardLayout({
               className="lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="w-6 h-6" />
             </Button>
 
-            <div className="flex-1 flex justify-end">
+            <div className="flex justify-end flex-1">
               <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+                <Bell className="w-5 h-5" />
+                <span className="absolute w-2 h-2 bg-red-500 rounded-full top-2 right-2"></span>
               </Button>
             </div>
           </div>
