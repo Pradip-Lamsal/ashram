@@ -18,6 +18,7 @@ import {
   Menu,
   Receipt,
   Settings,
+  Shield,
   User,
   Users,
   X,
@@ -32,6 +33,12 @@ const navigation = [
     href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["Admin", "Billing Staff", "Event Coordinator"],
+  },
+  {
+    name: "Admin Panel",
+    href: "/admin",
+    icon: Shield,
+    roles: ["Admin"],
   },
   {
     name: "Donors",
@@ -169,10 +176,6 @@ export default function DashboardLayout({
                     <User className="w-4 h-4 mr-2" />
                     Profile
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>

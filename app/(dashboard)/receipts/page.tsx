@@ -32,7 +32,6 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Receipt } from "@/types";
 import {
   Download,
-  Edit,
   Eye,
   Filter,
   Mail,
@@ -70,21 +69,21 @@ export default function ReceiptsPage() {
   const emailedReceipts = mockReceipts.filter((r) => r.isEmailSent).length;
 
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Receipt Management
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-600">
             Create, view, and manage donation receipts
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Create New Receipt
             </Button>
           </DialogTrigger>
@@ -107,7 +106,7 @@ export default function ReceiptsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -119,8 +118,8 @@ export default function ReceiptsPage() {
                   {totalReceipts}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <ReceiptIcon className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-blue-100 rounded-full">
+                <ReceiptIcon className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -137,8 +136,8 @@ export default function ReceiptsPage() {
                   {formatCurrency(totalAmount)}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <Download className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-full">
+                <Download className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -153,8 +152,8 @@ export default function ReceiptsPage() {
                   {printedReceipts}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-purple-100">
-                <Printer className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Printer className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -169,8 +168,8 @@ export default function ReceiptsPage() {
                   {emailedReceipts}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-orange-100">
-                <Mail className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Mail className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -186,9 +185,9 @@ export default function ReceiptsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-center mb-6 space-x-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
                 placeholder="Search by receipt number, donor name, or donation type..."
                 value={searchTerm}
@@ -197,7 +196,7 @@ export default function ReceiptsPage() {
               />
             </div>
             <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
+              <Filter className="w-4 h-4 mr-2" />
               Filters
             </Button>
           </div>
@@ -276,16 +275,7 @@ export default function ReceiptsPage() {
                           size="sm"
                           onClick={() => handleViewReceipt(receipt)}
                         >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Mail className="h-4 w-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -296,8 +286,8 @@ export default function ReceiptsPage() {
           </div>
 
           {filteredReceipts.length === 0 && (
-            <div className="text-center py-8">
-              <ReceiptIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="py-8 text-center">
+              <ReceiptIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-500">
                 No receipts found matching your search criteria.
               </p>
