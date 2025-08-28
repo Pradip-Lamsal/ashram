@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
-  Bell,
   Calendar,
   Heart,
   LayoutDashboard,
@@ -19,6 +18,7 @@ import {
   Menu,
   Receipt,
   Settings,
+  User,
   Users,
   X,
 } from "lucide-react";
@@ -51,6 +51,12 @@ const navigation = [
     icon: Calendar,
     roles: ["Admin", "Event Coordinator"],
   },
+  {
+    name: "Profile",
+    href: "/profile",
+    icon: User,
+    roles: ["Admin", "Billing Staff", "Event Coordinator"],
+  },
 ];
 
 interface DashboardLayoutProps {
@@ -60,7 +66,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({
   children,
-  userRole = "Admin",
+  userRole = "Billing Staff",
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -158,6 +164,12 @@ export default function DashboardLayout({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center">
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
@@ -186,13 +198,6 @@ export default function DashboardLayout({
             >
               <Menu className="w-6 h-6" />
             </Button>
-
-            <div className="flex justify-end flex-1">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute w-2 h-2 bg-red-500 rounded-full top-2 right-2"></span>
-              </Button>
-            </div>
           </div>
         </header>
 

@@ -95,26 +95,26 @@ const yearlyData = [
 
 export default function DashboardPage() {
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="mt-2 text-gray-600">
           Welcome to Ashram Management System
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card key={index} className="transition-shadow hover:shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     {stat.title}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                  <p className="mt-1 text-2xl font-bold text-gray-900">
                     {stat.value}
                   </p>
                 </div>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
         {/* Yearly Donations Chart */}
         <Card>
           <CardHeader>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center space-x-4 mt-4">
+            <div className="flex justify-center mt-4 space-x-4">
               {paymentModeData.map((entry, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <div
@@ -217,7 +217,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Top Donors */}
         <Card>
           <CardHeader>
@@ -229,10 +229,10 @@ export default function DashboardPage() {
               {mockDashboardStats.topDonors.map((donor, index) => (
                 <div
                   key={donor.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="bg-orange-100 text-orange-700 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+                    <div className="flex items-center justify-center w-8 h-8 text-sm font-medium text-orange-700 bg-orange-100 rounded-full">
                       {index + 1}
                     </div>
                     <div>
@@ -262,10 +262,10 @@ export default function DashboardPage() {
               {mockDashboardStats.upcomingEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center p-3 space-x-3 rounded-lg bg-gray-50"
                 >
-                  <div className="bg-blue-100 text-blue-700 p-2 rounded-lg">
-                    <Calendar className="h-5 w-5" />
+                  <div className="p-2 text-blue-700 bg-blue-100 rounded-lg">
+                    <Calendar className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{event.name}</p>

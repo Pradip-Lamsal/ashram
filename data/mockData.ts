@@ -5,6 +5,7 @@ import {
   PaymentMode,
   Receipt,
   SMSEvent,
+  User,
 } from "@/types";
 
 // Mock donors data
@@ -108,7 +109,7 @@ export const mockReceipts: Receipt[] = [
     donationType: "Annadanam",
     amount: 2500,
     paymentMode: "QR Payment",
-    createdBy: "Billing Staff",
+    createdBy: "Priya Billing Staff",
     dateOfDonation: new Date("2024-08-10"),
     notes: "Annadanam sponsorship",
     isPrinted: false,
@@ -138,7 +139,7 @@ export const mockReceipts: Receipt[] = [
     donationType: "Puja Sponsorship",
     amount: 3500,
     paymentMode: "Online",
-    createdBy: "Billing Staff",
+    createdBy: "Rahul Accounts",
     dateOfDonation: new Date("2024-08-01"),
     notes: "Weekly puja sponsorship",
     isPrinted: true,
@@ -153,11 +154,116 @@ export const mockReceipts: Receipt[] = [
     donationType: "Seva Donation",
     amount: 1500,
     paymentMode: "QR Payment",
-    createdBy: "Event Coordinator",
+    createdBy: "Meera Event Coordinator",
     dateOfDonation: new Date("2024-07-28"),
     isPrinted: false,
     isEmailSent: false,
     createdAt: new Date("2024-07-28"),
+  },
+  {
+    id: "6",
+    receiptNumber: "ASH789123461",
+    donorId: "1",
+    donorName: "Rajesh Kumar",
+    donationType: "Festival Sponsorship",
+    amount: 10000,
+    paymentMode: "Online",
+    createdBy: "Priya Billing Staff",
+    dateOfDonation: new Date("2024-07-25"),
+    notes: "Janmashtami sponsorship",
+    isPrinted: true,
+    isEmailSent: true,
+    createdAt: new Date("2024-07-25"),
+  },
+  {
+    id: "7",
+    receiptNumber: "ASH789123462",
+    donorId: "2",
+    donorName: "Priya Sharma",
+    donationType: "General Donation",
+    amount: 2000,
+    paymentMode: "QR Payment",
+    createdBy: "Rahul Accounts",
+    dateOfDonation: new Date("2024-07-20"),
+    notes: "Monthly donation",
+    isPrinted: true,
+    isEmailSent: true,
+    createdAt: new Date("2024-07-20"),
+  },
+  {
+    id: "8",
+    receiptNumber: "ASH789123463",
+    donorId: "3",
+    donorName: "Anand Patel",
+    donationType: "Vastra Danam",
+    amount: 5000,
+    paymentMode: "Offline",
+    createdBy: "Priya Billing Staff",
+    dateOfDonation: new Date("2024-07-15"),
+    notes: "Clothing donation for poor",
+    isPrinted: true,
+    isEmailSent: false,
+    createdAt: new Date("2024-07-15"),
+  },
+  {
+    id: "9",
+    receiptNumber: "ASH789123464",
+    donorId: "4",
+    donorName: "Meera Devi",
+    donationType: "General Donation",
+    amount: 3000,
+    paymentMode: "Online",
+    createdBy: "Rahul Accounts",
+    dateOfDonation: new Date("2024-07-10"),
+    notes: "Regular contribution",
+    isPrinted: true,
+    isEmailSent: true,
+    createdAt: new Date("2024-07-10"),
+  },
+  {
+    id: "10",
+    receiptNumber: "ASH789123465",
+    donorId: "5",
+    donorName: "Suresh Gupta",
+    donationType: "Annadanam",
+    amount: 4000,
+    paymentMode: "QR Payment",
+    createdBy: "Priya Billing Staff",
+    dateOfDonation: new Date("2024-07-05"),
+    notes: "Food for devotees",
+    isPrinted: false,
+    isEmailSent: true,
+    createdAt: new Date("2024-07-05"),
+  },
+  {
+    id: "11",
+    receiptNumber: "ASH789123466",
+    donorId: "1",
+    donorName: "Rajesh Kumar",
+    donationType: "Building Fund",
+    amount: 15000,
+    paymentMode: "Online",
+    createdBy: "Admin User",
+    dateOfDonation: new Date("2024-06-30"),
+    notes: "Temple construction",
+    isPrinted: true,
+    isEmailSent: true,
+    createdAt: new Date("2024-06-30"),
+  },
+  {
+    id: "12",
+    receiptNumber: "ASH789123467",
+    donorId: "2",
+    donorName: "Priya Sharma",
+    donationType: "Puja Sponsorship",
+    amount: 2500,
+    paymentMode: "QR Payment",
+    createdBy: "Rahul Accounts",
+    dateOfDonation: new Date("2024-06-25"),
+    notes: "Ganga Aarti sponsorship",
+    isPrinted: true,
+    isEmailSent: true,
+    createdAt: new Date("2024-06-25"),
   },
 ];
 
@@ -220,4 +326,87 @@ export const mockDashboardStats = {
     { id: "2", name: "Ganesh Chaturthi", date: new Date("2024-09-07") },
     { id: "3", name: "Monthly Annadanam", date: new Date("2024-09-01") },
   ],
+};
+
+// Mock current user data
+export const mockCurrentUser: User = {
+  id: "admin1",
+  name: "Admin User",
+  email: "admin@ashram.org",
+  role: "Admin",
+  joinDate: new Date("2023-01-15"),
+  permissions: [
+    "manage_donors",
+    "manage_receipts",
+    "manage_events",
+    "manage_users",
+  ],
+  emailVerified: true,
+};
+
+// Mock users data for different roles
+export const mockUsers: User[] = [
+  {
+    id: "admin1",
+    name: "Admin User",
+    email: "admin@ashram.org",
+    role: "Admin",
+    joinDate: new Date("2023-01-15"),
+    permissions: [
+      "manage_donors",
+      "manage_receipts",
+      "manage_events",
+      "manage_users",
+    ],
+    emailVerified: true,
+  },
+  {
+    id: "billing1",
+    name: "Priya Billing Staff",
+    email: "priya.billing@ashram.org",
+    role: "Billing Staff",
+    joinDate: new Date("2023-03-20"),
+    permissions: ["manage_donors", "manage_receipts"],
+    emailVerified: true,
+  },
+  {
+    id: "billing2",
+    name: "Rahul Accounts",
+    email: "rahul.accounts@ashram.org",
+    role: "Billing Staff",
+    joinDate: new Date("2023-06-10"),
+    permissions: ["manage_donors", "manage_receipts"],
+    emailVerified: false,
+  },
+  {
+    id: "event1",
+    name: "Meera Event Coordinator",
+    email: "meera.events@ashram.org",
+    role: "Event Coordinator",
+    joinDate: new Date("2023-08-05"),
+    permissions: ["manage_events"],
+    emailVerified: true,
+  },
+  {
+    id: "event2",
+    name: "Suresh Event Manager",
+    email: "suresh.events@ashram.org",
+    role: "Event Coordinator",
+    joinDate: new Date("2024-01-15"),
+    permissions: ["manage_events"],
+    emailVerified: true,
+  },
+];
+
+// Utility function to get user by role for testing different user contexts
+export const getUserByRole = (
+  role: "Admin" | "Billing Staff" | "Event Coordinator"
+): User => {
+  const user = mockUsers.find((u) => u.role === role);
+  return user || mockUsers[0]; // fallback to first user if not found
+};
+
+// Utility function to get user by ID
+export const getUserById = (id: string): User | undefined => {
+  return mockUsers.find((u) => u.id === id);
 };

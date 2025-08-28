@@ -80,6 +80,8 @@ export interface User {
   email: string;
   role: UserRole;
   permissions: string[];
+  joinDate: Date;
+  emailVerified: boolean;
 }
 
 export interface PujaHistory {

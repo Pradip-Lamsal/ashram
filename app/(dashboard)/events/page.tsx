@@ -95,14 +95,14 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Events & SMS Management
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-600">
             Send bulk SMS notifications and manage event communications
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function EventsPage() {
         >
           <DialogTrigger asChild>
             <Button className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Create SMS Campaign
             </Button>
           </DialogTrigger>
@@ -166,11 +166,11 @@ export default function EventsPage() {
                     </p>
                   </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">
+                  <div className="p-4 rounded-lg bg-blue-50">
+                    <h4 className="mb-2 font-medium text-blue-800">
                       Message Preview
                     </h4>
-                    <p className="text-blue-700 bg-white p-3 rounded border">
+                    <p className="p-3 text-blue-700 bg-white border rounded">
                       {smsForm.messageContent ||
                         "Your message will appear here..."}
                     </p>
@@ -181,7 +181,7 @@ export default function EventsPage() {
               <TabsContent value="recipients" className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="relative flex-1 mr-4">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
                     <Input
                       placeholder="Search donors..."
                       value={searchTerm}
@@ -204,7 +204,7 @@ export default function EventsPage() {
                   </div>
                 </div>
 
-                <div className="border rounded-lg max-h-96 overflow-y-auto">
+                <div className="overflow-y-auto border rounded-lg max-h-96">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -254,7 +254,7 @@ export default function EventsPage() {
                   </Table>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 rounded-lg bg-gray-50">
                   <p className="text-sm text-gray-600">
                     <strong>{selectedDonors.length}</strong> recipients selected
                   </p>
@@ -262,7 +262,7 @@ export default function EventsPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="flex justify-end space-x-4 pt-4">
+            <div className="flex justify-end pt-4 space-x-4">
               <Button
                 variant="outline"
                 onClick={() => setIsCreateSMSDialogOpen(false)}
@@ -278,7 +278,7 @@ export default function EventsPage() {
                   selectedDonors.length === 0
                 }
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="w-4 h-4 mr-2" />
                 Preview
               </Button>
             </div>
@@ -287,7 +287,7 @@ export default function EventsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -302,8 +302,8 @@ export default function EventsPage() {
                   )}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <MessageSquare className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-blue-100 rounded-full">
+                <MessageSquare className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -318,8 +318,8 @@ export default function EventsPage() {
                   {mockSMSEvents.length}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <Calendar className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-full">
+                <Calendar className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -336,8 +336,8 @@ export default function EventsPage() {
                   {mockDonors.length}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-purple-100">
-                <Users className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -357,8 +357,8 @@ export default function EventsPage() {
                   }
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-orange-100">
-                <History className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-full">
+                <History className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -374,9 +374,9 @@ export default function EventsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-center mb-6 space-x-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
                 placeholder="Search campaigns..."
                 value={searchTerm}
@@ -405,7 +405,7 @@ export default function EventsPage() {
                       {event.eventName}
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <p className="truncate text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 truncate">
                         {event.messageContent}
                       </p>
                     </TableCell>
@@ -418,7 +418,7 @@ export default function EventsPage() {
                     <TableCell>{event.createdBy}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
+                        <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -428,8 +428,8 @@ export default function EventsPage() {
           </div>
 
           {filteredSMSEvents.length === 0 && (
-            <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="py-8 text-center">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-500">No SMS campaigns found.</p>
             </div>
           )}
@@ -459,7 +459,7 @@ export default function EventsPage() {
                 </div>
                 <div>
                   <Label className="font-medium">Message Content</Label>
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 mt-2 rounded-lg bg-gray-50">
                     <p className="text-gray-900">{smsForm.messageContent}</p>
                   </div>
                 </div>
@@ -483,7 +483,7 @@ export default function EventsPage() {
                 onClick={handleSendSMS}
                 className="bg-green-600 hover:bg-green-700"
               >
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="w-4 h-4 mr-2" />
                 Send SMS
               </Button>
             </div>
