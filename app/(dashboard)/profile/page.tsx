@@ -182,7 +182,7 @@ export default function ProfilePage() {
   };
 
   const formatAmount = (amount: number) => {
-    return `₹${amount.toLocaleString("en-IN")}`;
+    return `Rs. ${amount.toLocaleString("en-IN")}`;
   };
 
   return (

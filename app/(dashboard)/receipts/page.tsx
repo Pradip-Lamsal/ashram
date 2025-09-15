@@ -323,7 +323,7 @@ export default function ReceiptsPage() {
             <div class="receipt-details">
               <div class="detail-row"><strong>Donor:</strong> ${donorName}</div>
               <div class="detail-row"><strong>Donation Type:</strong> ${donationType}</div>
-              <div class="detail-row"><strong>Amount:</strong> <span class="amount">₹${amount}</span></div>
+              <div class="detail-row"><strong>Amount:</strong> <span class="amount">Rs. ${amount}</span></div>
               <div class="detail-row"><strong>Date Issued:</strong> ${issuedDate}</div>
               <div class="detail-row"><strong>Payment Mode:</strong> ${
                 receipt.donation?.payment_mode || "N/A"

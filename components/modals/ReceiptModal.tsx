@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { Receipt } from "@/types";
 import {
+  Calendar,
+  Check,
   CreditCard,
   Download,
   Heart,
@@ -22,6 +24,7 @@ import {
   Loader2,
   Mail,
   Printer,
+  Send,
   Trash2,
   User,
   X,
@@ -85,11 +88,37 @@ export default function ReceiptModal({
     pageStyle: `
       @page {
         size: A4;
-        margin: 2cm;
+        margin: 1.5cm;
       }
       @media print {
-        body { font-size: 12pt; }
+        body { 
+          font-size: 11pt; 
+          line-height: 1.4;
+          color: black !important;
+          background: white !important;
+        }
         .no-print { display: none !important; }
+        .print-page {
+          max-height: none !important;
+          page-break-inside: avoid;
+        }
+        .print-section {
+          margin-bottom: 1rem;
+        }
+        .print-header {
+          border-bottom: 2px solid #ea580c;
+          padding-bottom: 1rem;
+          margin-bottom: 1.5rem;
+        }
+        .print-amount {
+          font-size: 16pt;
+          font-weight: bold;
+        }
+        .print-footer {
+          border-top: 2px solid #ea580c;
+          padding-top: 1rem;
+          margin-top: 1.5rem;
+        }
       }
     `,
   });
@@ -135,14 +164,16 @@ export default function ReceiptModal({
           receipt: {
             receiptNumber: receipt.receiptNumber,
             donorName: receipt.donorName,
+            donorId: receipt.donorId,
             amount: receipt.amount,
             createdAt: receipt.createdAt,
             donationType: receipt.donationType,
             paymentMode: receipt.paymentMode,
             dateOfDonation: receipt.dateOfDonation,
             notes: receipt.notes,
+            createdBy: receipt.createdBy,
           },
-          includeAttachment: false, // For now, just send email without PDF
+          includeAttachment: true, // Enable PDF attachment
         }),
       });
 
@@ -156,7 +187,7 @@ export default function ReceiptModal({
           isSending: false,
           error: "",
         });
-        showToastNotification("Email sent successfully");
+        showToastNotification("Email sent successfully with PDF attachment");
         // TODO: Update receipt status to mark as emailed
       } else {
         setEmailState((prev) => ({
@@ -349,7 +380,7 @@ export default function ReceiptModal({
             <!-- Amount Section -->
             <div class="amount-section">
               <div class="amount-label">TOTAL AMOUNT</div>
-              <div class="amount-value">₹${
+              <div class="amount-value">रु ${
                 receipt.amount?.toLocaleString("en-IN") || "0"
               }</div>
               <div class="amount-words">
@@ -451,12 +482,11 @@ export default function ReceiptModal({
             </TabsList>
 
             <TabsContent value="receipt" className="space-y-6">
-              {/* Enhanced Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4 no-print">
+              {/* Enhanced Action Buttons with Orange Theme */}
+              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 no-print">
                 <Button
-                  variant="outline"
                   onClick={handlePrint}
-                  className="flex items-center justify-center h-12 hover:bg-orange-50 hover:border-orange-200"
+                  className="flex items-center justify-center h-12 font-medium text-white transition-all duration-200 bg-orange-600 shadow-sm hover:bg-orange-700 hover:shadow-md"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print Receipt
@@ -464,7 +494,7 @@ export default function ReceiptModal({
                 <Button
                   variant="outline"
                   onClick={handleEmailReceipt}
-                  className="flex items-center justify-center h-12 hover:bg-blue-50 hover:border-blue-200"
+                  className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Send Email
@@ -472,31 +502,33 @@ export default function ReceiptModal({
                 <Button
                   variant="outline"
                   onClick={handleDownloadPDF}
-                  className="flex items-center justify-center h-12 hover:bg-green-50 hover:border-green-200"
+                  className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download Receipt
-                </Button>{" "}
+                  Download
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => onMarkPrinted?.(receipt.id)}
                   disabled={receipt.isPrinted || isUpdating}
-                  className="flex items-center justify-center h-12 hover:bg-purple-50 hover:border-purple-200 disabled:opacity-50"
+                  className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUpdating ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : receipt.isPrinted ? (
+                    <Check className="w-4 h-4 mr-2" />
                   ) : (
                     <Printer className="w-4 h-4 mr-2" />
                   )}
-                  {receipt.isPrinted ? "Already Printed" : "Mark as Printed"}
+                  {receipt.isPrinted ? "Printed" : "Mark Printed"}
                 </Button>
               </div>
 
-              {/* Danger Zone - Delete Action */}
-              <div className="p-4 mb-6 border border-red-200 rounded-lg no-print bg-red-50">
+              {/* Improved Danger Zone */}
+              <div className="p-4 mb-6 border border-red-200 rounded-lg no-print bg-red-50/50">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-red-900">
+                  <div className="flex-1">
+                    <h4 className="mb-1 text-sm font-semibold text-red-900">
                       Danger Zone
                     </h4>
                     <p className="text-sm text-red-700">
@@ -518,7 +550,7 @@ export default function ReceiptModal({
                       }
                     }}
                     disabled={isUpdating}
-                    className="text-red-600 border-red-300 hover:text-red-700 hover:border-red-300"
+                    className="ml-4 text-red-600 transition-colors duration-200 border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-50"
                   >
                     {isUpdating ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -533,23 +565,23 @@ export default function ReceiptModal({
               {/* Enhanced Receipt Content for Printing */}
               <div
                 ref={printRef}
-                className="p-8 bg-white border border-gray-200 rounded-lg shadow-sm"
+                className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm print-page"
               >
-                {/* Professional Header */}
-                <div className="pb-6 mb-8 text-center border-b-2 border-orange-500">
-                  <div className="flex items-center justify-center mb-4 space-x-3">
-                    <Heart className="w-10 h-10 text-orange-500" />
+                {/* Professional Header with Orange Theme */}
+                <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
+                  <div className="flex items-center justify-center mb-3 space-x-3">
+                    <Heart className="w-8 h-8 text-orange-500" />
                     <div>
-                      <h1 className="text-4xl font-bold text-gray-900">
+                      <h1 className="text-3xl font-bold text-gray-900">
                         Ashram Donation Receipt
                       </h1>
-                      <p className="text-lg font-medium text-orange-600">
-                        Official Receipt
+                      <p className="text-base font-medium text-orange-600">
+                        Official Tax Receipt
                       </p>
                     </div>
                   </div>
-                  <div className="p-3 mt-4 rounded-lg bg-orange-50">
-                    <p className="text-xl font-bold text-orange-800">
+                  <div className="inline-block p-3 mt-3 border border-orange-200 rounded-lg bg-orange-50">
+                    <p className="text-lg font-bold text-orange-800">
                       Receipt #{receipt.receiptNumber}
                     </p>
                     <p className="mt-1 text-sm text-orange-600">
@@ -558,16 +590,16 @@ export default function ReceiptModal({
                   </div>
                 </div>
 
-                {/* Two Column Layout for Receipt Details */}
-                <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
+                {/* Compact Two Column Layout for Receipt Details */}
+                <div className="grid grid-cols-1 gap-4 mb-6 print-section md:grid-cols-2">
                   {/* Donor Information */}
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-gray-50">
-                      <h3 className="flex items-center mb-3 text-lg font-bold text-gray-900">
-                        <User className="w-5 h-5 mr-2 text-gray-600" />
+                  <div className="space-y-3">
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                      <h3 className="flex items-center mb-3 text-base font-bold text-gray-900">
+                        <User className="w-4 h-4 mr-2 text-orange-600" />
                         Donor Information
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">
                             Name:
@@ -580,7 +612,7 @@ export default function ReceiptModal({
                           <span className="font-medium text-gray-600">
                             Donor ID:
                           </span>
-                          <span className="font-mono text-sm">
+                          <span className="font-mono text-xs text-gray-700">
                             {receipt.donorId}
                           </span>
                         </div>
@@ -589,17 +621,17 @@ export default function ReceiptModal({
                   </div>
 
                   {/* Receipt Information */}
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-blue-50">
-                      <h3 className="mb-3 text-lg font-bold text-gray-900">
+                  <div className="space-y-3">
+                    <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
+                      <h3 className="mb-3 text-base font-bold text-gray-900">
                         Receipt Details
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">
-                            Date of Donation:
+                            Donation Date:
                           </span>
-                          <span className="font-semibold">
+                          <span className="font-semibold text-gray-900">
                             {receipt.dateOfDonation
                               ? formatDate(receipt.dateOfDonation)
                               : "N/A"}
@@ -609,8 +641,8 @@ export default function ReceiptModal({
                           <span className="font-medium text-gray-600">
                             Issued By:
                           </span>
-                          <span className="font-semibold">
-                            {receipt.createdBy}
+                          <span className="font-semibold text-gray-900">
+                            {receipt.createdBy || "System"}
                           </span>
                         </div>
                       </div>
@@ -618,32 +650,32 @@ export default function ReceiptModal({
                   </div>
                 </div>
 
-                {/* Enhanced Donation Details */}
-                <div className="p-6 mb-8 border-2 border-green-200 rounded-lg bg-green-50">
-                  <h3 className="mb-6 text-2xl font-bold text-center text-green-800">
+                {/* Enhanced Donation Details - Compact Layout */}
+                <div className="p-4 mb-6 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
+                  <h3 className="mb-4 text-lg font-bold text-center text-orange-800">
                     Donation Information
                   </h3>
 
-                  <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-3">
                     <div className="text-center">
-                      <div className="p-4 bg-white rounded-lg shadow-sm">
-                        <label className="block mb-2 text-sm font-medium text-gray-600">
+                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                        <label className="block mb-1 text-xs font-medium text-gray-600">
                           Donation Type
                         </label>
-                        <p className="text-lg font-bold text-green-700">
+                        <p className="text-sm font-bold text-orange-700">
                           {receipt.donationType}
                         </p>
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="p-4 bg-white rounded-lg shadow-sm">
-                        <label className="block mb-2 text-sm font-medium text-gray-600">
+                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                        <label className="block mb-1 text-xs font-medium text-gray-600">
                           Payment Mode
                         </label>
-                        <div className="flex items-center justify-center space-x-2">
-                          <CreditCard className="w-4 h-4 text-gray-500" />
-                          <span className="text-lg font-bold text-blue-700">
+                        <div className="flex items-center justify-center space-x-1">
+                          <CreditCard className="w-3 h-3 text-gray-500" />
+                          <span className="text-sm font-bold text-blue-700">
                             {receipt.paymentMode}
                           </span>
                         </div>
@@ -651,11 +683,11 @@ export default function ReceiptModal({
                     </div>
 
                     <div className="text-center">
-                      <div className="p-4 bg-white rounded-lg shadow-sm">
-                        <label className="block mb-2 text-sm font-medium text-gray-600">
+                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                        <label className="block mb-1 text-xs font-medium text-gray-600">
                           Amount Donated
                         </label>
-                        <p className="text-3xl font-bold text-green-600">
+                        <p className="text-xl font-bold text-orange-600 print-amount">
                           {formatCurrency(receipt.amount || 0)}
                         </p>
                       </div>
@@ -663,24 +695,24 @@ export default function ReceiptModal({
                   </div>
 
                   {receipt.notes && (
-                    <div className="p-4 bg-white rounded-lg shadow-sm">
-                      <label className="block mb-2 text-sm font-medium text-gray-600">
+                    <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                      <label className="block mb-1 text-xs font-medium text-gray-600">
                         Special Notes
                       </label>
-                      <p className="italic text-gray-700">
+                      <p className="text-sm italic text-gray-700">
                         &ldquo;{receipt.notes}&rdquo;
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* Amount in Words - Enhanced */}
-                <div className="p-6 mb-8 border-2 border-orange-200 rounded-lg bg-orange-50">
-                  <h4 className="mb-3 text-lg font-bold text-center text-orange-800">
+                {/* Amount in Words - Compact */}
+                <div className="p-4 mb-6 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
+                  <h4 className="mb-2 text-base font-bold text-center text-orange-800">
                     Amount in Words
                   </h4>
-                  <div className="p-4 bg-white border-2 border-orange-300 border-dashed rounded-lg">
-                    <p className="text-xl font-bold text-center text-orange-900">
+                  <div className="p-3 bg-white border-2 border-orange-300 border-dashed rounded-lg">
+                    <p className="text-base font-bold text-center text-orange-900">
                       {receipt.amount
                         ? `Rupees ${receipt.amount.toLocaleString(
                             "en-IN"
@@ -690,55 +722,53 @@ export default function ReceiptModal({
                   </div>
                 </div>
 
-                {/* Professional Footer */}
-                <div className="pt-6 mt-8 border-t-2 border-orange-500">
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Compact Footer */}
+                <div className="pt-4 mt-6 border-t-2 border-orange-500 print-footer">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <h4 className="mb-2 font-bold text-gray-900">
+                      <h4 className="mb-2 text-sm font-bold text-gray-900">
                         Important Information:
                       </h4>
-                      <ul className="space-y-1 text-sm text-gray-700">
-                        <li>
-                          • This receipt is valid for tax deduction purposes
-                        </li>
-                        <li>• Please preserve this receipt for your records</li>
-                        <li>• For any queries, contact our office</li>
+                      <ul className="space-y-1 text-xs text-gray-700">
+                        <li>• Valid for tax deduction purposes</li>
+                        <li>• Preserve this receipt for your records</li>
+                        <li>• Contact our office for any queries</li>
                       </ul>
                     </div>
                     <div className="text-right">
-                      <div className="pt-4 mt-4 border-t border-gray-300">
-                        <p className="text-sm text-gray-600">
+                      <div className="pt-3 mt-3 border-t border-gray-300">
+                        <p className="mb-2 text-xs text-gray-600">
                           Authorized Signature
                         </p>
-                        <div className="h-12 mb-2 border-b border-gray-300"></div>
+                        <div className="h-8 mb-2 border-b border-gray-300"></div>
                         <p className="text-xs text-gray-500">
-                          Receipt generated on {formatDateTime(new Date())}
+                          Generated: {formatDateTime(new Date())}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-6 text-center border-t border-gray-200">
-                    <p className="mb-2 text-lg font-semibold text-orange-700">
+                  <div className="pt-3 mt-4 text-center border-t border-gray-200">
+                    <p className="mb-1 text-base font-semibold text-orange-700">
                       🙏 Thank you for your generous donation! 🙏
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-600">
                       Your contribution helps us serve the community better
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Status Information */}
-              <div className="flex items-center justify-between p-4 mt-6 rounded-lg bg-gray-50 no-print">
-                <div className="flex space-x-4">
+              {/* Enhanced Status Information */}
+              <div className="flex items-center justify-between p-4 mt-6 border border-gray-200 rounded-lg bg-gray-50 no-print">
+                <div className="flex space-x-6">
                   <div className="flex items-center space-x-2">
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        receipt.isPrinted ? "bg-green-500" : "bg-gray-300"
+                        receipt.isPrinted ? "bg-orange-500" : "bg-gray-300"
                       }`}
                     ></div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm font-medium text-gray-700">
                       {receipt.isPrinted ? "Printed" : "Not Printed"}
                     </span>
                   </div>
@@ -748,89 +778,112 @@ export default function ReceiptModal({
                         receipt.isEmailSent ? "bg-blue-500" : "bg-gray-300"
                       }`}
                     ></div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm font-medium text-gray-700">
                       {receipt.isEmailSent ? "Emailed" : "Not Emailed"}
                     </span>
                   </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Last updated: {formatDateTime(receipt.createdAt)}
                 </div>
               </div>
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
               <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
-                <Card>
+                <Card className="border-orange-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-orange-600">
                       {formatCurrency(totalDonations)}
                     </p>
-                    <p className="text-sm text-gray-600">Total Donated</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Donated
+                    </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border-orange-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-2xl font-bold text-orange-600">
                       {donationCount}
                     </p>
-                    <p className="text-sm text-gray-600">Total Donations</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Donations
+                    </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border-orange-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-2xl font-bold text-orange-600">
                       {donationCount > 0
                         ? formatCurrency(totalDonations / donationCount)
-                        : "₹0"}
+                        : "रु 0"}
                     </p>
-                    <p className="text-sm text-gray-600">Average Donation</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Average Donation
+                    </p>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Donation History</CardTitle>
+              <Card className="border-orange-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-lg text-gray-900">
+                    <History className="w-5 h-5 mr-2 text-orange-600" />
+                    Donation History
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loadingHistory ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span className="ml-2">Loading history...</span>
+                      <Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
+                      <span className="ml-2 text-gray-600">
+                        Loading history...
+                      </span>
                     </div>
                   ) : donorHistory.length > 0 ? (
                     <div className="space-y-3">
                       {donorHistory.map((donation, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                          className="flex items-center justify-between p-3 transition-colors duration-200 border border-orange-100 rounded-lg bg-orange-50 hover:bg-orange-100"
                         >
-                          <div>
-                            <p className="font-medium">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
                               {donation.donation_type}
                             </p>
-                            <p className="text-sm text-gray-600">
-                              {formatDate(new Date(donation.date_of_donation))}
-                            </p>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <Calendar className="w-3 h-3" />
+                              <span>
+                                {formatDate(
+                                  new Date(donation.date_of_donation)
+                                )}
+                              </span>
+                            </div>
                             {donation.notes && (
-                              <p className="mt-1 text-xs text-gray-500">
+                              <p className="mt-1 text-xs italic text-gray-500">
                                 {donation.notes}
                               </p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-green-600">
+                            <p className="font-bold text-orange-600">
                               {formatCurrency(donation.amount)}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {donation.payment_mode}
-                            </p>
+                            <div className="flex items-center justify-end space-x-1 text-xs text-gray-500">
+                              <CreditCard className="w-3 h-3" />
+                              <span>{donation.payment_mode}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="py-8 text-center text-gray-500">
-                      No donation history found for this donor.
-                    </p>
+                    <div className="py-8 text-center">
+                      <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-gray-500">
+                        No donation history found for this donor.
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -839,7 +892,7 @@ export default function ReceiptModal({
         </DialogContent>
       </Dialog>
 
-      {/* Email Dialog */}
+      {/* Enhanced Email Dialog */}
       <Dialog
         open={emailState.isDialogOpen}
         onOpenChange={(open) =>
@@ -848,16 +901,27 @@ export default function ReceiptModal({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send Receipt via Email</DialogTitle>
+            <DialogTitle className="flex items-center text-gray-900">
+              <Mail className="w-5 h-5 mr-2 text-orange-600" />
+              Send Receipt via Email
+            </DialogTitle>
             <DialogDescription>
               Enter the email address where you want to send the receipt for{" "}
-              {receipt.donorName}.
+              <span className="font-medium text-orange-700">
+                {receipt.donorName}
+              </span>
+              .
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
+                Email Address
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -875,17 +939,21 @@ export default function ReceiptModal({
                   }
                 }}
                 disabled={emailState.isSending}
+                className="border-orange-200 focus:border-orange-400 focus:ring-orange-400"
               />
               {emailState.error && (
-                <p className="text-sm text-red-600">{emailState.error}</p>
+                <p className="flex items-center text-sm text-red-600">
+                  <X className="w-3 h-3 mr-1" />
+                  {emailState.error}
+                </p>
               )}
             </div>
 
-            <div className="p-3 rounded-lg bg-blue-50">
-              <p className="text-sm text-blue-800">
-                <strong>Receipt Details:</strong>
+            <div className="p-3 border border-orange-200 rounded-lg bg-orange-50">
+              <p className="mb-1 text-sm font-medium text-orange-800">
+                Receipt Details:
               </p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-orange-700">
                 Receipt #{receipt.receiptNumber} | Amount:{" "}
                 {formatCurrency(receipt.amount || 0)}
               </p>
@@ -899,12 +967,14 @@ export default function ReceiptModal({
                 setEmailState((prev) => ({ ...prev, isDialogOpen: false }))
               }
               disabled={emailState.isSending}
+              className="text-gray-700 border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSendEmail}
               disabled={emailState.isSending || !emailState.address.trim()}
+              className="text-white bg-orange-600 hover:bg-orange-700"
             >
               {emailState.isSending ? (
                 <>
@@ -913,7 +983,7 @@ export default function ReceiptModal({
                 </>
               ) : (
                 <>
-                  <Mail className="w-4 h-4 mr-2" />
+                  <Send className="w-4 h-4 mr-2" />
                   Send Email
                 </>
               )}
@@ -922,16 +992,16 @@ export default function ReceiptModal({
         </DialogContent>
       </Dialog>
 
-      {/* Simple Toast Notification */}
+      {/* Enhanced Toast Notification */}
       {showToast && (
         <div className="fixed z-50 duration-300 top-4 right-4 animate-in slide-in-from-top-2">
-          <div className="max-w-md px-4 py-3 text-green-800 border border-l-4 border-green-200 rounded shadow-lg bg-green-50 border-l-green-500">
+          <div className="max-w-md px-4 py-3 text-orange-800 border border-l-4 border-orange-200 rounded shadow-lg bg-orange-50 border-l-orange-500">
             <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-green-600" />
+              <Check className="w-5 h-5 mr-2 text-orange-600" />
               <p className="font-medium">{toastMessage}</p>
               <button
                 onClick={() => setShowToast(false)}
-                className="ml-4 text-green-600 hover:text-green-800"
+                className="ml-4 text-orange-600 transition-colors duration-200 hover:text-orange-800"
               >
                 <X className="w-4 h-4" />
               </button>

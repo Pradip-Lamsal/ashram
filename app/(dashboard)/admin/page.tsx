@@ -245,7 +245,7 @@ export default function AdminPage() {
                     Total Amount
                   </p>
                   <p className="text-3xl font-bold text-purple-600">
-                    ₹{stats.totalAmount.toLocaleString()}
+                    Rs. {stats.totalAmount.toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500">
                     {stats.totalDonations} donations
@@ -325,7 +325,7 @@ export default function AdminPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-green-600">
-                        ₹{donation.amount}
+                        Rs. {donation.amount}
                       </p>
                       <p className="text-xs text-gray-500">
                         {donation.payment_mode}
@@ -432,7 +432,7 @@ export default function AdminPage() {
                         <td className="p-2">{donor.phone || "-"}</td>
                         <td className="p-2">{donor.email || "-"}</td>
                         <td className="p-2 font-bold text-green-600">
-                          ₹{donor.total_donations || 0}
+                          Rs. {donor.total_donations || 0}
                         </td>
                         <td className="p-2 text-sm">
                           {donor.last_donation_date
@@ -484,7 +484,7 @@ export default function AdminPage() {
                           {receipt.donation?.donor?.name || "Unknown"}
                         </td>
                         <td className="p-2 font-bold text-green-600">
-                          ₹{receipt.donation?.amount || 0}
+                          Rs. {receipt.donation?.amount || 0}
                         </td>
                         <td className="p-2 text-sm">
                           {new Date(receipt.issued_at).toLocaleDateString()}
@@ -545,7 +545,7 @@ export default function AdminPage() {
                         </td>
                         <td className="p-2">{donation.donation_type}</td>
                         <td className="p-2 font-bold text-green-600">
-                          ₹{donation.amount}
+                          Rs. {donation.amount}
                         </td>
                         <td className="p-2">
                           <Badge variant="outline">

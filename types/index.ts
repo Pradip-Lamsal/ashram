@@ -93,11 +93,7 @@ export type MembershipType = "Regular" | "Life" | "Special";
 
 export type PaymentMode = "Online" | "Offline" | "QR Payment";
 
-export type UserRole =
-  | "admin"
-  | "billing_staff"
-  | "event_coordinator"
-  | "devotee";
+export type UserRole = "admin" | "user";
 
 export interface User {
   id: string;

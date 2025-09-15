@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'billing_staff', 'event_coordinator', 'devotee')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
     permissions TEXT[] DEFAULT '{}',
     join_date TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
     email_verified BOOLEAN DEFAULT FALSE,

@@ -32,55 +32,118 @@ export const sendReceiptEmail = async (
     const mailOptions = {
       from: `"Ashram Management" <${process.env.GMAIL_USER}>`,
       to: donorEmail,
-      subject: `Receipt for Your Donation - ${receipt.id}`,
+      subject: `🙏 Thank You - Donation Receipt ${receipt.id} | Ashram Management`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Thank You for Your Donation</h2>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #ea580c, #dc2626); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🙏 Thank You for Your Donation</h1>
+            <p style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px;">Your generosity supports our spiritual community</p>
+          </div>
           
-          <p>Dear ${receipt.donor_name},</p>
-          
-          <p>We are grateful for your generous donation to our ashram. Your contribution helps us continue our spiritual and community work.</p>
-          
-          <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #374151; margin-top: 0;">Receipt Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Receipt ID:</td>
-                <td style="padding: 8px 0;">${receipt.id}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Amount:</td>
-                <td style="padding: 8px 0;">$${receipt.amount.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Date:</td>
-                <td style="padding: 8px 0;">${new Date(
-                  receipt.date
-                ).toLocaleDateString()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Type:</td>
-                <td style="padding: 8px 0;">${receipt.receipt_type}</td>
-              </tr>
+          <!-- Main Content -->
+          <div style="padding: 30px 20px; background-color: #ffffff;">
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Dear <strong style="color: #ea580c;">${
+                receipt.donor_name
+              }</strong>,
+            </p>
+            
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+              We are deeply grateful for your generous donation to our ashram. Your contribution helps us continue our spiritual and community work, supporting devotees and maintaining our sacred space.
+            </p>
+            
+            <!-- Receipt Details Card -->
+            <div style="background: linear-gradient(135deg, #fef3c7, #fed7aa); padding: 25px; border-radius: 12px; margin: 25px 0; border: 2px solid #ea580c;">
+              <h3 style="color: #ea580c; margin: 0 0 20px 0; font-size: 20px; font-weight: 600; text-align: center;">📋 Receipt Details</h3>
+              <table style="width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <tr style="background-color: #fef3c7;">
+                  <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #fed7aa;">Receipt ID:</td>
+                  <td style="padding: 12px 16px; color: #374151; border-bottom: 1px solid #fed7aa; font-family: 'Courier New', monospace;">${
+                    receipt.id
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #f3f4f6;">Amount:</td>
+                  <td style="padding: 12px 16px; color: #ea580c; font-weight: 700; font-size: 18px; border-bottom: 1px solid #f3f4f6;">रु${receipt.amount.toFixed(
+                    2
+                  )}</td>
+                </tr>
+                <tr style="background-color: #f9fafb;">
+                  <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #f3f4f6;">Date:</td>
+                  <td style="padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">${new Date(
+                    receipt.date
+                  ).toLocaleDateString("en-IN", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #f3f4f6;">Type:</td>
+                  <td style="padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">${
+                    receipt.receipt_type
+                  }</td>
+                </tr>
+                ${
+                  receipt.notes
+                    ? `
+                <tr style="background-color: #f9fafb;">
+                  <td style="padding: 12px 16px; font-weight: 600; color: #92400e;">Notes:</td>
+                  <td style="padding: 12px 16px; color: #374151; font-style: italic;">"${receipt.notes}"</td>
+                </tr>
+                `
+                    : ""
+                }
+              </table>
+            </div>
+            
+            <!-- Tax Information -->
+            <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin: 25px 0;">
+              <p style="color: #065f46; font-size: 14px; margin: 0; text-align: center;">
+                <strong>💡 Tax Information:</strong> This receipt serves as confirmation of your donation for tax deduction purposes. Please keep this for your records.
+              </p>
               ${
-                receipt.notes
+                pdfBuffer
                   ? `
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Notes:</td>
-                <td style="padding: 8px 0;">${receipt.notes}</td>
-              </tr>
+              ${
+                pdfBuffer
+                  ? `
+              <p style="color: #065f46; font-size: 14px; margin: 10px 0 0 0; text-align: center;">
+                <strong>📎 PDF Attachment:</strong> A detailed receipt is attached to this email for your convenience.
+              </p>
+              `
+                  : `
+              <p style="color: #f59e0b; font-size: 14px; margin: 10px 0 0 0; text-align: center;">
+                <strong>📧 Email Receipt:</strong> Your receipt details are included in this email. You can print this email for your records.
+              </p>
+              `
+              }
               `
                   : ""
               }
-            </table>
+            </div>
+            
+            <!-- Thank You Message -->
+            <div style="text-align: center; margin: 30px 0;">
+              <p style="color: #ea580c; font-size: 20px; font-weight: 600; margin-bottom: 10px;">🙏 May your generosity bring you blessings 🙏</p>
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">
+                Your donation helps us maintain our sacred space, support spiritual programs,<br>
+                and serve our community with love and devotion.
+              </p>
+            </div>
           </div>
           
-          <p>This receipt serves as confirmation of your donation for tax purposes.</p>
-          
-          <p style="color: #6b7280; font-size: 14px;">
-            With gratitude,<br>
-            Ashram Management Team
-          </p>
+          <!-- Footer -->
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border-top: 3px solid #ea580c;">
+            <p style="color: #6b7280; font-size: 14px; margin: 0;">
+              <strong style="color: #ea580c;">Ashram Management Team</strong><br>
+              🕉️ Serving with devotion and gratitude 🕉️
+            </p>
+            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+              This is an automated email. Please do not reply to this message.
+            </p>
+          </div>
         </div>
       `,
       attachments: pdfBuffer
@@ -118,33 +181,70 @@ export const sendVerificationEmail = async (
     const mailOptions = {
       from: `"Ashram Management" <${process.env.GMAIL_USER}>`,
       to: userEmail,
-      subject: "Welcome to Ashram Management - Verify Your Account",
+      subject: "🕉️ Welcome to Ashram Management - Please Verify Your Account",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Welcome to Ashram Management</h2>
-          
-          <p>Dear ${userName},</p>
-          
-          <p>Thank you for joining our ashram management system. To complete your registration, please verify your email address by clicking the button below:</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}" 
-               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Verify Email Address
-            </a>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #ea580c, #dc2626); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🙏 Welcome to Ashram Management</h1>
+            <p style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px;">Please verify your account to get started</p>
           </div>
           
-          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #2563eb;">${verificationLink}</p>
+          <!-- Main Content -->
+          <div style="padding: 30px 20px; background-color: #ffffff;">
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Dear <strong style="color: #ea580c;">${userName}</strong>,
+            </p>
+            
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+              Thank you for joining our ashram management system. To complete your registration and ensure the security of your account, please verify your email address by clicking the button below:
+            </p>
+            
+            <!-- Verification Button -->
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="${verificationLink}" 
+                 style="background: linear-gradient(135deg, #ea580c, #dc2626); 
+                        color: white; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        display: inline-block; 
+                        font-weight: 600; 
+                        font-size: 16px;
+                        box-shadow: 0 4px 6px rgba(234, 88, 12, 0.3);
+                        transition: all 0.3s ease;">
+                ✅ Verify Email Address
+              </a>
+            </div>
+            
+            <!-- Alternative Link -->
+            <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 25px 0;">
+              <p style="color: #374151; font-size: 14px; margin-bottom: 10px;">
+                <strong>Can't click the button?</strong> Copy and paste this link into your browser:
+              </p>
+              <p style="word-break: break-all; color: #ea580c; font-size: 12px; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 8px; border-radius: 4px; border: 1px solid #fed7aa;">
+                ${verificationLink}
+              </p>
+            </div>
+            
+            <!-- Security Notice -->
+            <div style="background-color: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 20px; margin: 25px 0;">
+              <p style="color: #92400e; font-size: 14px; margin: 0; text-align: center;">
+                <strong>🔒 Security Notice:</strong> If you didn't create this account, please ignore this email. The link will expire in 24 hours.
+              </p>
+            </div>
+          </div>
           
-          <p style="color: #6b7280; font-size: 14px;">
-            If you didn't create this account, please ignore this email.
-          </p>
-          
-          <p style="color: #6b7280; font-size: 14px;">
-            Best regards,<br>
-            Ashram Management Team
-          </p>
+          <!-- Footer -->
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border-top: 3px solid #ea580c;">
+            <p style="color: #6b7280; font-size: 14px; margin: 0;">
+              <strong style="color: #ea580c;">Ashram Management Team</strong><br>
+              🕉️ Serving with devotion and gratitude 🕉️
+            </p>
+            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+              This is an automated email. Please do not reply to this message.
+            </p>
+          </div>
         </div>
       `,
     };

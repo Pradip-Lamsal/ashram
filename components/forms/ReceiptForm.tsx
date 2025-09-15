@@ -217,7 +217,7 @@ export default function ReceiptForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (₹) *</Label>
+              <Label htmlFor="amount">Amount (रु) *</Label>
               <Input
                 id="amount"
                 type="number"
