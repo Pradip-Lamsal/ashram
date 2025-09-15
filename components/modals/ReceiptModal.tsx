@@ -40,9 +40,6 @@ interface ReceiptModalProps {
     notes?: string;
   }>;
   loadingHistory?: boolean;
-  onCreateReceipt?: () => void;
-  onEditDonor?: () => void;
-  onViewAllReceipts?: () => void;
 }
 
 export default function ReceiptModal({
@@ -51,9 +48,6 @@ export default function ReceiptModal({
   onClose,
   donorHistory = [],
   loadingHistory = false,
-  onCreateReceipt,
-  onEditDonor,
-  onViewAllReceipts,
 }: ReceiptModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -448,31 +442,6 @@ export default function ReceiptModal({
                 )}
               </CardContent>
             </Card>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button
-                onClick={onCreateReceipt}
-                className="bg-orange-600 hover:bg-orange-700"
-                disabled={!onCreateReceipt}
-              >
-                Create New Receipt
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onEditDonor}
-                disabled={!onEditDonor}
-              >
-                Edit Donor Info
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onViewAllReceipts}
-                disabled={!onViewAllReceipts}
-              >
-                View All Receipts
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -779,17 +779,6 @@ export default function ReceiptsPage() {
           loadingHistory={loadingHistory}
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
-          onCreateReceipt={() => {
-            setIsReceiptModalOpen(false);
-            setIsAddDialogOpen(true);
-          }}
-          onEditDonor={() => {
-            showToast("Edit donor functionality coming soon", "default");
-          }}
-          onViewAllReceipts={() => {
-            setIsReceiptModalOpen(false);
-            showToast("Viewing all receipts", "default");
-          }}
         />
       )}
     </div>
