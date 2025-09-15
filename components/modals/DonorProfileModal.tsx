@@ -1,13 +1,8 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -23,291 +18,260 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockReceipts } from "@/data/mockData";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Donor } from "@/types";
-import {
-  Calendar,
-  Download,
-  Edit,
-  Heart,
-  Mail,
-  MapPin,
-  Phone,
-  Receipt,
-  User,
-} from "lucide-react";
-import { useState } from "react";
+import { Calendar, Heart, Mail, MapPin, Phone, User, X } from "lucide-react";
 
 interface DonorProfileModalProps {
-  donor: Donor;
+  donor: Donor | null;
   isOpen: boolean;
   onClose: () => void;
 }
+
+const mockDonationHistory = [
+  {
+    id: 1,
+    amount: 5000,
+    date: "2024-01-15",
+    purpose: "Temple Construction",
+    receiptNumber: "REC-2024-001",
+  },
+  {
+    id: 2,
+    amount: 2500,
+    date: "2024-02-10",
+    purpose: "Food Service",
+    receiptNumber: "REC-2024-045",
+  },
+  {
+    id: 3,
+    amount: 1000,
+    date: "2024-03-05",
+    purpose: "Festival Celebration",
+    receiptNumber: "REC-2024-089",
+  },
+];
 
 export default function DonorProfileModal({
   donor,
   isOpen,
   onClose,
 }: DonorProfileModalProps) {
-  const [activeTab, setActiveTab] = useState("overview");
+  if (!donor) return null;
 
-  // Get donor's receipts
-  const donorReceipts = mockReceipts.filter(
-    (receipt) => receipt.donorId === donor.id
-  );
-
-  // Calculate statistics
-  const totalDonations = donorReceipts.length;
-  const totalAmount = donorReceipts.reduce(
-    (sum, receipt) => sum + receipt.amount,
+  const totalDonations = mockDonationHistory.reduce(
+    (total, donation) => total + donation.amount,
     0
   );
-  const averageAmount = totalAmount / totalDonations || 0;
-  const lastDonation = donorReceipts.sort(
-    (a, b) =>
-      new Date(b.dateOfDonation).getTime() -
-      new Date(a.dateOfDonation).getTime()
-  )[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
-            <span>{donor.name}</span>
-          </DialogTitle>
-          <DialogDescription>
-            Complete donor profile with donation history and details
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl">{donor.name}</DialogTitle>
+                <DialogDescription className="text-base">
+                  Donor Profile & Information
+                </DialogDescription>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="donations">Donation History</TabsTrigger>
-            <TabsTrigger value="pujas">Puja History</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100">Total Donations</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(totalDonations)}
+                    </p>
+                  </div>
+                  <Heart className="w-8 h-8 text-green-200" />
+                </div>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="overview" className="space-y-6">
-            {/* Personal Information Card */}
+            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100">Total Receipts</p>
+                    <p className="text-2xl font-bold">
+                      {mockDonationHistory.length}
+                    </p>
+                  </div>
+                  <Calendar className="w-8 h-8 text-blue-200" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100">Member Since</p>
+                    <p className="text-lg font-semibold">
+                      {formatDate(new Date(donor.createdAt || "2024-01-01"))}
+                    </p>
+                  </div>
+                  <User className="w-8 h-8 text-purple-200" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Personal Information</span>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="w-5 h-5 text-orange-600" />
+                  <span>Contact Information</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <User className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium">{donor.name}</p>
-                        <p className="text-sm text-gray-500">Full Name</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium">
-                          {formatDate(donor.dateOfBirth)}
-                        </p>
-                        <p className="text-sm text-gray-500">Date of Birth</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium">{donor.phone}</p>
-                        <p className="text-sm text-gray-500">Phone Number</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {donor.email && (
-                      <div className="flex items-start space-x-3">
-                        <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="font-medium">{donor.email}</p>
-                          <p className="text-sm text-gray-500">Email Address</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-start space-x-3">
-                      <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium">{donor.address}</p>
-                        <p className="text-sm text-gray-500">Address</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <Heart className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium">{donor.membership} Member</p>
-                        <p className="text-sm text-gray-500">Membership Type</p>
-                      </div>
-                    </div>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="font-medium">Phone</p>
+                    <p className="text-gray-600">
+                      {donor.phone || "Not provided"}
+                    </p>
                   </div>
                 </div>
 
-                {donor.notes && (
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Notes</h4>
-                    <p className="text-gray-700">{donor.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Donation Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {totalDonations}
-                  </div>
-                  <div className="text-sm text-gray-600">Total Donations</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(totalAmount)}
-                  </div>
-                  <div className="text-sm text-gray-600">Total Amount</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(averageAmount)}
-                  </div>
-                  <div className="text-sm text-gray-600">Average Amount</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {lastDonation
-                      ? formatDate(lastDonation.dateOfDonation)
-                      : "Never"}
-                  </div>
-                  <div className="text-sm text-gray-600">Last Donation</div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="donations" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Donation History</span>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  Complete history of all donations made by {donor.name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {donorReceipts.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Receipt No.</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {donorReceipts.map((receipt) => (
-                        <TableRow key={receipt.id}>
-                          <TableCell className="font-medium">
-                            {receipt.receiptNumber}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(receipt.dateOfDonation)}
-                          </TableCell>
-                          <TableCell>{receipt.donationType}</TableCell>
-                          <TableCell className="font-medium text-green-600">
-                            {formatCurrency(receipt.amount)}
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                receipt.paymentMode === "Online"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : receipt.paymentMode === "QR Payment"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-green-100 text-green-800"
-                              }`}
-                            >
-                              {receipt.paymentMode}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm">
-                              <Receipt className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      No donations found for this donor.
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="font-medium">Email</p>
+                    <p className="text-gray-600">
+                      {donor.email || "Not provided"}
                     </p>
                   </div>
-                )}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="font-medium">Joined</p>
+                    <p className="text-gray-600">
+                      {formatDate(new Date(donor.createdAt || "2024-01-01"))}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-4 h-4 text-gray-500 mt-1" />
+                  <div>
+                    <p className="font-medium">Address</p>
+                    <p className="text-gray-600">
+                      {donor.address || "Not provided"}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="pujas" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Puja History</CardTitle>
-                <CardDescription>
-                  Pujas sponsored or participated by {donor.name}
-                </CardDescription>
+                <CardTitle className="flex items-center space-x-2">
+                  <Heart className="w-5 h-5 text-red-500" />
+                  <span>Donation Summary</span>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No puja history available.</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Puja history will be displayed here once the donor
-                    participates in any pujas.
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-orange-50 p-3 rounded-lg">
+                    <p className="text-sm text-orange-600">Highest Donation</p>
+                    <p className="text-lg font-semibold text-orange-800">
+                      {formatCurrency(
+                        Math.max(...mockDonationHistory.map((d) => d.amount))
+                      )}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-sm text-green-600">Average Donation</p>
+                    <p className="text-lg font-semibold text-green-800">
+                      {formatCurrency(
+                        totalDonations / mockDonationHistory.length
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-600 mb-2">Recent Activity</p>
+                  <p className="text-blue-800">
+                    Last donation:{" "}
+                    {formatDate(new Date(mockDonationHistory[0].date))}
+                  </p>
+                  <p className="text-blue-800">
+                    Amount: {formatCurrency(mockDonationHistory[0].amount)}
                   </p>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Donation History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Receipt No.</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Purpose</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockDonationHistory.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell className="font-medium">
+                        {donation.receiptNumber}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(new Date(donation.date))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{donation.purpose}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(donation.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button className="flex-1 bg-orange-600 hover:bg-orange-700">
+              <Heart className="w-4 h-4 mr-2" />
+              Create New Receipt
+            </Button>
+            <Button variant="outline" className="flex-1">
+              Edit Donor Information
+            </Button>
+            <Button variant="outline" className="flex-1">
+              View All Receipts
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

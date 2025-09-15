@@ -1,3 +1,7 @@
+import { AuthErrorBoundary } from "@/components/context/AuthErrorBoundary";
+import { AuthProvider } from "@/components/context/AuthProvider";
+import { ToastContextProvider } from "@/components/context/ToastProvider";
+import { PerformanceProvider } from "@/components/providers/PerformanceProvider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -28,7 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthErrorBoundary>
+          <AuthProvider>
+            <ToastContextProvider>
+              <PerformanceProvider>{children}</PerformanceProvider>
+            </ToastContextProvider>
+          </AuthProvider>
+        </AuthErrorBoundary>
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/components/context/AuthProvider";
+import { useToast } from "@/components/context/ToastProvider";
 import DonorForm from "@/components/forms/DonorForm";
 import DonorProfileModal from "@/components/modals/DonorProfileModal";
 import { Button } from "@/components/ui/button";
@@ -27,22 +29,59 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { mockDonors } from "@/data/mockData";
+import { donorsService } from "@/lib/supabase-services";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Donor } from "@/types";
+import { type DonationType, type MembershipType } from "@/types";
 import { Calendar, Edit, Eye, Mail, Phone, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+interface Donor {
+  id: string;
+  name: string;
+  date_of_birth?: string;
+  phone?: string;
+  address?: string;
+  email?: string;
+  donation_type: string;
+  membership: string;
+  notes?: string;
+  total_donations: number;
+  last_donation_date?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function DonorsPage() {
+  const { appUser } = useAuth();
+  const { showToast } = useToast();
+  const [donors, setDonors] = useState<Donor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  const filteredDonors = mockDonors.filter(
+  useEffect(() => {
+    const loadDonors = async () => {
+      try {
+        const data = await donorsService.getAll();
+        setDonors(data);
+      } catch (error) {
+        console.error("Error loading donors:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (appUser) {
+      loadDonors();
+    }
+  }, [appUser]);
+
+  const filteredDonors = donors.filter(
     (donor) =>
       donor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      donor.phone.includes(searchTerm) ||
+      donor.phone?.includes(searchTerm) ||
       donor.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -51,22 +90,94 @@ export default function DonorsPage() {
     setIsProfileModalOpen(true);
   };
 
+  const handleAddDonor = async (donorData: {
+    name: string;
+    dateOfBirth: string;
+    phone: string;
+    address: string;
+    email: string;
+    donationType: string;
+    membership: string;
+    notes: string;
+  }) => {
+    try {
+      const newDonor = await donorsService.create({
+        name: donorData.name,
+        dateOfBirth: donorData.dateOfBirth
+          ? new Date(donorData.dateOfBirth)
+          : undefined,
+        phone: donorData.phone || undefined,
+        address: donorData.address || undefined,
+        email: donorData.email || undefined,
+        donationType: donorData.donationType as DonationType,
+        membership: donorData.membership as MembershipType,
+        notes: donorData.notes || undefined,
+        totalDonations: 0,
+        lastDonationDate: null,
+      });
+
+      setDonors([newDonor, ...donors]);
+      setIsAddDialogOpen(false);
+
+      // Show beautiful success toast
+      showToast(
+        "Donor Added Successfully! 🎉",
+        `${donorData.name} has been added to the database with ${donorData.membership} membership.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error adding donor:", error);
+
+      // Show error toast instead of alert
+      showToast(
+        "Failed to Add Donor",
+        "There was an error adding the donor. Please check your information and try again.",
+        "destructive"
+      );
+    }
+  };
+
+  // Stats calculations
+  const totalDonors = donors.length;
+  const lifeMembers = donors.filter((d) => d.membership === "Life").length;
+  const totalCollected = donors.reduce(
+    (sum, d) => sum + Number(d.total_donations || 0),
+    0
+  );
+  const activeThisMonth = donors.filter((d) => {
+    if (!d.last_donation_date) return false;
+    const lastDonation = new Date(d.last_donation_date);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return lastDonation > thirtyDaysAgo;
+  }).length;
+
+  if (loading) {
+    return (
+      <div className="px-6 py-8 mx-auto max-w-7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-12 h-12 border-b-2 border-orange-500 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Donors Management
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-600">
             Manage donor information and track contributions
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Add New Donor
             </Button>
           </DialogTrigger>
@@ -78,10 +189,7 @@ export default function DonorsPage() {
               </DialogDescription>
             </DialogHeader>
             <DonorForm
-              onSubmit={(donorData) => {
-                console.log("New donor:", donorData);
-                setIsAddDialogOpen(false);
-              }}
+              onSubmit={handleAddDonor}
               onCancel={() => setIsAddDialogOpen(false)}
             />
           </DialogContent>
@@ -89,13 +197,11 @@ export default function DonorsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
-                {mockDonors.length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{totalDonors}</p>
               <p className="text-sm text-gray-600">Total Donors</p>
             </div>
           </CardContent>
@@ -103,9 +209,7 @@ export default function DonorsPage() {
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
-                {mockDonors.filter((d) => d.membership === "Life").length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{lifeMembers}</p>
               <p className="text-sm text-gray-600">Life Members</p>
             </div>
           </CardContent>
@@ -114,9 +218,7 @@ export default function DonorsPage() {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(
-                  mockDonors.reduce((sum, d) => sum + d.totalDonations, 0)
-                )}
+                {formatCurrency(totalCollected)}
               </p>
               <p className="text-sm text-gray-600">Total Collected</p>
             </div>
@@ -126,14 +228,7 @@ export default function DonorsPage() {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">
-                {
-                  mockDonors.filter(
-                    (d) =>
-                      d.lastDonationDate &&
-                      new Date().getTime() - d.lastDonationDate.getTime() <
-                        30 * 24 * 60 * 60 * 1000
-                  ).length
-                }
+                {activeThisMonth}
               </p>
               <p className="text-sm text-gray-600">Active This Month</p>
             </div>
@@ -150,9 +245,9 @@ export default function DonorsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-center mb-6 space-x-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
                 placeholder="Search by name, phone, or email..."
                 value={searchTerm}
@@ -185,19 +280,21 @@ export default function DonorsPage() {
                           {donor.name}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {formatDate(donor.dateOfBirth)}
+                          {donor.date_of_birth
+                            ? formatDate(new Date(donor.date_of_birth))
+                            : "N/A"}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center text-sm">
-                          <Phone className="mr-2 h-3 w-3 text-gray-400" />
-                          {donor.phone}
+                          <Phone className="w-3 h-3 mr-2 text-gray-400" />
+                          {donor.phone || "N/A"}
                         </div>
                         {donor.email && (
                           <div className="flex items-center text-sm text-gray-600">
-                            <Mail className="mr-2 h-3 w-3 text-gray-400" />
+                            <Mail className="w-3 h-3 mr-2 text-gray-400" />
                             {donor.email}
                           </div>
                         )}
@@ -217,18 +314,18 @@ export default function DonorsPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{donor.donationType}</span>
+                      <span className="text-sm">{donor.donation_type}</span>
                     </TableCell>
                     <TableCell>
                       <p className="font-medium">
-                        {formatCurrency(donor.totalDonations)}
+                        {formatCurrency(Number(donor.total_donations || 0))}
                       </p>
                     </TableCell>
                     <TableCell>
-                      {donor.lastDonationDate ? (
+                      {donor.last_donation_date ? (
                         <div className="flex items-center text-sm">
-                          <Calendar className="mr-2 h-3 w-3 text-gray-400" />
-                          {formatDate(donor.lastDonationDate)}
+                          <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                          {formatDate(new Date(donor.last_donation_date))}
                         </div>
                       ) : (
                         <span className="text-gray-400">No donations</span>
@@ -241,10 +338,10 @@ export default function DonorsPage() {
                           size="sm"
                           onClick={() => handleViewProfile(donor)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
                         <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
+                          <Edit className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -254,10 +351,12 @@ export default function DonorsPage() {
             </Table>
           </div>
 
-          {filteredDonors.length === 0 && (
-            <div className="text-center py-8">
+          {filteredDonors.length === 0 && !loading && (
+            <div className="py-8 text-center">
               <p className="text-gray-500">
-                No donors found matching your search criteria.
+                {donors.length === 0
+                  ? "No donors yet. Add your first donor to get started!"
+                  : "No donors found matching your search criteria."}
               </p>
             </div>
           )}
@@ -267,7 +366,25 @@ export default function DonorsPage() {
       {/* Donor Profile Modal */}
       {selectedDonor && (
         <DonorProfileModal
-          donor={selectedDonor}
+          donor={{
+            id: selectedDonor.id,
+            name: selectedDonor.name,
+            dateOfBirth: selectedDonor.date_of_birth
+              ? new Date(selectedDonor.date_of_birth)
+              : undefined,
+            phone: selectedDonor.phone,
+            address: selectedDonor.address,
+            email: selectedDonor.email,
+            donationType: selectedDonor.donation_type as "General Donation",
+            membership: selectedDonor.membership as "Regular",
+            notes: selectedDonor.notes,
+            totalDonations: Number(selectedDonor.total_donations || 0),
+            lastDonationDate: selectedDonor.last_donation_date
+              ? new Date(selectedDonor.last_donation_date)
+              : undefined,
+            createdAt: new Date(selectedDonor.created_at),
+            updatedAt: new Date(selectedDonor.updated_at),
+          }}
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
         />

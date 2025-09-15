@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ea580c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #dc2626;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -65,4 +87,53 @@
       display: none !important;
     }
   }
+}
+
+/* Toast animations */
+@keyframes hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes swipeOut {
+  from {
+    transform: translateX(var(--radix-toast-swipe-move-x));
+  }
+  to {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+  }
+}
+
+[data-state='open'] {
+  animation: slideIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-state='closed'] {
+  animation: hide 100ms ease-in;
+}
+
+[data-swipe='move'] {
+  transform: translateX(var(--radix-toast-swipe-move-x));
+}
+
+[data-swipe='cancel'] {
+  transform: translateX(0);
+  transition: transform 200ms ease-out;
+}
+
+[data-swipe='end'] {
+  animation: swipeOut 100ms ease-out;
 }

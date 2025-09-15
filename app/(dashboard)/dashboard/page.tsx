@@ -7,7 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { mockDashboardStats } from "@/data/mockData";
+import { DashboardLoading } from "@/components/ui/loading";
+import { dashboardService } from "@/lib/supabase-services";
 import { formatCurrency } from "@/lib/utils";
 import {
   Calendar,
@@ -16,84 +17,194 @@ import {
   Receipt,
   Smartphone,
 } from "lucide-react";
-import {
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
 
-const statsCards = [
+// Lazy load Recharts components
+const ResponsiveContainer = dynamic(
+  () =>
+    import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
   {
-    title: "Total Donations",
-    value: mockDashboardStats.totalDonations,
-    icon: Receipt,
-    color: "text-blue-600",
-    bgColor: "bg-blue-100",
-  },
-  {
-    title: "Total Amount",
-    value: formatCurrency(mockDashboardStats.totalAmount),
-    icon: IndianRupee,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-  },
-  {
-    title: "Online Payments",
-    value: mockDashboardStats.onlinePayments,
-    icon: CreditCard,
-    color: "text-purple-600",
-    bgColor: "bg-purple-100",
-  },
-  {
-    title: "QR Payments",
-    value: mockDashboardStats.qrPayments,
-    icon: Smartphone,
-    color: "text-orange-600",
-    bgColor: "bg-orange-100",
-  },
-];
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] bg-gray-100 rounded animate-pulse" />
+    ),
+  }
+);
 
-const paymentModeData = [
+const LineChart = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.LineChart })),
   {
-    name: "Online",
-    value: mockDashboardStats.onlinePayments,
-    color: "#8b5cf6",
-  },
-  {
-    name: "Offline",
-    value: mockDashboardStats.offlinePayments,
-    color: "#10b981",
-  },
-  {
-    name: "QR Payment",
-    value: mockDashboardStats.qrPayments,
-    color: "#f59e0b",
-  },
-];
+    ssr: false,
+  }
+);
 
-const yearlyData = [
-  { name: "Jan 2024", amount: 45000, donations: 12 },
-  { name: "Feb 2024", amount: 52000, donations: 15 },
-  { name: "Mar 2024", amount: 48000, donations: 13 },
-  { name: "Apr 2024", amount: 61000, donations: 18 },
-  { name: "May 2024", amount: 55000, donations: 16 },
-  { name: "Jun 2024", amount: 67000, donations: 19 },
-  { name: "Jul 2024", amount: 72000, donations: 22 },
-  { name: "Aug 2024", amount: 84000, donations: 25 },
-  { name: "Sep 2024", amount: 78000, donations: 23 },
-  { name: "Oct 2024", amount: 91000, donations: 28 },
-  { name: "Nov 2024", amount: 96000, donations: 31 },
-  { name: "Dec 2024", amount: 105000, donations: 35 },
-];
+const PieChart = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.PieChart })),
+  {
+    ssr: false,
+  }
+);
+
+const CartesianGrid = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.CartesianGrid })),
+  {
+    ssr: false,
+  }
+);
+
+const XAxis = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.XAxis })),
+  {
+    ssr: false,
+  }
+);
+
+const YAxis = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.YAxis })),
+  {
+    ssr: false,
+  }
+);
+
+const Tooltip = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.Tooltip })),
+  {
+    ssr: false,
+  }
+);
+
+const Line = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.Line })),
+  {
+    ssr: false,
+  }
+);
+
+const Pie = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.Pie })),
+  {
+    ssr: false,
+  }
+);
+
+const Cell = dynamic(
+  () => import("recharts").then((mod) => ({ default: mod.Cell })),
+  {
+    ssr: false,
+  }
+);
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<{
+    totalDonations: number;
+    totalAmount: number;
+    onlinePayments: number;
+    offlinePayments: number;
+    qrPayments: number;
+    topDonors: Array<{ id: string; name: string; amount: number }>;
+    recentDonations: Array<{
+      id: string;
+      receipt_number: string;
+      amount: number;
+      donor_name: string;
+      created_at: string;
+    }>;
+    upcomingEvents: Array<{ id: string; name: string; date: Date }>;
+  }>({
+    totalDonations: 0,
+    totalAmount: 0,
+    onlinePayments: 0,
+    offlinePayments: 0,
+    qrPayments: 0,
+    topDonors: [],
+    recentDonations: [],
+    upcomingEvents: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [yearlyData] = useState([
+    { name: "Jan 2025", amount: 0, donations: 0 },
+    { name: "Feb 2025", amount: 0, donations: 0 },
+    { name: "Mar 2025", amount: 0, donations: 0 },
+    { name: "Apr 2025", amount: 0, donations: 0 },
+    { name: "May 2025", amount: 0, donations: 0 },
+    { name: "Jun 2025", amount: 0, donations: 0 },
+    { name: "Jul 2025", amount: 0, donations: 0 },
+    { name: "Aug 2025", amount: 0, donations: 0 },
+    { name: "Sep 2025", amount: 0, donations: 0 },
+  ]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await dashboardService.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  const statsCards = useMemo(
+    () => [
+      {
+        title: "Total Donations",
+        value: loading ? "..." : stats.totalDonations,
+        icon: Receipt,
+        color: "text-blue-600",
+        bgColor: "bg-blue-100",
+      },
+      {
+        title: "Total Amount",
+        value: loading ? "..." : formatCurrency(stats.totalAmount),
+        icon: IndianRupee,
+        color: "text-green-600",
+        bgColor: "bg-green-100",
+      },
+      {
+        title: "Online Payments",
+        value: loading ? "..." : stats.onlinePayments,
+        icon: CreditCard,
+        color: "text-purple-600",
+        bgColor: "bg-purple-100",
+      },
+      {
+        title: "QR Payments",
+        value: loading ? "..." : stats.qrPayments,
+        icon: Smartphone,
+        color: "text-orange-600",
+        bgColor: "bg-orange-100",
+      },
+    ],
+    [loading, stats]
+  );
+
+  const paymentModeData = [
+    {
+      name: "Online",
+      value: stats.onlinePayments,
+      color: "#8b5cf6",
+    },
+    {
+      name: "Offline",
+      value: stats.offlinePayments,
+      color: "#10b981",
+    },
+    {
+      name: "QR Payment",
+      value: stats.qrPayments,
+      color: "#f59e0b",
+    },
+  ];
+
+  if (loading) {
+    return <DashboardLoading />;
+  }
+
   return (
     <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
@@ -102,8 +213,7 @@ export default function DashboardPage() {
         <p className="mt-2 text-gray-600">
           Welcome to Ashram Management System
         </p>
-      </div>
-
+      </div>{" "}
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat, index) => (
@@ -126,7 +236,6 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
-
       {/* Charts Section */}
       <div className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
         {/* Yearly Donations Chart */}
@@ -134,7 +243,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Yearly Donations Trend</CardTitle>
             <CardDescription>
-              Donation trends over the past 12 months (2024)
+              Donation trends over the past months (2025)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -215,7 +324,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Bottom Section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Top Donors */}
@@ -226,27 +334,38 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockDashboardStats.topDonors.map((donor, index) => (
-                <div
-                  key={donor.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-8 h-8 text-sm font-medium text-orange-700 bg-orange-100 rounded-full">
-                      {index + 1}
+              {stats.topDonors.length > 0 ? (
+                stats.topDonors.map((donor, index) => (
+                  <div
+                    key={donor.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-center w-8 h-8 text-sm font-medium text-orange-700 bg-orange-100 rounded-full">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {donor.name}
+                        </p>
+                        <p className="text-sm text-gray-500">Total Donations</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{donor.name}</p>
-                      <p className="text-sm text-gray-500">Total Donations</p>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900">
+                        {formatCurrency(donor.amount)}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-900">
-                      {formatCurrency(donor.amount)}
-                    </p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No donors yet</p>
+                  <p className="text-sm">
+                    Start by adding donors and donations
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -259,7 +378,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockDashboardStats.upcomingEvents.map((event) => (
+              {stats.upcomingEvents.map((event) => (
                 <div
                   key={event.id}
                   className="flex items-center p-3 space-x-3 rounded-lg bg-gray-50"

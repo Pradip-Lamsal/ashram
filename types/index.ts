@@ -1,43 +1,64 @@
 export interface Donor {
   id: string;
   name: string;
-  dateOfBirth: Date;
-  phone: string;
-  address: string;
-  email?: string;
+  dateOfBirth?: Date | null;
+  phone?: string | null;
+  address?: string | null;
+  email?: string | null;
   donationType: DonationType;
   membership: MembershipType;
-  notes?: string;
+  notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
   totalDonations: number;
-  lastDonationDate?: Date;
+  lastDonationDate?: Date | null;
+  deletedAt?: Date | null;
+}
+
+export interface Donation {
+  id: string;
+  donorId: string;
+  donationType: DonationType;
+  amount: number;
+  paymentMode: PaymentMode;
+  dateOfDonation: Date;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
 }
 
 export interface Receipt {
   id: string;
+  donationId: string;
   receiptNumber: string;
-  donorId: string;
-  donorName: string;
-  donationType: DonationType;
-  amount: number;
-  paymentMode: PaymentMode;
-  createdBy: string;
-  dateOfDonation: Date;
-  notes?: string;
+  issuedAt: Date;
   isPrinted: boolean;
   isEmailSent: boolean;
   createdAt: Date;
+  deletedAt?: Date | null;
+  // Extended fields for legacy compatibility
+  donorId?: string;
+  donorName?: string;
+  donationType?: DonationType;
+  amount?: number;
+  paymentMode?: PaymentMode;
+  createdBy?: string;
+  dateOfDonation?: Date;
+  notes?: string;
 }
 
 export interface SMSEvent {
   id: string;
   eventName: string;
   messageContent: string;
-  recipients: string[]; // donor IDs
+  recipientDonorIds: string[];
   sentDate: Date;
-  createdBy: string;
+  createdBy?: string | null;
   totalRecipients: number;
+  createdAt: Date;
+  deletedAt?: Date | null;
 }
 
 export interface DashboardStats {
@@ -72,7 +93,11 @@ export type MembershipType = "Regular" | "Life" | "Special";
 
 export type PaymentMode = "Online" | "Offline" | "QR Payment";
 
-export type UserRole = "Admin" | "Billing Staff" | "Event Coordinator";
+export type UserRole =
+  | "admin"
+  | "billing_staff"
+  | "event_coordinator"
+  | "devotee";
 
 export interface User {
   id: string;

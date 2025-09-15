@@ -1,646 +1,617 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/components/context/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TableSkeleton } from "@/components/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockReceipts, mockUsers } from "@/data/mockData";
-import type { User, UserRole } from "@/types";
+import { dashboardService, usersService } from "@/lib/supabase-services";
 import {
-  Check,
-  Edit,
-  Mail,
-  Receipt as ReceiptIcon,
+  DollarSign,
+  Receipt,
+  RefreshCw,
   Shield,
-  TrendingUp,
-  Users as UsersIcon,
-  X,
+  UserCheck,
+  Users,
 } from "lucide-react";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+
+// Lazy load heavy components
+const DataTable = dynamic(
+  () => import("@/components/ui/table").then((mod) => ({ default: mod.Table })),
+  {
+    ssr: false,
+    loading: () => <TableSkeleton />,
+  }
+);
+
+interface User {
+  id: string;
+  name: string;
+  role: string;
+  email_verified: boolean;
+  join_date: string;
+}
+
+interface Donor {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  total_donations: number;
+  last_donation_date?: string;
+  membership: string;
+}
+
+interface Receipt {
+  id: string;
+  receipt_number: string;
+  issued_at: string;
+  is_printed: boolean;
+  is_email_sent: boolean;
+  donation?: {
+    amount: number;
+    donor?: {
+      name: string;
+    };
+  };
+}
+
+interface Donation {
+  id: string;
+  amount: number;
+  donation_type: string;
+  payment_mode: string;
+  date_of_donation: string;
+  notes?: string;
+  donor?: {
+    name: string;
+  };
+}
+
+interface Event {
+  id: string;
+  name: string;
+  description?: string;
+  date: string;
+  location?: string;
+  created_at: string;
+}
+
+interface AdminData {
+  users: User[];
+  donors: Donor[];
+  receipts: Receipt[];
+  donations: Donation[];
+  events: Event[];
+}
+
+interface DashboardStats {
+  totalUsers: number;
+  adminUsers: number;
+  regularUsers: number;
+  totalDonors: number;
+  totalDonations: number;
+  totalReceipts: number;
+  totalEvents: number;
+  totalAmount: number;
+}
 
 export default function AdminPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>("Billing Staff");
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const { appUser } = useAuth();
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Filter out admin users for role management
-  const nonAdminUsers = users.filter((user) => user.role !== "Admin");
-  const adminUsers = users.filter((user) => user.role === "Admin");
+  const fetchAdminData = async () => {
+    try {
+      setDataLoading(true);
+      const [overview, statsData] = await Promise.all([
+        dashboardService.getAdminOverview(),
+        dashboardService.getStats(),
+      ]);
+      setAdminData(overview);
+      setStats(statsData);
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
-  // Calculate stats
-  const totalUsers = users.length;
-  const totalAdmins = adminUsers.length;
-  const billingStaffCount = users.filter(
-    (user) => user.role === "Billing Staff"
-  ).length;
-  const eventCoordinatorCount = users.filter(
-    (user) => user.role === "Event Coordinator"
-  ).length;
+  const handleRoleUpdate = async (userId: string, newRole: string) => {
+    try {
+      await usersService.updateRole(userId, newRole);
+      await fetchAdminData(); // Refresh data
+    } catch (error) {
+      console.error("Error updating user role:", error);
+    }
+  };
 
-  // Bills created by billing staff
-  const billsByBillingStaff = mockReceipts.filter((receipt) =>
-    users.some(
-      (user) => user.role === "Billing Staff" && user.name === receipt.createdBy
-    )
-  );
+  useEffect(() => {
+    if (appUser?.role === "admin") {
+      fetchAdminData();
+    }
+  }, [appUser]);
 
-  // Calculate billing stats
-  const totalBillsAmount = billsByBillingStaff.reduce(
-    (sum, receipt) => sum + receipt.amount,
-    0
-  );
-  const totalBillsCount = billsByBillingStaff.length;
-
-  // Group bills by staff member
-  const billsByStaff = users
-    .filter((user) => user.role === "Billing Staff")
-    .map((staff) => {
-      const staffBills = billsByBillingStaff.filter(
-        (bill) => bill.createdBy === staff.name
-      );
-      const totalAmount = staffBills.reduce(
-        (sum, bill) => sum + bill.amount,
-        0
-      );
-      return {
-        staff,
-        bills: staffBills,
-        totalAmount,
-        billCount: staffBills.length,
-      };
-    });
-
-  const handleRoleUpdate = () => {
-    if (!selectedUser) return;
-
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === selectedUser.id
-          ? {
-              ...user,
-              role: newRole,
-              permissions: getPermissionsForRole(newRole),
-            }
-          : user
-      )
+  if (dataLoading) {
+    return (
+      <div className="px-6 py-8 max-w-7xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
+      </div>
     );
+  }
 
-    setIsRoleDialogOpen(false);
-    setSelectedUser(null);
-  };
-
-  const getPermissionsForRole = (role: UserRole): string[] => {
-    switch (role) {
-      case "Admin":
-        return [
-          "manage_donors",
-          "manage_receipts",
-          "manage_events",
-          "manage_users",
-        ];
-      case "Billing Staff":
-        return ["manage_donors", "manage_receipts"];
-      case "Event Coordinator":
-        return ["manage_events"];
-      default:
-        return [];
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount);
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(date));
-  };
-
-  const getRoleBadgeColor = (role: UserRole) => {
-    switch (role) {
-      case "Admin":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Billing Staff":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Event Coordinator":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  if (!appUser || appUser.role !== "admin") {
+    return (
+      <div className="px-6 py-8 max-w-7xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Access Denied
+            </h2>
+            <p className="text-gray-600">
+              You need admin privileges to access this page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-6 py-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-gray-600">
-            Manage user roles, monitor staff activities, and oversee system
-            operations
+          <p className="text-gray-600 mt-2">
+            System administration and management dashboard
           </p>
         </div>
+        <Button onClick={fetchAdminData} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh Data
+        </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Shield className="w-6 h-6 text-red-600" />
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {stats.totalUsers}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {stats.adminUsers} admin, {stats.regularUsers} users
+                  </p>
+                </div>
+                <Users className="w-8 h-8 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Admins
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {totalAdmins}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <UsersIcon className="w-6 h-6 text-blue-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Donors
+                  </p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {stats.totalDonors}
+                  </p>
+                  <p className="text-xs text-gray-500">Active donors</p>
+                </div>
+                <UserCheck className="w-8 h-8 text-green-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Billing Staff
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {billingStaffCount}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UsersIcon className="w-6 h-6 text-green-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Receipts
+                  </p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {stats.totalReceipts}
+                  </p>
+                  <p className="text-xs text-gray-500">Generated receipts</p>
+                </div>
+                <Receipt className="w-8 h-8 text-orange-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Event Coordinators
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {eventCoordinatorCount}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-orange-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Amount
+                  </p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    ₹{stats.totalAmount.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {stats.totalDonations} donations
+                  </p>
+                </div>
+                <DollarSign className="w-8 h-8 text-purple-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* Main Content */}
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="bills">Billing Activities</TabsTrigger>
+      {/* Data Tables */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">
+            Users ({adminData?.users.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="donors">
+            Donors ({adminData?.donors.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="receipts">
+            Receipts ({adminData?.receipts.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="donations">
+            Donations ({adminData?.donations.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="events">
+            Events ({adminData?.events.length || 0})
+          </TabsTrigger>
         </TabsList>
 
-        {/* User Management Tab */}
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {adminData?.users.slice(0, 5).map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-gray-500">{user.id}</p>
+                    </div>
+                    <Badge
+                      variant={user.role === "admin" ? "default" : "secondary"}
+                    >
+                      {user.role}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Donations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {adminData?.donations.slice(0, 5).map((donation) => (
+                  <div
+                    key={donation.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {donation.donor?.name || "Unknown"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {donation.donation_type}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">
+                        ₹{donation.amount}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {donation.payment_mode}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="users">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <UsersIcon className="w-5 h-5 text-orange-600" />
-                <span>User Role Management</span>
-              </CardTitle>
-              <CardDescription>
-                Manage user roles and permissions for non-admin users
-              </CardDescription>
+              <CardTitle>All Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Current Role</TableHead>
-                      <TableHead>Join Date</TableHead>
-                      <TableHead>Email Status</TableHead>
-                      <TableHead>Permissions</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {nonAdminUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback className="text-orange-700 bg-orange-100">
-                                {user.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {user.name}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-600">
-                          {user.email}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getRoleBadgeColor(user.role)}>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Name</th>
+                      <th className="text-left p-2">User ID</th>
+                      <th className="text-left p-2">Role</th>
+                      <th className="text-left p-2">Email Verified</th>
+                      <th className="text-left p-2">Join Date</th>
+                      <th className="text-left p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminData?.users.map((user) => (
+                      <tr key={user.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 font-medium">{user.name}</td>
+                        <td className="p-2 text-sm text-gray-600 font-mono">
+                          {user.id}
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              user.role === "admin" ? "default" : "secondary"
+                            }
+                          >
                             {user.role}
                           </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(user.joinDate)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            {user.emailVerified ? (
-                              <div className="flex items-center space-x-1 text-green-600">
-                                <Check className="w-4 h-4" />
-                                <span className="text-sm">Verified</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-1 text-amber-600">
-                                <X className="w-4 h-4" />
-                                <span className="text-sm">Pending</span>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {user.permissions.map((permission) => (
-                              <Badge
-                                key={permission}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {permission
-                                  .replace(/_/g, " ")
-                                  .replace(/\b\w/g, (l) => l.toUpperCase())}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Dialog
-                            open={
-                              isRoleDialogOpen && selectedUser?.id === user.id
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              user.email_verified ? "default" : "destructive"
                             }
-                            onOpenChange={(open) => {
-                              setIsRoleDialogOpen(open);
-                              if (!open) setSelectedUser(null);
-                            }}
                           >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setNewRole(user.role);
-                                }}
-                              >
-                                <Edit className="w-4 h-4 mr-1" />
-                                Edit Role
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Update User Role</DialogTitle>
-                                <DialogDescription>
-                                  Change the role for {user.name}. This will
-                                  update their permissions accordingly.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium">
-                                    New Role
-                                  </label>
-                                  <Select
-                                    value={newRole}
-                                    onValueChange={(value: UserRole) =>
-                                      setNewRole(value)
-                                    }
-                                  >
-                                    <SelectTrigger className="mt-1">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Billing Staff">
-                                        Billing Staff
-                                      </SelectItem>
-                                      <SelectItem value="Event Coordinator">
-                                        Event Coordinator
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="flex justify-end space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => setIsRoleDialogOpen(false)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button onClick={handleRoleUpdate}>
-                                    Update Role
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
+                            {user.email_verified ? "Yes" : "No"}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-sm">
+                          {new Date(user.join_date).toLocaleDateString()}
+                        </td>
+                        <td className="p-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleRoleUpdate(
+                                user.id,
+                                user.role === "admin" ? "user" : "admin"
+                              )
+                            }
+                          >
+                            {user.role === "admin" ? "Make User" : "Make Admin"}
+                          </Button>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Billing Activities Tab */}
-        <TabsContent value="bills" className="mt-6">
-          <div className="space-y-6">
-            {/* Billing Overview */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <ReceiptIcon className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Total Bills
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {totalBillsCount}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        <TabsContent value="donors">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Donors</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Name</th>
+                      <th className="text-left p-2">Phone</th>
+                      <th className="text-left p-2">Email</th>
+                      <th className="text-left p-2">Total Donations</th>
+                      <th className="text-left p-2">Last Donation</th>
+                      <th className="text-left p-2">Membership</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminData?.donors.map((donor) => (
+                      <tr key={donor.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 font-medium">{donor.name}</td>
+                        <td className="p-2">{donor.phone || "-"}</td>
+                        <td className="p-2">{donor.email || "-"}</td>
+                        <td className="p-2 font-bold text-green-600">
+                          ₹{donor.total_donations || 0}
+                        </td>
+                        <td className="p-2 text-sm">
+                          {donor.last_donation_date
+                            ? new Date(
+                                donor.last_donation_date
+                              ).toLocaleDateString()
+                            : "Never"}
+                        </td>
+                        <td className="p-2">
+                          <Badge variant="outline">{donor.membership}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Total Amount
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {formatCurrency(totalBillsAmount)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        <TabsContent value="receipts">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Receipts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Receipt Number</th>
+                      <th className="text-left p-2">Donor</th>
+                      <th className="text-left p-2">Amount</th>
+                      <th className="text-left p-2">Issued Date</th>
+                      <th className="text-left p-2">Printed</th>
+                      <th className="text-left p-2">Email Sent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminData?.receipts.map((receipt) => (
+                      <tr
+                        key={receipt.id}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <td className="p-2 font-mono font-medium">
+                          {receipt.receipt_number}
+                        </td>
+                        <td className="p-2">
+                          {receipt.donation?.donor?.name || "Unknown"}
+                        </td>
+                        <td className="p-2 font-bold text-green-600">
+                          ₹{receipt.donation?.amount || 0}
+                        </td>
+                        <td className="p-2 text-sm">
+                          {new Date(receipt.issued_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              receipt.is_printed ? "default" : "secondary"
+                            }
+                          >
+                            {receipt.is_printed ? "Yes" : "No"}
+                          </Badge>
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              receipt.is_email_sent ? "default" : "secondary"
+                            }
+                          >
+                            {receipt.is_email_sent ? "Yes" : "No"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <UsersIcon className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Active Staff
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {billingStaffCount}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        <TabsContent value="donations">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Donations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Donor</th>
+                      <th className="text-left p-2">Type</th>
+                      <th className="text-left p-2">Amount</th>
+                      <th className="text-left p-2">Payment Mode</th>
+                      <th className="text-left p-2">Date</th>
+                      <th className="text-left p-2">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminData?.donations.map((donation) => (
+                      <tr
+                        key={donation.id}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <td className="p-2 font-medium">
+                          {donation.donor?.name || "Unknown"}
+                        </td>
+                        <td className="p-2">{donation.donation_type}</td>
+                        <td className="p-2 font-bold text-green-600">
+                          ₹{donation.amount}
+                        </td>
+                        <td className="p-2">
+                          <Badge variant="outline">
+                            {donation.payment_mode}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-sm">
+                          {new Date(
+                            donation.date_of_donation
+                          ).toLocaleDateString()}
+                        </td>
+                        <td className="p-2 text-sm">{donation.notes || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            {/* Staff Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing Staff Performance</CardTitle>
-                <CardDescription>
-                  Overview of bills created by each billing staff member
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Staff Member</TableHead>
-                        <TableHead>Bills Created</TableHead>
-                        <TableHead>Total Amount</TableHead>
-                        <TableHead>Average Amount</TableHead>
-                        <TableHead>Join Date</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {billsByStaff.map(({ staff, totalAmount, billCount }) => (
-                        <TableRow key={staff.id}>
-                          <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="text-blue-700 bg-blue-100">
-                                  {staff.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {staff.name}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {staff.email}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium">{billCount}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(totalAmount)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {billCount > 0
-                              ? formatCurrency(totalAmount / billCount)
-                              : "₹0"}
-                          </TableCell>
-                          <TableCell>{formatDate(staff.joinDate)}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              {staff.emailVerified ? (
-                                <Badge className="bg-green-100 text-green-800 border-green-200">
-                                  <Check className="w-3 h-3 mr-1" />
-                                  Active
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                                  <Mail className="w-3 h-3 mr-1" />
-                                  Pending
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
+        <TabsContent value="events">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Events</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {adminData?.events.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  No events found
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full table-auto">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">Name</th>
+                        <th className="text-left p-2">Description</th>
+                        <th className="text-left p-2">Date</th>
+                        <th className="text-left p-2">Location</th>
+                        <th className="text-left p-2">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminData?.events.map((event) => (
+                        <tr
+                          key={event.id}
+                          className="border-b hover:bg-gray-50"
+                        >
+                          <td className="p-2 font-medium">{event.name}</td>
+                          <td className="p-2">{event.description || "-"}</td>
+                          <td className="p-2">
+                            {new Date(event.date).toLocaleDateString()}
+                          </td>
+                          <td className="p-2">{event.location || "-"}</td>
+                          <td className="p-2 text-sm">
+                            {new Date(event.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Bills */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Bills by Billing Staff</CardTitle>
-                <CardDescription>
-                  Latest receipts created by billing staff members
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Receipt No.</TableHead>
-                        <TableHead>Donor Name</TableHead>
-                        <TableHead>Donation Type</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Created By</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {billsByBillingStaff.slice(0, 10).map((receipt) => (
-                        <TableRow key={receipt.id}>
-                          <TableCell className="font-medium">
-                            {receipt.receiptNumber}
-                          </TableCell>
-                          <TableCell>{receipt.donorName}</TableCell>
-                          <TableCell>{receipt.donationType}</TableCell>
-                          <TableCell className="font-medium">
-                            {formatCurrency(receipt.amount)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                receipt.paymentMode === "Online"
-                                  ? "default"
-                                  : receipt.paymentMode === "QR Payment"
-                                  ? "secondary"
-                                  : "outline"
-                              }
-                            >
-                              {receipt.paymentMode}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{receipt.createdBy}</TableCell>
-                          <TableCell>
-                            {formatDate(receipt.dateOfDonation)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              {receipt.isPrinted && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-600 border-green-200"
-                                >
-                                  Printed
-                                </Badge>
-                              )}
-                              {receipt.isEmailSent && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-blue-600 border-blue-200"
-                                >
-                                  Emailed
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

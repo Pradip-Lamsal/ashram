@@ -1,67 +1,129 @@
 "use client";
 
+import { createClient } from "@/app/utils/supabase/client";
+import { useAuth } from "@/components/context/AuthProvider";
+import { useToast } from "@/components/context/ToastProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const supabase = createClient();
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
+    setError("");
 
-    // Automatically set role as billing-staff
-    const registrationData = {
-      ...formData,
-      role: "billing-staff",
-    };
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
-    // Simulate registration process
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/login");
-    }, 2000);
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            name: fullName,
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        // Show success toast
+        showToast(
+          "Registration Successful!",
+          "You have registered successfully. Redirecting to login page...",
+          "success"
+        );
+
+        // Set redirecting state
+        setIsRedirecting(true);
+
+        // Redirect to login page after 1.5 seconds
+        setTimeout(() => {
+          router.push("/login");
+        }, 1500);
+      }
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  if (user) {
+    return null; // Will redirect
+  }
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       {/* Left side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
+      <div className="relative hidden lg:flex lg:w-1/2">
         <Image
           src="/register-image.jpg"
-          alt="Ashram Register"
+          alt="Ashram Service"
           fill
           className="object-cover"
           priority
+          quality={85}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-orange-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 to-orange-600/20" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white">
-            <div className="flex items-center justify-center mb-3">
-              <Heart className="h-10 w-10 text-orange-500" />
+          <div className="text-center text-white px-8">
+            <div className="flex items-center justify-center mb-6">
+              <Heart className="w-12 h-12 text-orange-500 fill-current" />
             </div>
-            <h1 className="text-3xl font-bold mb-2">Join Our Mission</h1>
-            <p className="text-lg opacity-90">
+            <h1 className="mb-4 text-4xl font-bold tracking-tight">
+              Join Our Mission
+            </h1>
+            <p className="text-xl opacity-90">
               Be part of the divine service journey
             </p>
           </div>
@@ -69,196 +131,177 @@ export default function RegisterPage() {
       </div>
 
       {/* Right side - Register Form */}
-      <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto">
-        <div className="w-full max-w-md">
-          {/* Mobile Header */}
-          <div className="lg:hidden text-center mb-4">
-            <div className="flex items-center justify-center mb-2">
-              <Heart className="h-8 w-8 text-orange-500" />
-              <h1 className="text-xl font-bold text-gray-900 ml-2">Ashram</h1>
-            </div>
-            <p className="text-gray-600 text-sm">
-              Begin your journey of service
-            </p>
-          </div>
+      <div className="flex items-center justify-center flex-1 p-8 bg-gray-50 overflow-y-auto">
+        <Card className="w-full max-w-md my-8">
+          <CardHeader className="space-y-2 text-center">
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Create Account
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Join our ashram management system
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isRedirecting && (
+              <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md text-center">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-b-2 border-green-600 rounded-full animate-spin"></div>
+                  <span>Redirecting to login page...</span>
+                </div>
+              </div>
+            )}
 
-          <Card className="shadow-xl border-0">
-            <CardHeader className="space-y-1 pb-3">
-              <CardTitle className="text-xl lg:text-2xl font-bold text-center text-gray-900">
-                Create Account
-              </CardTitle>
-              <p className="text-center text-gray-600 text-sm">
-                Join our ashram management system
-              </p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-2">
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="name"
-                    className="text-gray-700 font-medium text-sm"
-                  >
-                    Full Name
-                  </Label>
+            <form onSubmit={handleSignUp} className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={isRedirecting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@ashram.org"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isRedirecting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
                   <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-9 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    disabled={isRedirecting}
+                    className="h-12 pr-10"
                   />
-                </div>
-
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="email"
-                    className="text-gray-700 font-medium text-sm"
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    Email Address
-                  </Label>
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="your.email@ashram.org"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="h-9 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    disabled={isRedirecting}
+                    className="h-12 pr-10"
                   />
-                </div>
-
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="password"
-                    className="text-gray-700 font-medium text-sm"
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a strong password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange("password", e.target.value)
-                      }
-                      required
-                      className="h-9 pr-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-gray-700 font-medium text-sm"
-                  >
-                    Confirm Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        handleInputChange("confirmPassword", e.target.value)
-                      }
-                      required
-                      className="h-9 pr-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-2 pt-1">
-                  <input
-                    id="terms"
-                    type="checkbox"
-                    required
-                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded mt-0.5"
-                  />
-                  <Label
-                    htmlFor="terms"
-                    className="text-xs text-gray-600 leading-4"
-                  >
-                    I agree to the{" "}
-                    <Link
-                      href="#"
-                      className="text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href="#"
-                      className="text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      Privacy Policy
-                    </Link>
-                  </Label>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-9 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white font-medium"
+              <div className="flex items-start space-x-2">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  disabled={isRedirecting}
+                  className="mt-1 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                />
+                <Label
+                  htmlFor="terms"
+                  className="text-sm text-gray-600 leading-tight"
                 >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
+                    className="text-orange-600 hover:underline"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    className="text-orange-600 hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
 
-                <div className="text-center pt-1">
-                  <p className="text-gray-600 text-sm">
-                    Already have an account?{" "}
-                    <Link
-                      href="/login"
-                      className="text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      Sign in
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+              <Button
+                type="submit"
+                className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-medium"
+                disabled={loading || isRedirecting}
+              >
+                {isRedirecting
+                  ? "Redirecting to login..."
+                  : loading
+                  ? "Creating Account..."
+                  : "Create Account"}
+              </Button>
+            </form>
 
-          {/* Footer */}
-          <div className="mt-3 text-center text-xs text-gray-500">
-            <p>© 2025 Ashram Management System. All rights reserved.</p>
-          </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-medium text-orange-600 hover:text-orange-700 hover:underline"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 lg:left-3/4">
+          <p className="text-xs text-gray-500 text-center">
+            © 2025 Ashram Management System. All rights reserved.
+          </p>
         </div>
       </div>
     </div>

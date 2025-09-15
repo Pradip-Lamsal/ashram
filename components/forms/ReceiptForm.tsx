@@ -12,9 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { donationTypes, mockDonors, paymentModes } from "@/data/mockData";
-import { generateReceiptNumber } from "@/lib/utils";
-import { DonationType, PaymentMode } from "@/types";
+import { DonationType, Donor, PaymentMode } from "@/types";
 import React, { useState } from "react";
 
 interface ReceiptFormData {
@@ -23,7 +21,7 @@ interface ReceiptFormData {
   donationType: DonationType;
   amount: number;
   paymentMode: PaymentMode;
-  dateOfDonation: string;
+  dateOfDonation: Date;
   notes: string;
 }
 
@@ -38,12 +36,35 @@ interface ReceiptFormError {
 }
 
 interface ReceiptFormProps {
+  donors: Donor[];
   onSubmit: (data: ReceiptFormData) => void;
   onCancel: () => void;
   initialData?: Partial<ReceiptFormData>;
 }
 
+const donationTypes: DonationType[] = [
+  "General Donation",
+  "Seva Donation",
+  "Annadanam",
+  "Vastra Danam",
+  "Building Fund",
+  "Festival Sponsorship",
+  "Puja Sponsorship",
+];
+
+const paymentModes: PaymentMode[] = ["Online", "Offline", "QR Payment"];
+
+const generateReceiptNumber = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const time = String(now.getTime()).slice(-6);
+  return `REC-${year}${month}${day}-${time}`;
+};
+
 export default function ReceiptForm({
+  donors,
   onSubmit,
   onCancel,
   initialData,
@@ -54,8 +75,7 @@ export default function ReceiptForm({
     donationType: initialData?.donationType || "General Donation",
     amount: initialData?.amount || 0,
     paymentMode: initialData?.paymentMode || "Offline",
-    dateOfDonation:
-      initialData?.dateOfDonation || new Date().toISOString().split("T")[0],
+    dateOfDonation: initialData?.dateOfDonation || new Date(),
     notes: initialData?.notes || "",
   });
 
@@ -84,7 +104,7 @@ export default function ReceiptForm({
 
   const handleInputChange = (
     field: keyof ReceiptFormData,
-    value: string | number
+    value: string | number | Date
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -94,7 +114,7 @@ export default function ReceiptForm({
   };
 
   const handleDonorChange = (donorId: string) => {
-    const selectedDonor = mockDonors.find((d) => d.id === donorId);
+    const selectedDonor = donors.find((d) => d.id === donorId);
     if (selectedDonor) {
       setFormData((prev) => ({
         ...prev,
@@ -108,6 +128,10 @@ export default function ReceiptForm({
   const handlePaymentModeChange = (mode: PaymentMode) => {
     setFormData((prev) => ({ ...prev, paymentMode: mode }));
     setShowQROption(mode === "QR Payment");
+  };
+
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split("T")[0];
   };
 
   return (
@@ -132,9 +156,9 @@ export default function ReceiptForm({
               <Input
                 id="dateOfDonation"
                 type="date"
-                value={formData.dateOfDonation}
+                value={formatDateForInput(formData.dateOfDonation)}
                 onChange={(e) =>
-                  handleInputChange("dateOfDonation", e.target.value)
+                  handleInputChange("dateOfDonation", new Date(e.target.value))
                 }
                 className={errors.dateOfDonation ? "border-red-500" : ""}
               />
@@ -152,12 +176,12 @@ export default function ReceiptForm({
                 <SelectValue placeholder="Choose a donor from the database" />
               </SelectTrigger>
               <SelectContent>
-                {mockDonors.map((donor) => (
+                {donors.map((donor) => (
                   <SelectItem key={donor.id} value={donor.id}>
                     <div className="flex flex-col">
                       <span className="font-medium">{donor.name}</span>
                       <span className="text-sm text-gray-500">
-                        {donor.phone}
+                        {donor.phone || "No phone"}
                       </span>
                     </div>
                   </SelectItem>
