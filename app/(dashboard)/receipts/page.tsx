@@ -38,16 +38,12 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { DonationType, Donor, PaymentMode } from "@/types";
 import {
   AlertCircle,
-  Download,
   Eye,
   Filter,
   Loader2,
-  Mail,
   Plus,
-  Printer,
   Receipt as ReceiptIcon,
   Search,
-  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -75,10 +71,14 @@ interface Receipt {
     date_of_donation: string;
     notes?: string;
     donor_id: string;
-  };
-  donor?: {
-    donors?: {
+    donor?: {
+      id: string;
       name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      donation_type?: string;
+      membership?: string;
     };
   };
 }
@@ -144,7 +144,7 @@ export default function ReceiptsPage() {
   const filteredReceipts = receipts.filter(
     (receipt) =>
       receipt.receipt_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receipt.donor?.donors?.name
+      receipt.donation?.donor?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase())
   );
@@ -295,7 +295,7 @@ export default function ReceiptsPage() {
       setUpdatingReceipt(receipt.id);
 
       // Access donor data from the proper structure
-      const donorName = receipt.donor?.donors?.name || "Unknown Donor";
+      const donorName = receipt.donation?.donor?.name || "Unknown Donor";
       const amount = receipt.donation?.amount || 0;
       const donationType =
         receipt.donation?.donation_type || "General Donation";
@@ -589,7 +589,7 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell>
                       <p className="font-medium">
-                        {receipt.donor?.donors?.name || "Unknown Donor"}
+                        {receipt.donation?.donor?.name || "Unknown Donor"}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -653,81 +653,16 @@ export default function ReceiptsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center justify-center">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewReceiptWithHistory(receipt)}
-                          title="View Receipt & History"
+                          title="View Receipt & Manage Actions"
+                          className="hover:bg-orange-50 hover:border-orange-200"
                         >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrintReceipt(receipt.id)}
-                          disabled={
-                            updatingReceipt === receipt.id || receipt.is_printed
-                          }
-                          title={
-                            receipt.is_printed
-                              ? "Already Printed"
-                              : "Mark as Printed"
-                          }
-                        >
-                          {updatingReceipt === receipt.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Printer className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadPDF(receipt)}
-                          disabled={updatingReceipt === receipt.id}
-                          title="Download PDF"
-                        >
-                          {updatingReceipt === receipt.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            receipt.is_email_sent
-                              ? handleResendEmail(receipt.id)
-                              : handleEmailReceipt(receipt.id)
-                          }
-                          disabled={updatingReceipt === receipt.id}
-                          title={
-                            receipt.is_email_sent
-                              ? "Resend Email"
-                              : "Send Email"
-                          }
-                        >
-                          {updatingReceipt === receipt.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Mail className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteReceipt(receipt.id)}
-                          disabled={updatingReceipt === receipt.id}
-                          title="Delete Receipt"
-                          className="text-red-600 hover:text-red-700 hover:border-red-300"
-                        >
-                          {updatingReceipt === receipt.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
+                          <Eye className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">View</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -756,7 +691,7 @@ export default function ReceiptsPage() {
             id: selectedReceipt.id,
             receiptNumber: selectedReceipt.receipt_number,
             issuedAt: new Date(selectedReceipt.issued_at),
-            donorName: selectedReceipt.donor?.donors?.name || "Unknown",
+            donorName: selectedReceipt.donation?.donor?.name || "Unknown",
             donationType:
               (selectedReceipt.donation?.donation_type as DonationType) ||
               "General Donation",
@@ -779,6 +714,9 @@ export default function ReceiptsPage() {
           loadingHistory={loadingHistory}
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
+          onMarkPrinted={handlePrintReceipt}
+          onDeleteReceipt={handleDeleteReceipt}
+          isUpdating={!!updatingReceipt}
         />
       )}
     </div>

@@ -38,99 +38,100 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Try to fetch real data from database first
-      try {
-        // Fetch user statistics - total receipts created by this user
-        const { data: receiptsData } = await supabase
-          .from("receipts")
-          .select(
-            `
+      // Simplified query approach - fetch receipts with donations
+      const { data: receiptsData, error: receiptsError } = await supabase
+        .from("receipts")
+        .select(
+          `
+          id,
+          created_at,
+          receipt_number,
+          is_printed,
+          is_email_sent,
+          donation:donations!inner(
             id,
-            created_at,
-            donation:donations(amount, created_by)
-          `
+            amount,
+            donation_type,
+            payment_mode,
+            created_by,
+            donor:donors(name)
           )
-          .eq("donation.created_by", user?.id);
+        `
+        )
+        .eq("donation.created_by", user.id)
+        .order("created_at", { ascending: false });
 
-        // Calculate statistics
-        const totalEntries = receiptsData?.length || 0;
-        const totalAmountProcessed =
-          receiptsData?.reduce(
-            (sum: number, receipt: { donation?: Array<{ amount: number }> }) =>
-              sum + (receipt.donation?.[0]?.amount || 0),
-            0
-          ) || 0;
-
-        // Get this month's entries
-        const thisMonth = new Date();
-        thisMonth.setDate(1);
-        const { data: thisMonthData } = await supabase
-          .from("receipts")
-          .select("id, donation:donations(created_by)")
-          .eq("donation.created_by", user?.id)
-          .gte("created_at", thisMonth.toISOString());
-
-        const thisMonthEntries = thisMonthData?.length || 0;
-
-        setUserStats({
-          totalEntries,
-          totalAmountProcessed,
-          thisMonthEntries,
-        });
-
-        // Fetch recent activity
-        const { data: activityData } = await supabase
-          .from("receipts")
-          .select(
-            `
-            receipt_number,
-            created_at,
-            is_printed,
-            is_email_sent,
-            donation:donations(
-              amount,
-              donation_type,
-              payment_mode,
-              created_by,
-              donor:donors(name)
-            )
-          `
-          )
-          .eq("donation.created_by", user?.id)
-          .order("created_at", { ascending: false })
-          .limit(4);
-
-        const formattedActivity: RecentActivity[] =
-          activityData?.map((item: any) => ({
-            receipt_number: item.receipt_number,
-            donor_name: item.donation?.[0]?.donor?.[0]?.name || "Unknown",
-            donation_type: item.donation?.[0]?.donation_type || "General",
-            amount: item.donation?.[0]?.amount || 0,
-            payment_mode: item.donation?.[0]?.payment_mode || "Cash",
-            date: new Date(item.created_at).toLocaleDateString("en-GB"),
-            status: [
-              ...(item.is_printed ? ["Printed"] : []),
-              ...(item.is_email_sent ? ["Emailed"] : []),
-            ],
-          })) || [];
-
-        setRecentActivity(formattedActivity);
-      } catch (dbError) {
-        console.log("Database query failed:", dbError);
-        // Use empty data if queries fail
-        setUserStats({
-          totalEntries: 0,
-          totalAmountProcessed: 0,
-          thisMonthEntries: 0,
-        });
-        setRecentActivity([]);
+      if (receiptsError) {
+        console.error("Receipts query error:", receiptsError);
+        throw receiptsError;
       }
+
+      // Process the data safely
+      const receipts = receiptsData || [];
+
+      // Calculate statistics
+      const totalEntries = receipts.length;
+      const totalAmountProcessed = receipts.reduce(
+        (sum: number, receipt: any) => {
+          const amount = Array.isArray(receipt.donation)
+            ? receipt.donation[0]?.amount || 0
+            : receipt.donation?.amount || 0;
+          return sum + amount;
+        },
+        0
+      );
+
+      // Get this month's entries
+      const thisMonth = new Date();
+      thisMonth.setDate(1);
+      const thisMonthEntries = receipts.filter(
+        (receipt: any) => new Date(receipt.created_at) >= thisMonth
+      ).length;
+
+      setUserStats({
+        totalEntries,
+        totalAmountProcessed,
+        thisMonthEntries,
+      });
+
+      // Format recent activity (last 4 entries)
+      const formattedActivity: RecentActivity[] = receipts
+        .slice(0, 4)
+        .map((receipt: any) => {
+          const donation = Array.isArray(receipt.donation)
+            ? receipt.donation[0]
+            : receipt.donation;
+
+          const donor = Array.isArray(donation?.donor)
+            ? donation.donor[0]
+            : donation?.donor;
+
+          return {
+            receipt_number: receipt.receipt_number || "N/A",
+            donor_name: donor?.name || "Unknown",
+            donation_type: donation?.donation_type || "General",
+            amount: donation?.amount || 0,
+            payment_mode: donation?.payment_mode || "Cash",
+            date: new Date(receipt.created_at).toLocaleDateString("en-GB"),
+            status: [
+              ...(receipt.is_printed ? ["Printed"] : []),
+              ...(receipt.is_email_sent ? ["Emailed"] : []),
+            ],
+          };
+        });
+
+      setRecentActivity(formattedActivity);
     } catch (error) {
       console.error("Error fetching user data:", error);
-      // Final fallback to empty data
+      // Set empty data on error
       setUserStats({
         totalEntries: 0,
         totalAmountProcessed: 0,
@@ -140,18 +141,21 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (user && appUser) {
+    if (user?.id && appUser) {
       fetchUserData();
     }
-  }, [user, appUser, fetchUserData]);
+  }, [user?.id, appUser, fetchUserData]);
 
-  if (!user || !appUser) {
+  if (!user?.id || !appUser) {
     return (
-      <div className="p-6">
-        <p className="text-gray-500">Please sign in to view your profile.</p>
+      <div className="flex items-center justify-center h-64 p-6">
+        <div className="text-center">
+          <div className="w-8 h-8 mx-auto mb-4 border-b-2 border-orange-500 rounded-full animate-spin"></div>
+          <p className="text-gray-500">Loading your profile...</p>
+        </div>
       </div>
     );
   }
