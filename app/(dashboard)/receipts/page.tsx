@@ -47,6 +47,7 @@ import {
   Printer,
   Receipt as ReceiptIcon,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -95,6 +96,17 @@ export default function ReceiptsPage() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [creatingReceipt, setCreatingReceipt] = useState(false);
   const [updatingReceipt, setUpdatingReceipt] = useState<string | null>(null);
+  const [donorHistory, setDonorHistory] = useState<
+    Array<{
+      id: string;
+      amount: number;
+      donation_type: string;
+      payment_mode: string;
+      date_of_donation: string;
+      notes?: string;
+    }>
+  >([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -136,11 +148,6 @@ export default function ReceiptsPage() {
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase())
   );
-
-  const handleViewReceipt = (receipt: Receipt) => {
-    setSelectedReceipt(receipt);
-    setIsReceiptModalOpen(true);
-  };
 
   const handleCreateReceipt = async (receiptData: {
     donorId: string;
@@ -256,6 +263,139 @@ export default function ReceiptsPage() {
     } finally {
       setUpdatingReceipt(null);
     }
+  };
+
+  const handleDeleteReceipt = async (receiptId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this receipt? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setUpdatingReceipt(receiptId);
+      await receiptsService.delete(receiptId);
+
+      // Remove from local state
+      setReceipts(receipts.filter((r) => r.id !== receiptId));
+
+      showToast("Receipt deleted successfully", "default");
+    } catch (error) {
+      console.error("Error deleting receipt:", error);
+      showToast("Failed to delete receipt", "destructive");
+    } finally {
+      setUpdatingReceipt(null);
+    }
+  };
+
+  const handleDownloadPDF = async (receipt: Receipt) => {
+    try {
+      setUpdatingReceipt(receipt.id);
+
+      // Access donor data from the proper structure
+      const donorName = receipt.donor?.donors?.name || "Unknown Donor";
+      const amount = receipt.donation?.amount || 0;
+      const donationType =
+        receipt.donation?.donation_type || "General Donation";
+      const receiptNumber = receipt.receipt_number;
+      const issuedDate = new Date(receipt.issued_at).toLocaleDateString();
+
+      // Create a printable HTML content
+      const htmlContent = `
+        <html>
+          <head>
+            <title>Receipt ${receiptNumber}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .receipt-details { margin: 20px 0; }
+              .detail-row { margin: 10px 0; }
+              .amount { font-size: 24px; font-weight: bold; color: green; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Donation Receipt</h1>
+              <h2>Receipt #${receiptNumber}</h2>
+            </div>
+            <div class="receipt-details">
+              <div class="detail-row"><strong>Donor:</strong> ${donorName}</div>
+              <div class="detail-row"><strong>Donation Type:</strong> ${donationType}</div>
+              <div class="detail-row"><strong>Amount:</strong> <span class="amount">₹${amount}</span></div>
+              <div class="detail-row"><strong>Date Issued:</strong> ${issuedDate}</div>
+              <div class="detail-row"><strong>Payment Mode:</strong> ${
+                receipt.donation?.payment_mode || "N/A"
+              }</div>
+            </div>
+            <div style="margin-top: 40px;">
+              <p>Thank you for your generous donation!</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Open in new window for printing/saving
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.print();
+      }
+
+      showToast("Receipt PDF generated 📄", "default");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      showToast("Failed to generate PDF", "destructive");
+    } finally {
+      setUpdatingReceipt(null);
+    }
+  };
+
+  const handleResendEmail = async (receiptId: string) => {
+    try {
+      setUpdatingReceipt(receiptId);
+
+      // Here you would integrate with your email service
+      // For now, we'll just mark it as sent
+      await receiptsService.updateEmailStatus(receiptId, true);
+
+      // Update local state
+      setReceipts(
+        receipts.map((r) =>
+          r.id === receiptId ? { ...r, is_email_sent: true } : r
+        )
+      );
+
+      showToast("Receipt email resent successfully 📧", "default");
+    } catch (error) {
+      console.error("Error resending email:", error);
+      showToast("Failed to resend email", "destructive");
+    } finally {
+      setUpdatingReceipt(null);
+    }
+  };
+
+  const handleViewReceiptWithHistory = async (receipt: Receipt) => {
+    setSelectedReceipt(receipt);
+
+    // Load donor history using donor_id from donation
+    const donorId = receipt.donation?.donor_id;
+    if (donorId) {
+      try {
+        setLoadingHistory(true);
+        const history = await receiptsService.getDonorHistory(donorId);
+        setDonorHistory(history);
+      } catch (error) {
+        console.error("Error loading donor history:", error);
+        setDonorHistory([]);
+      } finally {
+        setLoadingHistory(false);
+      }
+    }
+
+    setIsReceiptModalOpen(true);
   };
 
   // Stats calculations
@@ -513,12 +653,12 @@ export default function ReceiptsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewReceipt(receipt)}
-                          title="View Receipt"
+                          onClick={() => handleViewReceiptWithHistory(receipt)}
+                          title="View Receipt & History"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -544,15 +684,29 @@ export default function ReceiptsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEmailReceipt(receipt.id)}
-                          disabled={
-                            updatingReceipt === receipt.id ||
+                          onClick={() => handleDownloadPDF(receipt)}
+                          disabled={updatingReceipt === receipt.id}
+                          title="Download PDF"
+                        >
+                          {updatingReceipt === receipt.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
                             receipt.is_email_sent
+                              ? handleResendEmail(receipt.id)
+                              : handleEmailReceipt(receipt.id)
                           }
+                          disabled={updatingReceipt === receipt.id}
                           title={
                             receipt.is_email_sent
-                              ? "Already Emailed"
-                              : "Mark as Emailed"
+                              ? "Resend Email"
+                              : "Send Email"
                           }
                         >
                           {updatingReceipt === receipt.id ? (
@@ -564,9 +718,16 @@ export default function ReceiptsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          title="Download Receipt"
+                          onClick={() => handleDeleteReceipt(receipt.id)}
+                          disabled={updatingReceipt === receipt.id}
+                          title="Delete Receipt"
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
                         >
-                          <Download className="w-4 h-4" />
+                          {updatingReceipt === receipt.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -610,13 +771,25 @@ export default function ReceiptsPage() {
             isPrinted: selectedReceipt.is_printed,
             isEmailSent: selectedReceipt.is_email_sent,
             createdAt: new Date(selectedReceipt.created_at),
-            // Add required fields
-            donationId: selectedReceipt.donation?.donor_id || "",
+            donationId: selectedReceipt.id,
             donorId: selectedReceipt.donation?.donor_id || "",
             createdBy: "System",
           }}
+          donorHistory={donorHistory}
+          loadingHistory={loadingHistory}
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
+          onCreateReceipt={() => {
+            setIsReceiptModalOpen(false);
+            setIsAddDialogOpen(true);
+          }}
+          onEditDonor={() => {
+            showToast("Edit donor functionality coming soon", "default");
+          }}
+          onViewAllReceipts={() => {
+            setIsReceiptModalOpen(false);
+            showToast("Viewing all receipts", "default");
+          }}
         />
       )}
     </div>

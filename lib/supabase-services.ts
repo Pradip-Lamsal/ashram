@@ -172,6 +172,39 @@ export const donorsService = {
     if (error) throw error;
     return data;
   },
+
+  async updateDonationStats(
+    donorId: string,
+    donationAmount: number,
+    donationDate: Date
+  ) {
+    // Get current donor data
+    const { data: currentDonor, error: fetchError } = await supabase
+      .from("donors")
+      .select("total_donations, last_donation_date")
+      .eq("id", donorId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const newTotalDonations =
+      (currentDonor.total_donations || 0) + donationAmount;
+    const lastDonationDate = donationDate.toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("donors")
+      .update({
+        total_donations: newTotalDonations,
+        last_donation_date: lastDonationDate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", donorId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
 };
 
 // Donations service
@@ -213,6 +246,14 @@ export const donationsService = {
       .single();
 
     if (error) throw error;
+
+    // Update donor's total donations and last donation date
+    await donorsService.updateDonationStats(
+      donation.donorId,
+      donation.amount,
+      new Date()
+    );
+
     return data;
   },
 
@@ -239,12 +280,36 @@ export const receiptsService = {
         *,
         donation:donations(
           *,
-          donor:donors(*)
+          donor:donors(
+            id, name, email, phone, address, donation_type, membership
+          )
         )
       `
       )
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from("receipts")
+      .select(
+        `
+        *,
+        donation:donations(
+          *,
+          donor:donors(
+            id, name, email, phone, address, donation_type, membership
+          )
+        )
+      `
+      )
+      .eq("id", id)
+      .is("deleted_at", null)
+      .single();
 
     if (error) throw error;
     return data;
@@ -262,7 +327,17 @@ export const receiptsService = {
     const { data, error } = await supabase
       .from("receipts")
       .insert([dbReceipt])
-      .select()
+      .select(
+        `
+        *,
+        donation:donations(
+          *,
+          donor:donors(
+            id, name, email, phone, address, donation_type, membership
+          )
+        )
+      `
+      )
       .single();
 
     if (error) throw error;
@@ -288,6 +363,35 @@ export const receiptsService = {
       .eq("id", id)
       .select()
       .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { data, error } = await supabase
+      .from("receipts")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getDonorHistory(donorId: string) {
+    const { data, error } = await supabase
+      .from("donations")
+      .select(
+        `
+        *,
+        receipt:receipts(*)
+      `
+      )
+      .eq("donor_id", donorId)
+      .is("deleted_at", null)
+      .order("date_of_donation", { ascending: false });
 
     if (error) throw error;
     return data;

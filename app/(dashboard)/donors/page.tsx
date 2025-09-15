@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { donorsService } from "@/lib/supabase-services";
+import { donorsService, receiptsService } from "@/lib/supabase-services";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { type DonationType, type MembershipType } from "@/types";
 import { Calendar, Edit, Eye, Mail, Phone, Plus, Search } from "lucide-react";
@@ -59,7 +59,21 @@ export default function DonorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [donorToEdit, setDonorToEdit] = useState<Donor | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [donorHistory, setDonorHistory] = useState<
+    Array<{
+      id: string;
+      amount: number;
+      donation_type: string;
+      payment_mode: string;
+      date_of_donation: string;
+      notes?: string;
+      receipt_number?: string;
+    }>
+  >([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     const loadDonors = async () => {
@@ -85,9 +99,82 @@ export default function DonorsPage() {
       donor.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleViewProfile = (donor: Donor) => {
+  const handleViewProfile = async (donor: Donor) => {
     setSelectedDonor(donor);
     setIsProfileModalOpen(true);
+
+    // Load donor history
+    try {
+      setLoadingHistory(true);
+      const history = await receiptsService.getDonorHistory(donor.id);
+      setDonorHistory(history);
+    } catch (error) {
+      console.error("Error loading donor history:", error);
+      setDonorHistory([]);
+      showToast("Failed to load donor history", "destructive");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleEditDonor = (donor: Donor) => {
+    setDonorToEdit(donor);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateDonor = async (donorData: {
+    name: string;
+    dateOfBirth: string;
+    phone: string;
+    address: string;
+    email: string;
+    donationType: string;
+    membership: string;
+    notes: string;
+  }) => {
+    if (!donorToEdit) return;
+
+    try {
+      await donorsService.update(donorToEdit.id, {
+        name: donorData.name,
+        dateOfBirth: donorData.dateOfBirth
+          ? new Date(donorData.dateOfBirth)
+          : undefined,
+        phone: donorData.phone,
+        address: donorData.address,
+        email: donorData.email,
+        donationType: donorData.donationType as DonationType,
+        membership: donorData.membership as MembershipType,
+        notes: donorData.notes,
+      });
+
+      // Update the donor in the local state
+      setDonors(
+        donors.map((d) =>
+          d.id === donorToEdit.id
+            ? {
+                ...d,
+                name: donorData.name,
+                date_of_birth: donorData.dateOfBirth,
+                phone: donorData.phone,
+                address: donorData.address,
+                email: donorData.email,
+                donation_type: donorData.donationType,
+                membership: donorData.membership,
+                notes: donorData.notes,
+                updated_at: new Date().toISOString(),
+              }
+            : d
+        )
+      );
+
+      setIsEditDialogOpen(false);
+      setDonorToEdit(null);
+      showToast(`${donorData.name} updated successfully! ✅`, "default");
+    } catch (error) {
+      console.error("Error updating donor:", error);
+      showToast("Failed to update donor", "destructive");
+    }
   };
 
   const handleAddDonor = async (donorData: {
@@ -192,6 +279,39 @@ export default function DonorsPage() {
               onSubmit={handleAddDonor}
               onCancel={() => setIsAddDialogOpen(false)}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Donor Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Donor Information</DialogTitle>
+              <DialogDescription>
+                Update the donor&apos;s information and preferences.
+              </DialogDescription>
+            </DialogHeader>
+            {donorToEdit && (
+              <DonorForm
+                initialData={{
+                  name: donorToEdit.name,
+                  dateOfBirth: donorToEdit.date_of_birth
+                    ? new Date(donorToEdit.date_of_birth)
+                    : undefined,
+                  phone: donorToEdit.phone || "",
+                  address: donorToEdit.address || "",
+                  email: donorToEdit.email || "",
+                  donationType: donorToEdit.donation_type as DonationType,
+                  membership: donorToEdit.membership as MembershipType,
+                  notes: donorToEdit.notes || "",
+                }}
+                onSubmit={handleUpdateDonor}
+                onCancel={() => {
+                  setIsEditDialogOpen(false);
+                  setDonorToEdit(null);
+                }}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -340,7 +460,11 @@ export default function DonorsPage() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditDonor(donor)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                       </div>
@@ -385,6 +509,8 @@ export default function DonorsPage() {
             createdAt: new Date(selectedDonor.created_at),
             updatedAt: new Date(selectedDonor.updated_at),
           }}
+          donorHistory={donorHistory}
+          loadingHistory={loadingHistory}
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
         />

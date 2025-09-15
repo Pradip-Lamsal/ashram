@@ -20,57 +20,55 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Donor } from "@/types";
-import { Calendar, Heart, Mail, MapPin, Phone, User, X } from "lucide-react";
+import {
+  Calendar,
+  Heart,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  X,
+} from "lucide-react";
 
 interface DonorProfileModalProps {
   donor: Donor | null;
   isOpen: boolean;
   onClose: () => void;
+  donorHistory?: Array<{
+    id: string;
+    amount: number;
+    donation_type: string;
+    payment_mode: string;
+    date_of_donation: string;
+    notes?: string;
+    receipt_number?: string;
+  }>;
+  loadingHistory?: boolean;
 }
-
-const mockDonationHistory = [
-  {
-    id: 1,
-    amount: 5000,
-    date: "2024-01-15",
-    purpose: "Temple Construction",
-    receiptNumber: "REC-2024-001",
-  },
-  {
-    id: 2,
-    amount: 2500,
-    date: "2024-02-10",
-    purpose: "Food Service",
-    receiptNumber: "REC-2024-045",
-  },
-  {
-    id: 3,
-    amount: 1000,
-    date: "2024-03-05",
-    purpose: "Festival Celebration",
-    receiptNumber: "REC-2024-089",
-  },
-];
 
 export default function DonorProfileModal({
   donor,
   isOpen,
   onClose,
+  donorHistory = [],
+  loadingHistory = false,
 }: DonorProfileModalProps) {
   if (!donor) return null;
 
-  const totalDonations = mockDonationHistory.reduce(
-    (total, donation) => total + donation.amount,
+  // Use real donor history data instead of mock data
+  const totalDonations = donorHistory.reduce(
+    (total, donation) => total + (donation.amount || 0),
     0
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-500">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -87,8 +85,8 @@ export default function DonorProfileModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card className="text-white bg-gradient-to-r from-green-500 to-green-600">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -102,21 +100,19 @@ export default function DonorProfileModal({
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <Card className="text-white bg-gradient-to-r from-blue-500 to-blue-600">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-blue-100">Total Receipts</p>
-                    <p className="text-2xl font-bold">
-                      {mockDonationHistory.length}
-                    </p>
+                    <p className="text-2xl font-bold">{donorHistory.length}</p>
                   </div>
                   <Calendar className="w-8 h-8 text-blue-200" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <Card className="text-white bg-gradient-to-r from-purple-500 to-purple-600">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -131,7 +127,7 @@ export default function DonorProfileModal({
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -171,7 +167,7 @@ export default function DonorProfileModal({
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <MapPin className="w-4 h-4 text-gray-500 mt-1" />
+                  <MapPin className="w-4 h-4 mt-1 text-gray-500" />
                   <div>
                     <p className="font-medium">Address</p>
                     <p className="text-gray-600">
@@ -191,32 +187,39 @@ export default function DonorProfileModal({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-orange-50 p-3 rounded-lg">
+                  <div className="p-3 rounded-lg bg-orange-50">
                     <p className="text-sm text-orange-600">Highest Donation</p>
                     <p className="text-lg font-semibold text-orange-800">
-                      {formatCurrency(
-                        Math.max(...mockDonationHistory.map((d) => d.amount))
-                      )}
+                      {donorHistory.length > 0
+                        ? formatCurrency(
+                            Math.max(...donorHistory.map((d) => d.amount))
+                          )
+                        : formatCurrency(0)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
+                  <div className="p-3 rounded-lg bg-green-50">
                     <p className="text-sm text-green-600">Average Donation</p>
                     <p className="text-lg font-semibold text-green-800">
-                      {formatCurrency(
-                        totalDonations / mockDonationHistory.length
-                      )}
+                      {donorHistory.length > 0
+                        ? formatCurrency(totalDonations / donorHistory.length)
+                        : formatCurrency(0)}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-600 mb-2">Recent Activity</p>
+                <div className="p-4 rounded-lg bg-blue-50">
+                  <p className="mb-2 text-sm text-blue-600">Recent Activity</p>
                   <p className="text-blue-800">
                     Last donation:{" "}
-                    {formatDate(new Date(mockDonationHistory[0].date))}
+                    {donorHistory.length > 0
+                      ? formatDate(new Date(donorHistory[0].date_of_donation))
+                      : "No donations yet"}
                   </p>
                   <p className="text-blue-800">
-                    Amount: {formatCurrency(mockDonationHistory[0].amount)}
+                    Amount:{" "}
+                    {donorHistory.length > 0
+                      ? formatCurrency(donorHistory[0].amount)
+                      : formatCurrency(0)}
                   </p>
                 </div>
               </CardContent>
@@ -228,49 +231,56 @@ export default function DonorProfileModal({
               <CardTitle>Donation History</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Receipt No.</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Purpose</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockDonationHistory.map((donation) => (
-                    <TableRow key={donation.id}>
-                      <TableCell className="font-medium">
-                        {donation.receiptNumber}
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(new Date(donation.date))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{donation.purpose}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(donation.amount)}
-                      </TableCell>
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span className="ml-2">Loading donation history...</span>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Receipt No.</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Purpose</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {donorHistory.length > 0 ? (
+                      donorHistory.map((donation, index) => (
+                        <TableRow key={donation.id}>
+                          <TableCell className="font-medium">
+                            {donation.receipt_number || `REC-${index + 1}`}
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(new Date(donation.date_of_donation))}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {donation.donation_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold text-right">
+                            {formatCurrency(donation.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="py-8 text-center text-gray-500"
+                        >
+                          No donation history found for this donor.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button className="flex-1 bg-orange-600 hover:bg-orange-700">
-              <Heart className="w-4 h-4 mr-2" />
-              Create New Receipt
-            </Button>
-            <Button variant="outline" className="flex-1">
-              Edit Donor Information
-            </Button>
-            <Button variant="outline" className="flex-1">
-              View All Receipts
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
