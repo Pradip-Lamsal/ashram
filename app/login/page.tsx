@@ -30,16 +30,23 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
+  const [showEmailMessage, setShowEmailMessage] = useState(false);
 
   useEffect(() => {
     // Check for error parameters in URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlError = urlParams.get("error");
+    const message = urlParams.get("message");
 
     if (urlError === "auth-error") {
       setError(
         "There was an error with authentication. Please try logging in again."
       );
+    }
+
+    if (message === "check-email") {
+      setError(""); // Clear any existing errors
+      setShowEmailMessage(true);
     }
 
     if (user && !redirecting) {
@@ -119,6 +126,13 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSignIn} className="space-y-4">
+              {showEmailMessage && (
+                <div className="p-3 text-sm text-blue-600 border border-blue-200 rounded-md bg-blue-50">
+                  📧 Please check your email and click the verification link to
+                  complete your registration before logging in.
+                </div>
+              )}
+
               {error && (
                 <div className="p-3 text-sm text-red-600 border border-red-200 rounded-md bg-red-50">
                   {error}

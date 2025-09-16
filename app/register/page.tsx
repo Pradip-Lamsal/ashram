@@ -68,26 +68,27 @@ export default function RegisterPage() {
             full_name: fullName,
             name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (error) {
         setError(error.message);
       } else {
-        // Show success toast
+        // Show success message for email verification
         showToast(
-          "Registration Successful!",
-          "You have registered successfully. Redirecting to login page...",
+          "Check Your Email!",
+          "Please check your email and click the verification link to complete your registration.",
           "success"
         );
 
-        // Set redirecting state
+        // Set redirecting state  
         setIsRedirecting(true);
 
-        // Redirect to login page after 1.5 seconds
+        // Redirect to login page after showing the message
         setTimeout(() => {
-          router.push("/login");
-        }, 1500);
+          router.push("/login?message=check-email");
+        }, 3000);
       }
     } catch {
       setError("An unexpected error occurred");
@@ -116,7 +117,7 @@ export default function RegisterPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 to-orange-600/20" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-8">
+          <div className="px-8 text-center text-white">
             <div className="flex items-center justify-center mb-6">
               <Heart className="w-12 h-12 text-orange-500 fill-current" />
             </div>
@@ -131,7 +132,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Right side - Register Form */}
-      <div className="flex items-center justify-center flex-1 p-8 bg-gray-50 overflow-y-auto">
+      <div className="flex items-center justify-center flex-1 p-8 overflow-y-auto bg-gray-50">
         <Card className="w-full max-w-md my-8">
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-2xl font-bold text-gray-900">
@@ -143,7 +144,7 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {isRedirecting && (
-              <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md text-center">
+              <div className="p-3 text-sm text-center text-green-600 border border-green-200 rounded-md bg-green-50">
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-4 h-4 border-b-2 border-green-600 rounded-full animate-spin"></div>
                   <span>Redirecting to login page...</span>
@@ -153,7 +154,7 @@ export default function RegisterPage() {
 
             <form onSubmit={handleSignUp} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                <div className="p-3 text-sm text-red-600 border border-red-200 rounded-md bg-red-50">
                   {error}
                 </div>
               )}
@@ -202,7 +203,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute text-gray-500 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-700"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -229,7 +230,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute text-gray-500 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-700"
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -247,11 +248,11 @@ export default function RegisterPage() {
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   disabled={isRedirecting}
-                  className="mt-1 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  className="mt-1 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
                 <Label
                   htmlFor="terms"
-                  className="text-sm text-gray-600 leading-tight"
+                  className="text-sm leading-tight text-gray-600"
                 >
                   I agree to the{" "}
                   <Link
@@ -272,7 +273,7 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-medium"
+                className="w-full h-12 font-medium text-white bg-orange-600 hover:bg-orange-700"
                 disabled={loading || isRedirecting}
               >
                 {isRedirecting
@@ -298,8 +299,8 @@ export default function RegisterPage() {
         </Card>
 
         {/* Footer */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 lg:left-3/4">
-          <p className="text-xs text-gray-500 text-center">
+        <div className="absolute transform -translate-x-1/2 bottom-4 left-1/2 lg:left-3/4">
+          <p className="text-xs text-center text-gray-500">
             © 2025 Ashram Management System. All rights reserved.
           </p>
         </div>
