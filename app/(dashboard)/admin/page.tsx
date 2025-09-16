@@ -4,7 +4,6 @@ import { useAuth } from "@/components/context/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableSkeleton } from "@/components/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dashboardService, usersService } from "@/lib/supabase-services";
 import {
@@ -15,17 +14,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-
-// Lazy load heavy components
-const DataTable = dynamic(
-  () => import("@/components/ui/table").then((mod) => ({ default: mod.Table })),
-  {
-    ssr: false,
-    loading: () => <TableSkeleton />,
-  }
-);
 
 interface User {
   id: string;
@@ -139,9 +128,9 @@ export default function AdminPage() {
 
   if (dataLoading) {
     return (
-      <div className="px-6 py-8 max-w-7xl mx-auto">
+      <div className="px-6 py-8 mx-auto max-w-7xl">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <div className="w-12 h-12 border-b-2 border-orange-500 rounded-full animate-spin"></div>
         </div>
       </div>
     );
@@ -149,11 +138,11 @@ export default function AdminPage() {
 
   if (!appUser || appUser.role !== "admin") {
     return (
-      <div className="px-6 py-8 max-w-7xl mx-auto">
+      <div className="px-6 py-8 mx-auto max-w-7xl">
         <Card>
           <CardContent className="p-8 text-center">
-            <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">
               Access Denied
             </h2>
             <p className="text-gray-600">
@@ -166,12 +155,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 mx-auto max-w-7xl">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-center">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-600">
             System administration and management dashboard
           </p>
         </div>
@@ -183,7 +172,7 @@ export default function AdminPage() {
 
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -280,7 +269,7 @@ export default function AdminPage() {
         </TabsList>
 
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Users</CardTitle>
@@ -348,19 +337,19 @@ export default function AdminPage() {
                 <table className="w-full table-auto">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Name</th>
-                      <th className="text-left p-2">User ID</th>
-                      <th className="text-left p-2">Role</th>
-                      <th className="text-left p-2">Email Verified</th>
-                      <th className="text-left p-2">Join Date</th>
-                      <th className="text-left p-2">Actions</th>
+                      <th className="p-2 text-left">Name</th>
+                      <th className="p-2 text-left">User ID</th>
+                      <th className="p-2 text-left">Role</th>
+                      <th className="p-2 text-left">Email Verified</th>
+                      <th className="p-2 text-left">Join Date</th>
+                      <th className="p-2 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {adminData?.users.map((user) => (
                       <tr key={user.id} className="border-b hover:bg-gray-50">
                         <td className="p-2 font-medium">{user.name}</td>
-                        <td className="p-2 text-sm text-gray-600 font-mono">
+                        <td className="p-2 font-mono text-sm text-gray-600">
                           {user.id}
                         </td>
                         <td className="p-2">
@@ -417,12 +406,12 @@ export default function AdminPage() {
                 <table className="w-full table-auto">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Name</th>
-                      <th className="text-left p-2">Phone</th>
-                      <th className="text-left p-2">Email</th>
-                      <th className="text-left p-2">Total Donations</th>
-                      <th className="text-left p-2">Last Donation</th>
-                      <th className="text-left p-2">Membership</th>
+                      <th className="p-2 text-left">Name</th>
+                      <th className="p-2 text-left">Phone</th>
+                      <th className="p-2 text-left">Email</th>
+                      <th className="p-2 text-left">Total Donations</th>
+                      <th className="p-2 text-left">Last Donation</th>
+                      <th className="p-2 text-left">Membership</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,12 +452,12 @@ export default function AdminPage() {
                 <table className="w-full table-auto">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Receipt Number</th>
-                      <th className="text-left p-2">Donor</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Issued Date</th>
-                      <th className="text-left p-2">Printed</th>
-                      <th className="text-left p-2">Email Sent</th>
+                      <th className="p-2 text-left">Receipt Number</th>
+                      <th className="p-2 text-left">Donor</th>
+                      <th className="p-2 text-left">Amount</th>
+                      <th className="p-2 text-left">Issued Date</th>
+                      <th className="p-2 text-left">Printed</th>
+                      <th className="p-2 text-left">Email Sent</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -526,12 +515,12 @@ export default function AdminPage() {
                 <table className="w-full table-auto">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Donor</th>
-                      <th className="text-left p-2">Type</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Payment Mode</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Notes</th>
+                      <th className="p-2 text-left">Donor</th>
+                      <th className="p-2 text-left">Type</th>
+                      <th className="p-2 text-left">Amount</th>
+                      <th className="p-2 text-left">Payment Mode</th>
+                      <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -574,7 +563,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               {adminData?.events.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
+                <p className="py-8 text-center text-gray-500">
                   No events found
                 </p>
               ) : (
@@ -582,11 +571,11 @@ export default function AdminPage() {
                   <table className="w-full table-auto">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2">Name</th>
-                        <th className="text-left p-2">Description</th>
-                        <th className="text-left p-2">Date</th>
-                        <th className="text-left p-2">Location</th>
-                        <th className="text-left p-2">Created</th>
+                        <th className="p-2 text-left">Name</th>
+                        <th className="p-2 text-left">Description</th>
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Location</th>
+                        <th className="p-2 text-left">Created</th>
                       </tr>
                     </thead>
                     <tbody>

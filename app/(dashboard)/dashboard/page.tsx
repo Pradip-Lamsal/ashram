@@ -20,79 +20,56 @@ import {
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
-// Lazy load Recharts components
+// Properly import Recharts components with colors
 const ResponsiveContainer = dynamic(
   () =>
     import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] bg-gray-100 rounded animate-pulse" />
-    ),
-  }
+  { ssr: false }
 );
 
 const LineChart = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.LineChart })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const PieChart = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.PieChart })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const CartesianGrid = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.CartesianGrid })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const XAxis = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.XAxis })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const YAxis = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.YAxis })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const Tooltip = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.Tooltip })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const Line = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.Line })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const Pie = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.Pie })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const Cell = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.Cell })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 export default function DashboardPage() {
@@ -122,7 +99,7 @@ export default function DashboardPage() {
     upcomingEvents: [],
   });
   const [loading, setLoading] = useState(true);
-  const [yearlyData] = useState([
+  const [yearlyData, setYearlyData] = useState([
     { name: "Jan 2025", amount: 0, donations: 0 },
     { name: "Feb 2025", amount: 0, donations: 0 },
     { name: "Mar 2025", amount: 0, donations: 0 },
@@ -131,7 +108,11 @@ export default function DashboardPage() {
     { name: "Jun 2025", amount: 0, donations: 0 },
     { name: "Jul 2025", amount: 0, donations: 0 },
     { name: "Aug 2025", amount: 0, donations: 0 },
-    { name: "Sep 2025", amount: 0, donations: 0 },
+    {
+      name: "Sep 2025",
+      amount: stats.totalAmount || 0,
+      donations: stats.totalDonations || 0,
+    },
   ]);
 
   useEffect(() => {
@@ -139,6 +120,20 @@ export default function DashboardPage() {
       try {
         const data = await dashboardService.getStats();
         setStats(data);
+
+        // Update current month with real data
+        setYearlyData((prev) =>
+          prev.map((month, index) =>
+            index === 8
+              ? {
+                  // September (current month)
+                  ...month,
+                  amount: data.totalAmount,
+                  donations: data.totalDonations,
+                }
+              : month
+          )
+        );
       } catch (error) {
         console.error("Error loading dashboard stats:", error);
       } finally {
@@ -199,7 +194,7 @@ export default function DashboardPage() {
       value: stats.qrPayments,
       color: "#f59e0b",
     },
-  ];
+  ].filter((item) => item.value > 0); // Only show items with data
 
   if (loading) {
     return <DashboardLoading />;
@@ -249,20 +244,21 @@ export default function DashboardPage() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={yearlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "#666" }}
                   angle={-45}
                   textAnchor="end"
                   height={60}
                 />
-                <YAxis />
+                <YAxis tick={{ fontSize: 12, fill: "#666" }} />
                 <Tooltip
-                  formatter={(value, name) => [
-                    name === "amount" ? formatCurrency(Number(value)) : value,
-                    name === "amount" ? "Amount" : "Donations",
-                  ]}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -307,7 +303,13 @@ export default function DashboardPage() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
             <div className="flex justify-center mt-4 space-x-4">
@@ -359,7 +361,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="py-8 text-center text-gray-500">
                   <p>No donors yet</p>
                   <p className="text-sm">
                     Start by adding donors and donations

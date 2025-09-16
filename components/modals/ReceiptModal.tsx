@@ -46,6 +46,7 @@ interface ReceiptModalProps {
   }>;
   loadingHistory?: boolean;
   onMarkPrinted?: (receiptId: string) => void;
+  onMarkEmailed?: (receiptId: string) => void;
   onDeleteReceipt?: (receiptId: string) => void;
   onUpdateReceipt?: (receiptId: string) => void;
   isUpdating?: boolean;
@@ -58,6 +59,7 @@ export default function ReceiptModal({
   donorHistory = [],
   loadingHistory = false,
   onMarkPrinted,
+  onMarkEmailed,
   onDeleteReceipt,
   isUpdating = false,
 }: ReceiptModalProps) {
@@ -188,7 +190,8 @@ export default function ReceiptModal({
           error: "",
         });
         showToastNotification("Email sent successfully with PDF attachment");
-        // TODO: Update receipt status to mark as emailed
+        // Mark receipt as emailed
+        onMarkEmailed?.(receipt.id);
       } else {
         setEmailState((prev) => ({
           ...prev,
@@ -204,7 +207,7 @@ export default function ReceiptModal({
         error: "Network error. Please check your connection and try again.",
       }));
     }
-  }, [emailState.address, receipt]);
+  }, [emailState.address, receipt, onMarkEmailed]);
 
   const handleDownloadPDF = () => {
     // Generate supermarket-style receipt that matches the print design

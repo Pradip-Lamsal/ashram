@@ -47,16 +47,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface ReceiptFormData {
-  donorId: string;
-  donorName: string;
-  donationType: DonationType;
-  amount: number;
-  paymentMode: PaymentMode;
-  dateOfDonation: Date;
-  notes?: string;
-}
-
 interface Receipt {
   id: string;
   receipt_number: string;
@@ -290,93 +280,6 @@ export default function ReceiptsPage() {
     }
   };
 
-  const handleDownloadPDF = async (receipt: Receipt) => {
-    try {
-      setUpdatingReceipt(receipt.id);
-
-      // Access donor data from the proper structure
-      const donorName = receipt.donation?.donor?.name || "Unknown Donor";
-      const amount = receipt.donation?.amount || 0;
-      const donationType =
-        receipt.donation?.donation_type || "General Donation";
-      const receiptNumber = receipt.receipt_number;
-      const issuedDate = new Date(receipt.issued_at).toLocaleDateString();
-
-      // Create a printable HTML content
-      const htmlContent = `
-        <html>
-          <head>
-            <title>Receipt ${receiptNumber}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 40px; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .receipt-details { margin: 20px 0; }
-              .detail-row { margin: 10px 0; }
-              .amount { font-size: 24px; font-weight: bold; color: green; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>Donation Receipt</h1>
-              <h2>Receipt #${receiptNumber}</h2>
-            </div>
-            <div class="receipt-details">
-              <div class="detail-row"><strong>Donor:</strong> ${donorName}</div>
-              <div class="detail-row"><strong>Donation Type:</strong> ${donationType}</div>
-              <div class="detail-row"><strong>Amount:</strong> <span class="amount">Rs. ${amount}</span></div>
-              <div class="detail-row"><strong>Date Issued:</strong> ${issuedDate}</div>
-              <div class="detail-row"><strong>Payment Mode:</strong> ${
-                receipt.donation?.payment_mode || "N/A"
-              }</div>
-            </div>
-            <div style="margin-top: 40px;">
-              <p>Thank you for your generous donation!</p>
-            </div>
-          </body>
-        </html>
-      `;
-
-      // Open in new window for printing/saving
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.print();
-      }
-
-      showToast("Receipt PDF generated 📄", "default");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      showToast("Failed to generate PDF", "destructive");
-    } finally {
-      setUpdatingReceipt(null);
-    }
-  };
-
-  const handleResendEmail = async (receiptId: string) => {
-    try {
-      setUpdatingReceipt(receiptId);
-
-      // Here you would integrate with your email service
-      // For now, we'll just mark it as sent
-      await receiptsService.updateEmailStatus(receiptId, true);
-
-      // Update local state
-      setReceipts(
-        receipts.map((r) =>
-          r.id === receiptId ? { ...r, is_email_sent: true } : r
-        )
-      );
-
-      showToast("Receipt email resent successfully 📧", "default");
-    } catch (error) {
-      console.error("Error resending email:", error);
-      showToast("Failed to resend email", "destructive");
-    } finally {
-      setUpdatingReceipt(null);
-    }
-  };
-
   const handleViewReceiptWithHistory = async (receipt: Receipt) => {
     setSelectedReceipt(receipt);
 
@@ -434,7 +337,7 @@ export default function ReceiptsPage() {
               <Button
                 onClick={() => window.location.reload()}
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100"
+                className="text-red-700 border-red-300 hover:bg-red-100"
               >
                 Retry
               </Button>
@@ -715,6 +618,7 @@ export default function ReceiptsPage() {
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
           onMarkPrinted={handlePrintReceipt}
+          onMarkEmailed={handleEmailReceipt}
           onDeleteReceipt={handleDeleteReceipt}
           isUpdating={!!updatingReceipt}
         />

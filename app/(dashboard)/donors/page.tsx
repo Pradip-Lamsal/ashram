@@ -241,7 +241,7 @@ export default function DonorsPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 mx-auto max-w-7xl">
+      <div className="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-center h-64">
           <div className="w-12 h-12 border-b-2 border-orange-500 rounded-full animate-spin"></div>
         </div>
@@ -250,11 +250,11 @@ export default function DonorsPage() {
   }
 
   return (
-    <div className="px-6 py-8 mx-auto max-w-7xl">
+    <div className="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col mb-8 space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Donors Management
           </h1>
           <p className="mt-2 text-gray-600">
@@ -263,12 +263,12 @@ export default function DonorsPage() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-orange-600 hover:bg-orange-700">
+            <Button className="w-full bg-orange-600 hover:bg-orange-700 sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add New Donor
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>Add New Donor</DialogTitle>
               <DialogDescription>
@@ -284,7 +284,7 @@ export default function DonorsPage() {
 
         {/* Edit Donor Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>Edit Donor Information</DialogTitle>
               <DialogDescription>
@@ -317,40 +317,48 @@ export default function DonorsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 mb-8 lg:grid-cols-4 sm:gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{totalDonors}</p>
-              <p className="text-sm text-gray-600">Total Donors</p>
+              <p className="text-xl font-bold text-gray-900 sm:text-2xl">
+                {totalDonors}
+              </p>
+              <p className="text-xs text-gray-600 sm:text-sm">Total Donors</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{lifeMembers}</p>
-              <p className="text-sm text-gray-600">Life Members</p>
+              <p className="text-xl font-bold text-gray-900 sm:text-2xl">
+                {lifeMembers}
+              </p>
+              <p className="text-xs text-gray-600 sm:text-sm">Life Members</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                 {formatCurrency(totalCollected)}
               </p>
-              <p className="text-sm text-gray-600">Total Collected</p>
+              <p className="text-xs text-gray-600 sm:text-sm">
+                Total Collected
+              </p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                 {activeThisMonth}
               </p>
-              <p className="text-sm text-gray-600">Active This Month</p>
+              <p className="text-xs text-gray-600 sm:text-sm">
+                Active This Month
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -366,113 +374,138 @@ export default function DonorsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center mb-6 space-x-4">
-            <div className="relative flex-1">
+            <div className="relative flex-1 w-full">
               <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
                 placeholder="Search by name, phone, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="w-full pl-10"
               />
             </div>
           </div>
 
           {/* Donors Table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Membership</TableHead>
-                  <TableHead>Donation Type</TableHead>
-                  <TableHead>Total Contributions</TableHead>
-                  <TableHead>Last Donation</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDonors.map((donor) => (
-                  <TableRow key={donor.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {donor.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {donor.date_of_birth
-                            ? formatDate(new Date(donor.date_of_birth))
-                            : "N/A"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <Phone className="w-3 h-3 mr-2 text-gray-400" />
-                          {donor.phone || "N/A"}
-                        </div>
-                        {donor.email && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Mail className="w-3 h-3 mr-2 text-gray-400" />
-                            {donor.email}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          donor.membership === "Life"
-                            ? "bg-green-100 text-green-800"
-                            : donor.membership === "Special"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {donor.membership}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{donor.donation_type}</span>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-medium">
-                        {formatCurrency(Number(donor.total_donations || 0))}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      {donor.last_donation_date ? (
-                        <div className="flex items-center text-sm">
-                          <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                          {formatDate(new Date(donor.last_donation_date))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">No donations</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProfile(donor)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditDonor(donor)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          <div className="overflow-x-auto border rounded-lg">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[150px]">Name</TableHead>
+                    <TableHead className="min-w-[120px] hidden sm:table-cell">
+                      Contact
+                    </TableHead>
+                    <TableHead className="min-w-[100px]">Membership</TableHead>
+                    <TableHead className="min-w-[120px] hidden lg:table-cell">
+                      Donation Type
+                    </TableHead>
+                    <TableHead className="min-w-[140px]">
+                      Total Contributions
+                    </TableHead>
+                    <TableHead className="min-w-[120px] hidden md:table-cell">
+                      Last Donation
+                    </TableHead>
+                    <TableHead className="min-w-[100px]">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredDonors.map((donor) => (
+                    <TableRow key={donor.id}>
+                      <TableCell className="min-w-[150px]">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 sm:text-base">
+                            {donor.name}
+                          </p>
+                          <p className="text-xs text-gray-500 sm:text-sm">
+                            {donor.date_of_birth
+                              ? formatDate(new Date(donor.date_of_birth))
+                              : "N/A"}
+                          </p>
+                          {/* Show contact info on mobile when Contact column is hidden */}
+                          <div className="block mt-1 sm:hidden">
+                            <div className="flex items-center text-xs">
+                              <Phone className="w-3 h-3 mr-1 text-gray-400" />
+                              {donor.phone || "N/A"}
+                            </div>
+                            {donor.email && (
+                              <div className="flex items-center text-xs text-gray-600">
+                                <Mail className="w-3 h-3 mr-1 text-gray-400" />
+                                {donor.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="min-w-[120px] hidden sm:table-cell">
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm">
+                            <Phone className="w-3 h-3 mr-2 text-gray-400" />
+                            {donor.phone || "N/A"}
+                          </div>
+                          {donor.email && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Mail className="w-3 h-3 mr-2 text-gray-400" />
+                              {donor.email}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="min-w-[100px]">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            donor.membership === "Life"
+                              ? "bg-green-100 text-green-800"
+                              : donor.membership === "Special"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {donor.membership}
+                        </span>
+                      </TableCell>
+                      <TableCell className="min-w-[120px] hidden lg:table-cell">
+                        <span className="text-sm">{donor.donation_type}</span>
+                      </TableCell>
+                      <TableCell className="min-w-[140px]">
+                        <p className="text-sm font-medium sm:text-base">
+                          {formatCurrency(Number(donor.total_donations || 0))}
+                        </p>
+                      </TableCell>
+                      <TableCell className="min-w-[120px] hidden md:table-cell">
+                        {donor.last_donation_date ? (
+                          <div className="flex items-center text-sm">
+                            <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                            {formatDate(new Date(donor.last_donation_date))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No donations</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="min-w-[100px]">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewProfile(donor)}
+                            className="p-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditDonor(donor)}
+                            className="p-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {filteredDonors.length === 0 && !loading && (

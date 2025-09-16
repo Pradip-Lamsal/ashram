@@ -62,23 +62,23 @@ export default function DonorProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl max-h-[95vh] p-0 bg-white border-0 shadow-2xl rounded-2xl [&>button]:hidden">
+      <DialogContent className="max-w-3xl max-h-[95vh] p-0 bg-white border-0 shadow-2xl rounded-2xl [&>button]:hidden mx-4 w-[calc(100vw-2rem)] sm:w-full">
         {/* Minimalist Header */}
-        <DialogHeader className="relative p-6 pb-0 flex-shrink-0">
+        <DialogHeader className="relative p-4 pb-0 flex-shrink-0 sm:p-6">
           <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center justify-center w-16 h-16 text-2xl font-bold text-white rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 sm:w-16 sm:h-16 sm:text-2xl">
                 {donor.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <DialogTitle className="text-2xl font-semibold text-gray-900">
+                <DialogTitle className="text-lg font-semibold text-gray-900 sm:text-2xl">
                   {donor.name}
                 </DialogTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
+                <div className="flex flex-col gap-1 mt-1 sm:flex-row sm:items-center sm:gap-2">
+                  <Badge variant="outline" className="text-xs w-fit">
                     {donor.membership} Member
                   </Badge>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs text-gray-500 sm:text-sm">
                     Joined{" "}
                     {formatDate(new Date(donor.createdAt || "2024-01-01"))}
                   </span>
@@ -96,13 +96,13 @@ export default function DonorProfileModal({
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6 space-y-6 overflow-y-auto flex-1">
-          {/* Key Metrics - Minimalist Cards */}
-          <div className="grid grid-cols-3 gap-4">
+        <div className="px-4 pb-4 space-y-4 overflow-y-auto flex-1 sm:px-6 sm:pb-6 sm:space-y-6">
+          {/* Key Metrics - Responsive Grid */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100">
-              <CardContent className="p-4 text-center">
-                <Heart className="w-5 h-5 mx-auto mb-2 text-emerald-600" />
-                <p className="text-2xl font-bold text-emerald-900">
+              <CardContent className="p-3 text-center sm:p-4">
+                <Heart className="w-4 h-4 mx-auto mb-2 text-emerald-600 sm:w-5 sm:h-5" />
+                <p className="text-lg font-bold text-emerald-900 sm:text-2xl">
                   {formatCurrency(totalDonations)}
                 </p>
                 <p className="text-xs text-emerald-600 uppercase tracking-wide">
@@ -112,9 +112,9 @@ export default function DonorProfileModal({
             </Card>
 
             <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100">
-              <CardContent className="p-4 text-center">
-                <Calendar className="w-5 h-5 mx-auto mb-2 text-blue-600" />
-                <p className="text-2xl font-bold text-blue-900">
+              <CardContent className="p-3 text-center sm:p-4">
+                <Calendar className="w-4 h-4 mx-auto mb-2 text-blue-600 sm:w-5 sm:h-5" />
+                <p className="text-lg font-bold text-blue-900 sm:text-2xl">
                   {donorHistory.length}
                 </p>
                 <p className="text-xs text-blue-600 uppercase tracking-wide">
@@ -124,9 +124,9 @@ export default function DonorProfileModal({
             </Card>
 
             <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100">
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="w-5 h-5 mx-auto mb-2 text-amber-600" />
-                <p className="text-2xl font-bold text-amber-900">
+              <CardContent className="p-3 text-center sm:p-4">
+                <TrendingUp className="w-4 h-4 mx-auto mb-2 text-amber-600 sm:w-5 sm:h-5" />
+                <p className="text-lg font-bold text-amber-900 sm:text-2xl">
                   {formatCurrency(averageDonation)}
                 </p>
                 <p className="text-xs text-amber-600 uppercase tracking-wide">
@@ -136,15 +136,15 @@ export default function DonorProfileModal({
             </Card>
           </div>
 
-          {/* Contact Information - Clean Layout */}
+          {/* Contact Information - Responsive Layout */}
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-                <User className="w-5 h-5 mr-2 text-gray-600" />
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="flex items-center mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
+                <User className="w-4 h-4 mr-2 text-gray-600 sm:w-5 sm:h-5" />
                 Contact Information
               </h3>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100">
                     <Phone className="w-4 h-4 text-gray-600" />
@@ -163,13 +163,13 @@ export default function DonorProfileModal({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Email</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 break-all">
                       {donor.email || "Not provided"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 md:col-span-2">
+                <div className="flex items-start space-x-3 sm:col-span-2">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100">
                     <MapPin className="w-4 h-4 text-gray-600" />
                   </div>
@@ -184,28 +184,28 @@ export default function DonorProfileModal({
             </CardContent>
           </Card>
 
-          {/* Donation Summary - Minimalist Design */}
+          {/* Donation Summary - Mobile-First Design */}
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-                <Heart className="w-5 h-5 mr-2 text-rose-500" />
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="flex items-center mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
+                <Heart className="w-4 h-4 mr-2 text-rose-500 sm:w-5 sm:h-5" />
                 Donation Summary
               </h3>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 sm:mb-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100 sm:p-4">
                   <p className="text-sm font-medium text-rose-900">
                     Highest Donation
                   </p>
-                  <p className="text-xl font-bold text-rose-800">
+                  <p className="text-lg font-bold text-rose-800 sm:text-xl">
                     {formatCurrency(highestDonation)}
                   </p>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100 sm:p-4">
                   <p className="text-sm font-medium text-violet-900">
                     Last Donation
                   </p>
-                  <p className="text-xl font-bold text-violet-800">
+                  <p className="text-lg font-bold text-violet-800 sm:text-xl">
                     {donorHistory.length > 0
                       ? formatDate(new Date(donorHistory[0].date_of_donation))
                       : "No donations"}
@@ -215,26 +215,26 @@ export default function DonorProfileModal({
             </CardContent>
           </Card>
 
-          {/* Recent Donations - Simplified List */}
+          {/* Recent Donations - Mobile Optimized */}
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 Recent Donations
               </h3>
 
               {loadingHistory ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-6 sm:py-8">
                   <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                   <span className="ml-2 text-sm text-gray-500">Loading...</span>
                 </div>
               ) : donorHistory.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {donorHistory.slice(0, 5).map((donation) => (
                     <div
                       key={donation.id}
-                      className="flex items-center justify-between py-3"
+                      className="flex items-center justify-between py-2 sm:py-3"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
                         <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
@@ -264,8 +264,8 @@ export default function DonorProfileModal({
                   )}
                 </div>
               ) : (
-                <div className="py-8 text-center">
-                  <Heart className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <div className="py-6 text-center sm:py-8">
+                  <Heart className="w-6 h-6 mx-auto mb-2 text-gray-300 sm:w-8 sm:h-8" />
                   <p className="text-sm text-gray-500">
                     No donation history found
                   </p>
