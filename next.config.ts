@@ -33,6 +33,34 @@ const nextConfig: NextConfig = {
   // Enable static optimization
   trailingSlash: false,
 
+  // Headers configuration to handle Cloudflare cookies
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
+          },
+          // Allow cross-origin cookies for development
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true",
+          },
+        ],
+      },
+    ];
+  },
+
   // Image optimization
   images: {
     formats: ["image/webp", "image/avif"],
@@ -41,6 +69,8 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Add quality configuration to fix the image warning
+    qualities: [75, 85, 90],
   },
 
   // Compiler optimizations

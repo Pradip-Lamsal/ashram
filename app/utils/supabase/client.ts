@@ -13,6 +13,10 @@ export function createClient() {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          // Use localStorage in development to avoid cookie domain issues
+          storage:
+            typeof window !== "undefined" ? window.localStorage : undefined,
+          storageKey: "supabase.auth.token",
         },
         db: {
           schema: "public",
@@ -21,6 +25,12 @@ export function createClient() {
           headers: {
             "x-client-info": "ashram-management",
           },
+        },
+        // Simple cookie options to avoid domain conflicts
+        cookieOptions: {
+          name: "supabase-auth-token",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
         },
       }
     );

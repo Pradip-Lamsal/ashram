@@ -17,6 +17,7 @@ interface AppUser {
   id: string;
   name: string;
   role: string;
+  status: string; // Add status field
   email_verified: boolean;
   permissions: string[];
   join_date: string;
@@ -63,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: userResponse.data.id,
             name: userResponse.data.name,
             role: userResponse.data.role,
+            status: userResponse.data.status || "pending", // Add status field
             email_verified: true, // Always true for now
             permissions: userResponse.data.permissions || ["dashboard:read"],
             join_date: userResponse.data.join_date,
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             sessionUser.data.user?.email?.split("@")[0] ||
             "User",
           role: "user",
+          status: "pending", // Add status field
           email_verified: true,
           permissions: ["dashboard:read"],
           join_date:
@@ -101,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: userId,
           name: "User",
           role: "user",
+          status: "pending", // Add status field
           email_verified: true,
           permissions: ["dashboard:read"],
           join_date: new Date().toISOString(),
@@ -166,6 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               session.user.email?.split("@")[0] ||
               "User",
             role: "user",
+            status: "pending", // Add status field - will be updated from DB
             email_verified: !!session.user.email_confirmed_at,
             permissions: ["dashboard:read"],
             join_date: session.user.created_at || new Date().toISOString(),
@@ -179,6 +184,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .then((userProfile) => {
               if (mounted) {
                 setAppUser(userProfile);
+
+                // Handle redirects based on status - only if we're on auth pages
+                if (typeof window !== "undefined") {
+                  const currentPath = window.location.pathname;
+
+                  // Only redirect from auth pages or root, not from dashboard pages
+                  if (
+                    currentPath === "/login" ||
+                    currentPath === "/register" ||
+                    currentPath === "/" ||
+                    currentPath === "/auth/verify-success"
+                  ) {
+                    if (
+                      userProfile.status === "pending" ||
+                      userProfile.status === "rejected"
+                    ) {
+                      window.location.href = "/approval-pending";
+                    } else if (userProfile.status === "approved") {
+                      window.location.href = "/dashboard";
+                    }
+                  }
+                }
               }
             })
             .catch((error) => {
@@ -233,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 session.user.email?.split("@")[0] ||
                 "User",
               role: "user",
+              status: "pending", // Add status field - will be updated from DB
               email_verified: !!session.user.email_confirmed_at,
               permissions: ["dashboard:read"],
               join_date: session.user.created_at || new Date().toISOString(),
@@ -244,7 +272,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Fetch complete profile to update with database info
             fetchUserProfile(session.user.id)
               .then((userProfile) => {
-                if (mounted) setAppUser(userProfile);
+                if (mounted) {
+                  setAppUser(userProfile);
+
+                  // Handle redirects based on status - only for SIGNED_IN event
+                  if (event === "SIGNED_IN" && typeof window !== "undefined") {
+                    const currentPath = window.location.pathname;
+
+                    // Only redirect from auth pages or root, not from dashboard pages
+                    if (
+                      currentPath === "/login" ||
+                      currentPath === "/register" ||
+                      currentPath === "/" ||
+                      currentPath === "/auth/verify-success"
+                    ) {
+                      if (
+                        userProfile.status === "pending" ||
+                        userProfile.status === "rejected"
+                      ) {
+                        window.location.href = "/approval-pending";
+                      } else if (userProfile.status === "approved") {
+                        window.location.href = "/dashboard";
+                      }
+                    }
+                  }
+                }
               })
               .catch(console.error);
           }

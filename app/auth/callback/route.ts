@@ -10,8 +10,37 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Email verification disabled - redirect directly to dashboard
-      return NextResponse.redirect(`${origin}/dashboard`);
+      // Get the user after session exchange
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // Check user status from database
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("status")
+          .eq("id", user.id)
+          .single();
+
+        if (userProfile) {
+          // Redirect based on user status
+          if (
+            userProfile.status === "pending" ||
+            userProfile.status === "rejected"
+          ) {
+            return NextResponse.redirect(`${origin}/approval-pending`);
+          } else if (userProfile.status === "approved") {
+            return NextResponse.redirect(`${origin}/dashboard`);
+          }
+        }
+
+        // Fallback: if no status found, assume pending (new user)
+        return NextResponse.redirect(`${origin}/approval-pending`);
+      }
+
+      // No user found, redirect to login
+      return NextResponse.redirect(`${origin}/login`);
     } else {
       console.error("Error exchanging code for session:", error);
       return NextResponse.redirect(`${origin}/login?error=auth-error`);

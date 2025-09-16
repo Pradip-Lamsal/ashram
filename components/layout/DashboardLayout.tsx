@@ -1,5 +1,6 @@
 "use client";
 
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/components/context/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,19 @@ const navigation = [
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const pathname = usePathname();
+
+  // Check if this is admin route
+  const isAdminRoute = pathname.startsWith("/admin");
+
+  return (
+    <ProtectedRoute requireApproval={true} requireAdmin={isAdminRoute}>
+      <DashboardContent>{children}</DashboardContent>
+    </ProtectedRoute>
+  );
+}
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const pathname = usePathname();

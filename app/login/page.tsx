@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 const supabase = createClient();
 
 export default function LoginPage() {
-  const { user } = useAuth();
+  const { user, appUser } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +29,6 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [redirecting, setRedirecting] = useState(false);
   const [showEmailMessage, setShowEmailMessage] = useState(false);
 
   useEffect(() => {
@@ -49,11 +48,15 @@ export default function LoginPage() {
       setShowEmailMessage(true);
     }
 
-    if (user && !redirecting) {
-      setRedirecting(true);
-      router.push("/dashboard");
+    // Handle redirect based on user status - let AuthProvider handle this
+    if (user && appUser) {
+      if (appUser.status === "pending" || appUser.status === "rejected") {
+        router.push("/approval-pending");
+      } else if (appUser.status === "approved") {
+        router.push("/dashboard");
+      }
     }
-  }, [user, router, redirecting]);
+  }, [user, appUser, router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

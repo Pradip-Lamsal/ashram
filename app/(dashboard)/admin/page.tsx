@@ -1,608 +1,549 @@
 "use client";
 
+import { createClient } from "@/app/utils/supabase/client";
 import { useAuth } from "@/components/context/AuthProvider";
+import { useToast } from "@/components/context/ToastProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dashboardService, usersService } from "@/lib/supabase-services";
 import {
-  DollarSign,
-  Receipt,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CheckCircle,
+  Clock,
+  Eye,
+  Filter,
+  MoreHorizontal,
   RefreshCw,
-  Shield,
-  UserCheck,
+  Search,
   Users,
+  XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+
+const supabase = createClient();
 
 interface User {
   id: string;
   name: string;
+  email: string;
   role: string;
-  email_verified: boolean;
-  join_date: string;
-}
-
-interface Donor {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  total_donations: number;
-  last_donation_date?: string;
-  membership: string;
-}
-
-interface Receipt {
-  id: string;
-  receipt_number: string;
-  issued_at: string;
-  is_printed: boolean;
-  is_email_sent: boolean;
-  donation?: {
-    amount: number;
-    donor?: {
-      name: string;
-    };
-  };
-}
-
-interface Donation {
-  id: string;
-  amount: number;
-  donation_type: string;
-  payment_mode: string;
-  date_of_donation: string;
-  notes?: string;
-  donor?: {
-    name: string;
-  };
-}
-
-interface Event {
-  id: string;
-  name: string;
-  description?: string;
-  date: string;
-  location?: string;
+  status: "pending" | "approved" | "rejected";
   created_at: string;
+  updated_at: string;
+  email_verified: boolean;
 }
 
-interface AdminData {
-  users: User[];
-  donors: Donor[];
-  receipts: Receipt[];
-  donations: Donation[];
-  events: Event[];
-}
-
-interface DashboardStats {
-  totalUsers: number;
-  adminUsers: number;
-  regularUsers: number;
-  totalDonors: number;
-  totalDonations: number;
-  totalReceipts: number;
-  totalEvents: number;
-  totalAmount: number;
+interface UserStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
 }
 
 export default function AdminPage() {
-  const { appUser } = useAuth();
-  const [adminData, setAdminData] = useState<AdminData | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const { user, appUser, isLoading } = useAuth();
+  const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState("all");
+  const [stats, setStats] = useState<UserStats>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+  const [updating, setUpdating] = useState<string | null>(null);
+  const { showToast } = useToast();
 
-  const fetchAdminData = async () => {
-    try {
-      setDataLoading(true);
-      const [overview, statsData] = await Promise.all([
-        dashboardService.getAdminOverview(),
-        dashboardService.getStats(),
-      ]);
-      setAdminData(overview);
-      setStats(statsData);
-    } catch (error) {
-      console.error("Error fetching admin data:", error);
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  const handleRoleUpdate = async (userId: string, newRole: string) => {
-    try {
-      await usersService.updateRole(userId, newRole);
-      await fetchAdminData(); // Refresh data
-    } catch (error) {
-      console.error("Error updating user role:", error);
-    }
-  };
-
+  // Protection logic - redirect if not admin
   useEffect(() => {
-    if (appUser?.role === "admin") {
-      fetchAdminData();
+    if (isLoading) return;
+
+    if (!user) {
+      router.push("/login");
+      return;
     }
-  }, [appUser]);
 
-  if (dataLoading) {
-    return (
-      <div className="px-6 py-8 mx-auto max-w-7xl">
-        <div className="flex items-center justify-center h-64">
-          <div className="w-12 h-12 border-b-2 border-orange-500 rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
-  }
+    if (appUser?.role !== "admin") {
+      router.push("/dashboard");
+      return;
+    }
+  }, [user, appUser, isLoading, router]);
 
-  if (!appUser || appUser.role !== "admin") {
+  // Update user status function - includes API call
+  const updateUserStatus = async (
+    userId: string,
+    newStatus: "pending" | "approved" | "rejected"
+  ) => {
+    try {
+      setUpdating(userId);
+
+      // Get current user session
+      const {
+        data: { user: currentUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      // Check if current user is admin
+      const { data: adminUser, error: adminError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (adminError || adminUser?.role !== "admin") {
+        throw new Error("Admin access required");
+      }
+
+      // Validate status
+      if (!["pending", "approved", "rejected"].includes(newStatus)) {
+        throw new Error("Invalid status");
+      }
+
+      // Update user status using the stored function
+      const { error } = await supabase.rpc("update_user_status", {
+        user_id: userId,
+        new_status: newStatus,
+      });
+
+      if (error) {
+        console.error("Error updating user status:", error);
+        throw new Error("Failed to update user status");
+      }
+
+      // Update local state
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+              }
+            : user
+        )
+      );
+
+      // Update stats
+      const updatedUsers = users.map((user) =>
+        user.id === userId ? { ...user, status: newStatus } : user
+      );
+      const total = updatedUsers.length;
+      const pending = updatedUsers.filter((u) => u.status === "pending").length;
+      const approved = updatedUsers.filter(
+        (u) => u.status === "approved"
+      ).length;
+      const rejected = updatedUsers.filter(
+        (u) => u.status === "rejected"
+      ).length;
+      setStats({ total, pending, approved, rejected });
+
+      showToast("Success", `User status updated to ${newStatus}`, "success");
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      showToast(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update user status",
+        "destructive"
+      );
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  // Fetch users from Supabase
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching users:", error);
+        showToast("Error", "Failed to fetch users", "destructive");
+        return;
+      }
+
+      setUsers(data || []);
+
+      // Calculate stats
+      const total = data?.length || 0;
+      const pending =
+        data?.filter((u: User) => u.status === "pending").length || 0;
+      const approved =
+        data?.filter((u: User) => u.status === "approved").length || 0;
+      const rejected =
+        data?.filter((u: User) => u.status === "rejected").length || 0;
+
+      setStats({ total, pending, approved, rejected });
+    } catch (error) {
+      console.error("Error:", error);
+      showToast("Error", "Failed to fetch users", "destructive");
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  // Filter users based on search term and status
+  useEffect(() => {
+    let filtered = users;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((user) => user.status === statusFilter);
+    }
+
+    setFilteredUsers(filtered);
+  }, [users, searchTerm, statusFilter]);
+
+  // Initial load with real-time subscription
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchUsers();
+    };
+
+    loadData();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel("user-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "users",
+        },
+        () => {
+          fetchUsers(); // Refetch when any user changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchUsers]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return (
+          <Badge
+            variant="outline"
+            className="text-yellow-600 border-yellow-600"
+          >
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case "approved":
+        return (
+          <Badge variant="outline" className="text-green-600 border-green-600">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Approved
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge variant="outline" className="text-red-600 border-red-600">
+            <XCircle className="w-3 h-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (loading) {
     return (
-      <div className="px-6 py-8 mx-auto max-w-7xl">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h2 className="mb-2 text-xl font-semibold text-gray-900">
-              Access Denied
-            </h2>
-            <p className="text-gray-600">
-              You need admin privileges to access this page.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-b-2 border-orange-500 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="px-6 py-8 mx-auto max-w-7xl">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="mt-2 text-gray-600">
-            System administration and management dashboard
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="mt-1 text-gray-600">
+            Manage user registrations and approvals
           </p>
         </div>
-        <Button onClick={fetchAdminData} variant="outline" size="sm">
+        <Button
+          onClick={fetchUsers}
+          className="bg-orange-600 hover:bg-orange-700"
+        >
           <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh Data
+          Refresh
         </Button>
       </div>
 
-      {/* Stats Overview */}
-      {stats && (
-        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Users
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {stats.totalUsers}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {stats.adminUsers} admin, {stats.regularUsers} users
-                  </p>
-                </div>
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="w-4 h-4 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Donors
-                  </p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {stats.totalDonors}
-                  </p>
-                  <p className="text-xs text-gray-500">Active donors</p>
-                </div>
-                <UserCheck className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <Clock className="w-4 h-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pending}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Receipts
-                  </p>
-                  <p className="text-3xl font-bold text-orange-600">
-                    {stats.totalReceipts}
-                  </p>
-                  <p className="text-xs text-gray-500">Generated receipts</p>
-                </div>
-                <Receipt className="w-8 h-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CheckCircle className="w-4 h-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.approved}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Amount
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600">
-                    Rs. {stats.totalAmount.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {stats.totalDonations} donations
-                  </p>
-                </div>
-                <DollarSign className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <XCircle className="w-4 h-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.rejected}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Data Tables */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">
-            Users ({adminData?.users.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="donors">
-            Donors ({adminData?.donors.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="receipts">
-            Receipts ({adminData?.receipts.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="donations">
-            Donations ({adminData?.donations.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="events">
-            Events ({adminData?.events.length || 0})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {adminData?.users.slice(0, 5).map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.id}</p>
-                    </div>
-                    <Badge
-                      variant={user.role === "admin" ? "default" : "secondary"}
-                    >
-                      {user.role}
-                    </Badge>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Donations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {adminData?.donations.slice(0, 5).map((donation) => (
-                  <div
-                    key={donation.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {donation.donor?.name || "Unknown"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {donation.donation_type}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">
-                        Rs. {donation.amount}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {donation.payment_mode}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">Name</th>
-                      <th className="p-2 text-left">User ID</th>
-                      <th className="p-2 text-left">Role</th>
-                      <th className="p-2 text-left">Email Verified</th>
-                      <th className="p-2 text-left">Join Date</th>
-                      <th className="p-2 text-left">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminData?.users.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-gray-50">
-                        <td className="p-2 font-medium">{user.name}</td>
-                        <td className="p-2 font-mono text-sm text-gray-600">
-                          {user.id}
-                        </td>
-                        <td className="p-2">
-                          <Badge
-                            variant={
-                              user.role === "admin" ? "default" : "secondary"
-                            }
-                          >
+      {/* Users Table with Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Verification</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="pending">
+                Pending ({stats.pending})
+              </TabsTrigger>
+              <TabsTrigger value="approved">
+                Approved ({stats.approved})
+              </TabsTrigger>
+              <TabsTrigger value="rejected">
+                Rejected ({stats.rejected})
+              </TabsTrigger>
+              <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={activeTab} className="mt-6">
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">SN</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Registration Date</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers
+                      .filter(
+                        (user) =>
+                          activeTab === "all" || user.status === activeTab
+                      )
+                      .map((user, index) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {user.name || "N/A"}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell className="capitalize">
                             {user.role}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <Badge
-                            variant={
-                              user.email_verified ? "default" : "destructive"
-                            }
-                          >
-                            {user.email_verified ? "Yes" : "No"}
-                          </Badge>
-                        </td>
-                        <td className="p-2 text-sm">
-                          {new Date(user.join_date).toLocaleDateString()}
-                        </td>
-                        <td className="p-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              handleRoleUpdate(
-                                user.id,
-                                user.role === "admin" ? "user" : "admin"
-                              )
-                            }
-                          >
-                            {user.role === "admin" ? "Make User" : "Make Admin"}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="donors">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Donors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">Name</th>
-                      <th className="p-2 text-left">Phone</th>
-                      <th className="p-2 text-left">Email</th>
-                      <th className="p-2 text-left">Total Donations</th>
-                      <th className="p-2 text-left">Last Donation</th>
-                      <th className="p-2 text-left">Membership</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminData?.donors.map((donor) => (
-                      <tr key={donor.id} className="border-b hover:bg-gray-50">
-                        <td className="p-2 font-medium">{donor.name}</td>
-                        <td className="p-2">{donor.phone || "-"}</td>
-                        <td className="p-2">{donor.email || "-"}</td>
-                        <td className="p-2 font-bold text-green-600">
-                          Rs. {donor.total_donations || 0}
-                        </td>
-                        <td className="p-2 text-sm">
-                          {donor.last_donation_date
-                            ? new Date(
-                                donor.last_donation_date
-                              ).toLocaleDateString()
-                            : "Never"}
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="outline">{donor.membership}</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="receipts">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Receipts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">Receipt Number</th>
-                      <th className="p-2 text-left">Donor</th>
-                      <th className="p-2 text-left">Amount</th>
-                      <th className="p-2 text-left">Issued Date</th>
-                      <th className="p-2 text-left">Printed</th>
-                      <th className="p-2 text-left">Email Sent</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminData?.receipts.map((receipt) => (
-                      <tr
-                        key={receipt.id}
-                        className="border-b hover:bg-gray-50"
-                      >
-                        <td className="p-2 font-mono font-medium">
-                          {receipt.receipt_number}
-                        </td>
-                        <td className="p-2">
-                          {receipt.donation?.donor?.name || "Unknown"}
-                        </td>
-                        <td className="p-2 font-bold text-green-600">
-                          Rs. {receipt.donation?.amount || 0}
-                        </td>
-                        <td className="p-2 text-sm">
-                          {new Date(receipt.issued_at).toLocaleDateString()}
-                        </td>
-                        <td className="p-2">
-                          <Badge
-                            variant={
-                              receipt.is_printed ? "default" : "secondary"
-                            }
-                          >
-                            {receipt.is_printed ? "Yes" : "No"}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <Badge
-                            variant={
-                              receipt.is_email_sent ? "default" : "secondary"
-                            }
-                          >
-                            {receipt.is_email_sent ? "Yes" : "No"}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="donations">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Donations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">Donor</th>
-                      <th className="p-2 text-left">Type</th>
-                      <th className="p-2 text-left">Amount</th>
-                      <th className="p-2 text-left">Payment Mode</th>
-                      <th className="p-2 text-left">Date</th>
-                      <th className="p-2 text-left">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminData?.donations.map((donation) => (
-                      <tr
-                        key={donation.id}
-                        className="border-b hover:bg-gray-50"
-                      >
-                        <td className="p-2 font-medium">
-                          {donation.donor?.name || "Unknown"}
-                        </td>
-                        <td className="p-2">{donation.donation_type}</td>
-                        <td className="p-2 font-bold text-green-600">
-                          Rs. {donation.amount}
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="outline">
-                            {donation.payment_mode}
-                          </Badge>
-                        </td>
-                        <td className="p-2 text-sm">
-                          {new Date(
-                            donation.date_of_donation
-                          ).toLocaleDateString()}
-                        </td>
-                        <td className="p-2 text-sm">{donation.notes || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="events">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {adminData?.events.length === 0 ? (
-                <p className="py-8 text-center text-gray-500">
-                  No events found
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="p-2 text-left">Name</th>
-                        <th className="p-2 text-left">Description</th>
-                        <th className="p-2 text-left">Date</th>
-                        <th className="p-2 text-left">Location</th>
-                        <th className="p-2 text-left">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {adminData?.events.map((event) => (
-                        <tr
-                          key={event.id}
-                          className="border-b hover:bg-gray-50"
-                        >
-                          <td className="p-2 font-medium">{event.name}</td>
-                          <td className="p-2">{event.description || "-"}</td>
-                          <td className="p-2">
-                            {new Date(event.date).toLocaleDateString()}
-                          </td>
-                          <td className="p-2">{event.location || "-"}</td>
-                          <td className="p-2 text-sm">
-                            {new Date(event.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(user.status)}</TableCell>
+                          <TableCell>{formatDate(user.created_at)}</TableCell>
+                          <TableCell>{formatDate(user.updated_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="w-8 h-8 p-0"
+                                  disabled={updating === user.id}
+                                >
+                                  <span className="sr-only">Open menu</span>
+                                  {updating === user.id ? (
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="text-green-600">
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                {user.status !== "approved" && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateUserStatus(user.id, "approved")
+                                    }
+                                    className="text-green-600"
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Approve
+                                  </DropdownMenuItem>
+                                )}
+                                {user.status !== "rejected" && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateUserStatus(user.id, "rejected")
+                                    }
+                                    className="text-red-600"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                )}
+                                {user.status !== "pending" && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateUserStatus(user.id, "pending")
+                                    }
+                                    className="text-yellow-600"
+                                  >
+                                    <Clock className="w-4 h-4 mr-2" />
+                                    Set Pending
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {filteredUsers.filter(
+                (user) => activeTab === "all" || user.status === activeTab
+              ).length === 0 && (
+                <div className="py-8 text-center text-gray-500">
+                  No users found matching your criteria.
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
