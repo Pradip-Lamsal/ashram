@@ -2,51 +2,53 @@ import { createClient } from "@/app/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      // Get the user after session exchange
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        // Check user status from database
-        const { data: userProfile } = await supabase
-          .from("users")
-          .select("status")
-          .eq("id", user.id)
-          .single();
-
-        if (userProfile) {
-          // Redirect based on user status
-          if (
-            userProfile.status === "pending" ||
-            userProfile.status === "rejected"
-          ) {
-            return NextResponse.redirect(`${origin}/approval-pending`);
-          } else if (userProfile.status === "approved") {
-            return NextResponse.redirect(`${origin}/dashboard`);
-          }
-        }
-
-        // Fallback: if no status found, assume pending (new user)
-        return NextResponse.redirect(`${origin}/approval-pending`);
-      }
-
-      // No user found, redirect to login
-      return NextResponse.redirect(`${origin}/login`);
-    } else {
-      console.error("Error exchanging code for session:", error);
-      return NextResponse.redirect(`${origin}/login?error=auth-error`);
-    }
+  // If magic-link is disabled (usual case), just redirect to login
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login`);
   }
 
-  // No code provided, redirect to login
-  return NextResponse.redirect(`${origin}/login`);
+  const supabase = await createClient();
+
+  // Exchange code for a session (protective handling if link is still used)
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
+    code
+  );
+
+  if (exchangeError) {
+    console.error("Error exchanging code for session:", exchangeError);
+    return NextResponse.redirect(`${origin}/login?error=auth-error`);
+  }
+
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.redirect(`${origin}/login`);
+  }
+
+  // Check approval status in public.users
+  const { data: userProfile, error: profileError } = await supabase
+    .from("users")
+    .select("status")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !userProfile || userProfile.status !== "approved") {
+    // Revoke session for safety and send to approval pending
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Error signing out non-approved user:", e);
+    }
+    return NextResponse.redirect(`${origin}/approval-pending`);
+  }
+
+  // Approved
+  return NextResponse.redirect(`${origin}/dashboard`);
 }

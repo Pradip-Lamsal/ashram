@@ -60,6 +60,7 @@ export default function RegisterPage() {
     }
 
     try {
+      // Create auth user with email+password (no magic link redirect)
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -68,27 +69,29 @@ export default function RegisterPage() {
             full_name: fullName,
             name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (error) {
         setError(error.message);
       } else {
-        // Show success message for email verification
+        // No need to call /api/create-user-row! The trigger will create the profile row.
+
+        // Revoke any created session so user cannot access until approved
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // ignore
+        }
+
         showToast(
-          "Check Your Email!",
-          "Please check your email and click the verification link to complete your registration.",
+          "Registration Submitted",
+          "Your account is created and is awaiting admin approval. You will be able to log in once approved.",
           "success"
         );
 
-        // Set redirecting state  
         setIsRedirecting(true);
-
-        // Redirect to login page after showing the message
-        setTimeout(() => {
-          router.push("/login?message=check-email");
-        }, 3000);
+        setTimeout(() => router.push("/login"), 1200);
       }
     } catch {
       setError("An unexpected error occurred");
@@ -97,9 +100,7 @@ export default function RegisterPage() {
     }
   };
 
-  if (user) {
-    return null; // Will redirect
-  }
+  if (user) return null;
 
   return (
     <div className="flex h-screen overflow-hidden">

@@ -52,6 +52,17 @@ const donationTypes: DonationType[] = [
   "Puja Sponsorship",
 ];
 
+// Nepali labels for UI only — keep backend values unchanged
+const DONATION_TYPE_LABELS: Record<string, string> = {
+  "General Donation": "अक्षयकोष",
+  "Seva Donation": "मुठ्ठी दान",
+  Annadanam: "गुरुकुलमा",
+  "Vastra Danam": "जिन्सी सामग्री",
+  "Building Fund": "भण्डारा",
+  "Festival Sponsorship": "विशेष पूजा",
+  "Puja Sponsorship": "आजीवन सदस्यता",
+};
+
 const paymentModes: PaymentMode[] = ["Online", "Offline", "QR Payment"];
 
 const generateReceiptNumber = () => {
@@ -139,7 +150,7 @@ export default function ReceiptForm({
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Receipt Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="receiptNumber">Receipt Number</Label>
               <Input
@@ -194,7 +205,7 @@ export default function ReceiptForm({
           </div>
 
           {/* Donation Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="donationType">Donation Type *</Label>
               <Select
@@ -209,7 +220,7 @@ export default function ReceiptForm({
                 <SelectContent>
                   {donationTypes.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type}
+                      {DONATION_TYPE_LABELS[type] ?? type}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -257,8 +268,8 @@ export default function ReceiptForm({
 
           {/* QR Payment Option */}
           {showQROption && (
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
+            <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
+              <div className="flex items-center mb-2 space-x-2">
                 <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
                 <span className="font-medium text-orange-800">
                   QR Payment Selected
@@ -284,7 +295,7 @@ export default function ReceiptForm({
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex justify-end pt-4 space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>

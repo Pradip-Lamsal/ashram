@@ -2,6 +2,7 @@
 
 import { createClient } from "@/app/utils/supabase/client";
 import { useAuth } from "@/components/context/AuthProvider";
+import { useToast } from "@/components/context/ToastProvider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +23,7 @@ const supabase = createClient();
 
 export default function LoginPage() {
   const { user, appUser } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,6 @@ export default function LoginPage() {
   const [showEmailMessage, setShowEmailMessage] = useState(false);
 
   useEffect(() => {
-    // Check for error parameters in URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlError = urlParams.get("error");
     const message = urlParams.get("message");
@@ -44,11 +45,10 @@ export default function LoginPage() {
     }
 
     if (message === "check-email") {
-      setError(""); // Clear any existing errors
+      setError("");
       setShowEmailMessage(true);
     }
 
-    // Handle redirect based on user status - let AuthProvider handle this
     if (user && appUser) {
       if (appUser.status === "pending" || appUser.status === "rejected") {
         router.push("/approval-pending");
@@ -64,15 +64,58 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        setError(error.message);
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
       }
-      // Remove the manual redirect here since useEffect will handle it
+
+      // fetch auth user and profile status
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError("Unable to retrieve user after sign-in");
+        setLoading(false);
+        return;
+      }
+
+      const { data: userProfile, error: profileError } = await supabase
+        .from("users")
+        .select("status")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        // if profile missing, sign out and show pending
+        await supabase.auth.signOut();
+        showToast(
+          "Access Pending",
+          "Your account is not yet approved. Please wait for admin approval."
+        );
+        router.push("/approval-pending");
+        return;
+      }
+
+      if (!userProfile || userProfile.status !== "approved") {
+        await supabase.auth.signOut();
+        showToast(
+          "Access Pending",
+          "Your account is not yet approved. Please wait for admin approval."
+        );
+        router.push("/approval-pending");
+        return;
+      }
+
+      // approved
+      router.push("/dashboard");
     } catch {
       setError("An unexpected error occurred");
     } finally {
