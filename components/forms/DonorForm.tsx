@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NepaliDatePicker } from "@/components/ui/nepali-date-picker";
 import {
   Select,
   SelectContent,
@@ -238,16 +239,25 @@ export default function DonorForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) =>
-                    handleInputChange("dateOfBirth", e.target.value)
-                  }
-                  className={errors.dateOfBirth ? "border-red-500" : ""}
-                  max={new Date().toISOString().split("T")[0]} // Prevent future dates
+                <Label htmlFor="dateOfBirth">Date of Birth (नेपाली मिति)</Label>
+                <NepaliDatePicker
+                  value=""
+                  onChange={(dateString: string, adDate?: Date) => {
+                    // Convert to ISO string format for storage
+                    if (adDate) {
+                      handleInputChange(
+                        "dateOfBirth",
+                        adDate.toISOString().split("T")[0]
+                      );
+                    } else {
+                      // Fallback - use current date
+                      handleInputChange(
+                        "dateOfBirth",
+                        new Date().toISOString().split("T")[0]
+                      );
+                    }
+                  }}
+                  error={!!errors.dateOfBirth}
                 />
                 {errors.dateOfBirth && (
                   <p className="text-sm text-red-500">{errors.dateOfBirth}</p>

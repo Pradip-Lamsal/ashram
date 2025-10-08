@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NepaliDatePicker } from "@/components/ui/nepali-date-picker";
 import {
   Select,
   SelectContent,
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DonationType, Donor, PaymentMode } from "@/types";
-import { QrCode } from "lucide-react";
 import React, { useState } from "react";
 
 interface ReceiptFormData {
@@ -164,10 +164,10 @@ export default function ReceiptForm({
   const handlePaymentModeChange = (mode: PaymentMode) => {
     setFormData((prev) => ({ ...prev, paymentMode: mode }));
     setShowQROption(mode === "QR Payment");
-  };
-
-  const formatDateForInput = (date: Date) => {
-    return date.toISOString().split("T")[0];
+    // Automatically show QR modal when QR Payment is selected
+    if (mode === "QR Payment") {
+      setShowQRModal(true);
+    }
   };
 
   return (
@@ -189,18 +189,21 @@ export default function ReceiptForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfDonation">Date of Donation *</Label>
-                <Input
-                  id="dateOfDonation"
-                  type="date"
-                  value={formatDateForInput(formData.dateOfDonation)}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "dateOfDonation",
-                      new Date(e.target.value)
-                    )
-                  }
-                  className={errors.dateOfDonation ? "border-red-500" : ""}
+                <Label htmlFor="dateOfDonation">
+                  Date of Donation (नेपाली मिति) *
+                </Label>
+                <NepaliDatePicker
+                  value=""
+                  onChange={(dateString: string, adDate?: Date) => {
+                    // Convert Nepali date to English date for storage
+                    if (adDate) {
+                      handleInputChange("dateOfDonation", adDate);
+                    } else {
+                      // Fallback - use current date
+                      handleInputChange("dateOfDonation", new Date());
+                    }
+                  }}
+                  error={!!errors.dateOfDonation}
                 />
                 {errors.dateOfDonation && (
                   <p className="text-sm text-red-500">
@@ -305,27 +308,15 @@ export default function ReceiptForm({
             {/* QR Payment Option */}
             {showQROption && (
               <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                    <span className="font-medium text-orange-800">
-                      QR Payment Selected
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={() => setShowQRModal(true)}
-                    variant="outline"
-                    size="sm"
-                    className="text-orange-700 border-orange-300 hover:bg-orange-100"
-                  >
-                    <QrCode className="w-4 h-4 mr-1" />
-                    Show QR
-                  </Button>
+                <div className="flex items-center mb-2 space-x-2">
+                  <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                  <span className="font-medium text-orange-800">
+                    QR Payment Selected
+                  </span>
                 </div>
                 <p className="text-sm text-orange-700">
-                  Click &ldquo;Show QR&rdquo; to display the payment QR code.
-                  The donor can scan this to make the payment.
+                  QR payment code is displayed. The donor can scan the QR code
+                  to make the payment.
                 </p>
               </div>
             )}
@@ -345,38 +336,38 @@ export default function ReceiptForm({
             {/* Conditional date range for Seva Donation (मुठ्ठी दान) */}
             {formData.donationType === "Seva Donation" && (
               <div className="space-y-2">
-                <Label>Donation Period (Start / End)</Label>
+                <Label>Donation Period (नेपाली मिति - Start / End)</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={
-                      formData.startDate
-                        ? formatDateForInput(formData.startDate)
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleInputChange(
-                        "startDate",
-                        e.target.value ? new Date(e.target.value) : null
-                      )
-                    }
-                  />
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={
-                      formData.endDate
-                        ? formatDateForInput(formData.endDate)
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleInputChange(
-                        "endDate",
-                        e.target.value ? new Date(e.target.value) : null
-                      )
-                    }
-                  />
+                  <div>
+                    <label className="block mb-1 text-sm text-gray-600">
+                      Start Date (नेपाली मिति)
+                    </label>
+                    <NepaliDatePicker
+                      value=""
+                      onChange={(dateString: string, adDate?: Date) => {
+                        if (adDate) {
+                          handleInputChange("startDate", adDate);
+                        } else {
+                          handleInputChange("startDate", new Date());
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-sm text-gray-600">
+                      End Date (नेपाली मिति)
+                    </label>
+                    <NepaliDatePicker
+                      value=""
+                      onChange={(dateString: string, adDate?: Date) => {
+                        if (adDate) {
+                          handleInputChange("endDate", adDate);
+                        } else {
+                          handleInputChange("endDate", new Date());
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
                 {errors.dateOfDonation && (
                   <p className="text-sm text-red-500">
