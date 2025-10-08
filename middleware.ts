@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   // Create a response object
   const response = NextResponse.next();
 
-  // Handle Cloudflare cookie issues in development
+  // Handle Cloudflare cookie issues in development only
   if (process.env.NODE_ENV === "development") {
     // Remove problematic Cloudflare cookies that might cause domain issues
     const cookies = request.cookies;
@@ -40,6 +40,7 @@ export function middleware(request: NextRequest) {
     );
   }
 
+  // In production, just return the response without modifications
   return response;
 }
 
@@ -51,7 +52,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public files
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|_next/webpack-hmr|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg).*)",
   ],
 };
