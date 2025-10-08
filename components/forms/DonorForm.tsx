@@ -26,6 +26,17 @@ const donationTypes: DonationType[] = [
   "Puja Sponsorship",
 ];
 
+// Nepali labels for UI only — keep backend values unchanged (same as ReceiptForm)
+const DONATION_TYPE_LABELS: Record<string, string> = {
+  "General Donation": "अक्षयकोष",
+  "Seva Donation": "मुठ्ठी दान",
+  Annadanam: "गुरुकुलमा",
+  "Vastra Danam": "जिन्सी सामग्री",
+  "Building Fund": "भण्डारा",
+  "Festival Sponsorship": "विशेष पूजा",
+  "Puja Sponsorship": "आजीवन सदस्यता",
+};
+
 const membershipTypes: MembershipType[] = ["Regular", "Life", "Special"];
 
 interface DonorFormData {
@@ -186,12 +197,12 @@ export default function DonorForm({
           {/* Personal Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Personal Information
+              Personal Information (व्यक्तिगत जानकारी)
             </h3>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name">Full Name (नाम) *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -205,7 +216,7 @@ export default function DonorForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">Phone Number (फोन नम्बर) *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -224,7 +235,7 @@ export default function DonorForm({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Email Address (इमेल ठेगाना)</Label>
                 <Input
                   id="email"
                   type="email"
@@ -239,7 +250,9 @@ export default function DonorForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth (नेपाली मिति)</Label>
+                <Label htmlFor="dateOfBirth">
+                  Date of Birth (जन्म मिति - नेपाली मिति)
+                </Label>
                 <NepaliDatePicker
                   value=""
                   onChange={(dateString: string, adDate?: Date) => {
@@ -266,7 +279,7 @@ export default function DonorForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">Full Address (पूरा ठेगाना)</Label>
               <Textarea
                 id="address"
                 value={formData.address}
@@ -288,12 +301,14 @@ export default function DonorForm({
           {/* Donation Preferences */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Donation Preferences
+              Donation Preferences (दान प्राथमिकता)
             </h3>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="donationType">Preferred Donation Type *</Label>
+                <Label htmlFor="donationType">
+                  Preferred Donation Type (मनपर्ने दान प्रकार) *
+                </Label>
                 <Select
                   value={formData.donationType}
                   onValueChange={(value: DonationType) =>
@@ -308,7 +323,7 @@ export default function DonorForm({
                   <SelectContent>
                     {donationTypes.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type}
+                        {DONATION_TYPE_LABELS[type] ?? type}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -319,7 +334,9 @@ export default function DonorForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="membership">Membership Type *</Label>
+                <Label htmlFor="membership">
+                  Membership Type (सदस्यता प्रकार) *
+                </Label>
                 <Select
                   value={formData.membership}
                   onValueChange={(value: MembershipType) =>
@@ -348,7 +365,7 @@ export default function DonorForm({
 
           {/* Additional Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Additional Notes</Label>
+            <Label htmlFor="notes">Additional Notes (थप टिप्पणी)</Label>
             <Textarea
               id="notes"
               value={formData.notes}
