@@ -1,6 +1,24 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps"
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+    "NPM_CONFIG_FORCE": "true"
+  },
+  "buildCommand": "npm run force-build",
+  "framework": "nextjs"
 }
