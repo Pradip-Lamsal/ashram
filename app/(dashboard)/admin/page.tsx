@@ -141,6 +141,28 @@ export default function AdminPage() {
         throw new Error("Failed to update user status");
       }
 
+      // When approving a user, mark their email as confirmed so they can sign in
+      if (newStatus === "approved") {
+        try {
+          const response = await fetch("/api/auto-confirm", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id: userId }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Failed to confirm user email:", errorData);
+            // Don't throw - status update succeeded, just log the email confirmation failure
+          }
+        } catch (emailError) {
+          console.error("Error confirming user email:", emailError);
+          // Don't throw - status update succeeded
+        }
+      }
+
       // Update local state
       setUsers((prev) =>
         prev.map((user) =>

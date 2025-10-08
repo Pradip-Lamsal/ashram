@@ -199,8 +199,7 @@ export default function ReceiptsPage() {
 
       setIsAddDialogOpen(false);
       showToast(
-        `Receipt generated successfully for ${receiptData.donorName}! 🎉`,
-        "default"
+        `Receipt generated successfully for ${receiptData.donorName}! 🎉`
       );
     } catch (error) {
       console.error("Error creating receipt:", error);

@@ -9,6 +9,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Edit2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+// Nepali labels mapping + helpers (UI only)
+const DONATION_TYPE_LABELS: Record<string, string> = {
+  "General Donation": "अक्षयकोष",
+  "Seva Donation": "मुठ्ठी दान",
+  Annadanam: "गुरुकुलमा",
+  "Vastra Danam": "जिन्सी सामग्री",
+  "Building Fund": "भण्डारा",
+  "Festival Sponsorship": "विशेष पूजा",
+  "Puja Sponsorship": "आजीवन सदस्यता",
+};
+
+function humanizeDonationType(type?: string) {
+  if (!type) return "N/A";
+  return String(type)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getDisplayDonationType(type?: string | null) {
+  if (!type) return "N/A";
+  return DONATION_TYPE_LABELS[String(type)] ?? humanizeDonationType(type);
+}
+
 const supabase = createClient();
 
 interface UserStats {
@@ -117,7 +140,9 @@ export default function ProfilePage() {
           return {
             receipt_number: receipt.receipt_number || "N/A",
             donor_name: donor?.name || "Unknown",
-            donation_type: donation?.donation_type || "General",
+            // display Nepali label (UI only) while keeping backend key intact elsewhere
+            donation_type:
+              getDisplayDonationType(donation?.donation_type) || "N/A",
             amount: donation?.amount || 0,
             payment_mode: donation?.payment_mode || "Cash",
             date: new Date(receipt.created_at).toLocaleDateString("en-GB"),

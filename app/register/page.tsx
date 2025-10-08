@@ -60,8 +60,9 @@ export default function RegisterPage() {
     }
 
     try {
-      // Create auth user with email+password (no magic link redirect)
-      const { error } = await supabase.auth.signUp({
+      // Create auth user with email+password
+      // Note: Email confirmation should be disabled in Supabase settings
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -74,19 +75,17 @@ export default function RegisterPage() {
 
       if (error) {
         setError(error.message);
-      } else {
-        // No need to call /api/create-user-row! The trigger will create the profile row.
-
-        // Revoke any created session so user cannot access until approved
+      } else if (data.user) {
+        // Immediately sign out so user cannot access dashboard until approved
         try {
           await supabase.auth.signOut();
         } catch {
-          // ignore
+          // ignore signout errors
         }
 
         showToast(
           "Registration Submitted",
-          "Your account is created and is awaiting admin approval. You will be able to log in once approved.",
+          "Your account has been created and is awaiting admin approval. You will be able to log in once approved.",
           "success"
         );
 

@@ -13,27 +13,60 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { Receipt } from "@/types";
-import {
-  Calendar,
-  Check,
-  CreditCard,
-  Download,
-  Heart,
-  History,
-  Loader2,
-  Mail,
-  Printer,
-  Send,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
+import { DonationType, PaymentMode } from "@/types";
+import * as lucideReact from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 
+// add small helper to display fallback humanized english label
+function humanizeDonationType(type?: string) {
+  if (!type) return "N/A";
+  return String(type)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// --- ADDED: safe date helpers (handle string | Date | null) ---
+function toDate(d?: string | Date | null): Date | null {
+  if (!d) return null;
+  return d instanceof Date ? d : new Date(d);
+}
+
+function safeFormatDate(d?: string | Date | null) {
+  const dt = toDate(d);
+  return dt ? formatDate(dt) : "N/A";
+}
+
+function safeFormatDateTime(d?: string | Date | null) {
+  const dt = toDate(d);
+  return dt ? formatDateTime(dt) : formatDateTime(new Date());
+}
+// --- end added helpers ---
+
+// explicit receipt shape used by this modal (includes optional UI-only fields)
+type ReceiptModalReceipt = {
+  id: string;
+  receiptNumber: string;
+  issuedAt: Date | string;
+  donorName: string;
+  donationType: DonationType | string;
+  donationTypeLabel?: string;
+  amount: number;
+  paymentMode: PaymentMode | string;
+  dateOfDonation?: Date | string | null;
+  notes?: string;
+  isPrinted: boolean;
+  isEmailSent: boolean;
+  createdAt: Date | string;
+  donationId?: string;
+  donorId?: string;
+  createdBy?: string;
+  startDate?: Date | string | null;
+  endDate?: Date | string | null;
+};
+
 interface ReceiptModalProps {
-  receipt: Receipt;
+  receipt: ReceiptModalReceipt;
   isOpen: boolean;
   onClose: () => void;
   donorHistory?: Array<{
@@ -63,7 +96,7 @@ export default function ReceiptModal({
   onDeleteReceipt,
   isUpdating = false,
 }: ReceiptModalProps) {
-  const printRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement | null>(null);
 
   // Consolidated email state to reduce useState calls and improve performance
   const [emailState, setEmailState] = useState({
@@ -84,46 +117,28 @@ export default function ReceiptModal({
     setTimeout(() => setShowToast(false), 1500); // Hide after 1.5 seconds
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
+  // use an `any` options object and set both `getContent` and `content`
+  // to avoid TypeScript errors across react-to-print versions.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const printOptions: any = {
+    getContent: () => printRef.current,
+    content: () => printRef.current,
     documentTitle: `Receipt-${receipt.receiptNumber}`,
     pageStyle: `
-      @page {
-        size: A4;
-        margin: 1.5cm;
-      }
+      @page { size: A4; margin: 1.5cm; }
       @media print {
-        body { 
-          font-size: 11pt; 
-          line-height: 1.4;
-          color: black !important;
-          background: white !important;
-        }
+        body { font-size: 11pt; line-height: 1.4; color: black !important; background: white !important; }
         .no-print { display: none !important; }
-        .print-page {
-          max-height: none !important;
-          page-break-inside: avoid;
-        }
-        .print-section {
-          margin-bottom: 1rem;
-        }
-        .print-header {
-          border-bottom: 2px solid #ea580c;
-          padding-bottom: 1rem;
-          margin-bottom: 1.5rem;
-        }
-        .print-amount {
-          font-size: 16pt;
-          font-weight: bold;
-        }
-        .print-footer {
-          border-top: 2px solid #ea580c;
-          padding-top: 1rem;
-          margin-top: 1.5rem;
-        }
+        .print-page { max-height: none !important; page-break-inside: avoid; }
+        .print-section { margin-bottom: 1rem; }
+        .print-header { border-bottom: 2px solid #ea580c; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .print-amount { font-size: 16pt; font-weight: bold; }
+        .print-footer { border-top: 2px solid #ea580c; padding-top: 1rem; margin-top: 1.5rem; }
       }
     `,
-  });
+  };
+
+  const handlePrint = useReactToPrint(printOptions);
 
   const handleEmailReceipt = useCallback(() => {
     // Open email dialog to get email address
@@ -156,6 +171,10 @@ export default function ReceiptModal({
     setEmailState((prev) => ({ ...prev, isSending: true, error: "" }));
 
     try {
+      const donationTypeDisplay = getDisplayDonationType(
+        receipt.donationType as string,
+        receipt.donationTypeLabel
+      );
       const response = await fetch("/api/send-receipt-email", {
         method: "POST",
         headers: {
@@ -169,13 +188,15 @@ export default function ReceiptModal({
             donorId: receipt.donorId,
             amount: receipt.amount,
             createdAt: receipt.createdAt,
-            donationType: receipt.donationType,
+            // send friendly label for email, keep raw value if backend needs it
+            donationType: donationTypeDisplay,
+            donationTypeRaw: receipt.donationType,
             paymentMode: receipt.paymentMode,
             dateOfDonation: receipt.dateOfDonation,
             notes: receipt.notes,
             createdBy: receipt.createdBy,
           },
-          includeAttachment: true, // Enable PDF attachment
+          includeAttachment: true, // Enable PDF attachment (backend must support)
         }),
       });
 
@@ -210,6 +231,13 @@ export default function ReceiptModal({
   }, [emailState.address, receipt, onMarkEmailed]);
 
   const handleDownloadPDF = () => {
+    const donationTypeLabel = getDisplayDonationType(
+      receipt.donationType as string,
+      receipt.donationTypeLabel
+    );
+    // safe createdAt/time values
+    const createdAtDate = toDate(receipt.createdAt);
+    const createdTime = createdAtDate ? createdAtDate.toLocaleTimeString() : "";
     // Generate supermarket-style receipt that matches the print design
     const htmlContent = `
       <html>
@@ -336,13 +364,11 @@ export default function ReceiptModal({
             <div class="section">
               <div class="row">
                 <span class="label">Date:</span>
-                <span class="value">${formatDate(receipt.createdAt)}</span>
+                <span class="value">${safeFormatDate(receipt.createdAt)}</span>
               </div>
               <div class="row">
                 <span class="label">Time:</span>
-                <span class="value">${new Date(
-                  receipt.createdAt
-                ).toLocaleTimeString()}</span>
+                <span class="value">${createdTime}</span>
               </div>
             </div>
 
@@ -364,7 +390,7 @@ export default function ReceiptModal({
               <div class="divider">--- TRANSACTION DETAILS ---</div>
               <div class="row">
                 <span class="label">Type:</span>
-                <span class="value">${receipt.donationType}</span>
+                <span class="value">${donationTypeLabel}</span>
               </div>
               <div class="row">
                 <span class="label">Payment:</span>
@@ -372,11 +398,9 @@ export default function ReceiptModal({
               </div>
               <div class="row">
                 <span class="label">Donation Date:</span>
-                <span class="value">${
+                <span class="value">${safeFormatDate(
                   receipt.dateOfDonation
-                    ? formatDate(receipt.dateOfDonation)
-                    : "N/A"
-                }</span>
+                )}</span>
               </div>
             </div>
 
@@ -447,7 +471,11 @@ export default function ReceiptModal({
   // Calculate donor totals from history - memoized to prevent recalculation on every render
   const { totalDonations, donationCount } = useMemo(() => {
     const total = donorHistory.reduce(
-      (sum, donation) => sum + (donation.amount || 0),
+      (sum, donation) =>
+        sum +
+        (typeof donation.amount === "string"
+          ? parseFloat(donation.amount || "0")
+          : donation.amount || 0),
       0
     );
     return {
@@ -455,6 +483,16 @@ export default function ReceiptModal({
       donationCount: donorHistory.length,
     };
   }, [donorHistory]);
+
+  // display the period in the modal if provided
+  const renderDonationPeriod = () => {
+    if (receipt.startDate && receipt.endDate) {
+      return `${safeFormatDate(receipt.startDate)} — ${safeFormatDate(
+        receipt.endDate
+      )}`;
+    }
+    return null;
+  };
 
   return (
     <>
@@ -470,7 +508,7 @@ export default function ReceiptModal({
                 </DialogDescription>
               </div>
               <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="w-4 h-4" />
+                <lucideReact.X className="w-4 h-4" />
               </Button>
             </div>
           </DialogHeader>
@@ -479,7 +517,7 @@ export default function ReceiptModal({
             <TabsList className="grid w-full grid-cols-2 no-print">
               <TabsTrigger value="receipt">Receipt Details</TabsTrigger>
               <TabsTrigger value="history">
-                <History className="w-4 h-4 mr-2" />
+                <lucideReact.History className="w-4 h-4 mr-2" />
                 Donor History ({donationCount})
               </TabsTrigger>
             </TabsList>
@@ -491,7 +529,7 @@ export default function ReceiptModal({
                   onClick={handlePrint}
                   className="flex items-center justify-center h-12 font-medium text-white transition-all duration-200 bg-orange-600 shadow-sm hover:bg-orange-700 hover:shadow-md"
                 >
-                  <Printer className="w-4 h-4 mr-2" />
+                  <lucideReact.Printer className="w-4 h-4 mr-2" />
                   Print Receipt
                 </Button>
                 <Button
@@ -499,7 +537,7 @@ export default function ReceiptModal({
                   onClick={handleEmailReceipt}
                   className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
                 >
-                  <Mail className="w-4 h-4 mr-2" />
+                  <lucideReact.Mail className="w-4 h-4 mr-2" />
                   Send Email
                 </Button>
                 <Button
@@ -507,7 +545,7 @@ export default function ReceiptModal({
                   onClick={handleDownloadPDF}
                   className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <lucideReact.Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>
                 <Button
@@ -517,11 +555,11 @@ export default function ReceiptModal({
                   className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUpdating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : receipt.isPrinted ? (
-                    <Check className="w-4 h-4 mr-2" />
+                    <lucideReact.Check className="w-4 h-4 mr-2" />
                   ) : (
-                    <Printer className="w-4 h-4 mr-2" />
+                    <lucideReact.Printer className="w-4 h-4 mr-2" />
                   )}
                   {receipt.isPrinted ? "Printed" : "Mark Printed"}
                 </Button>
@@ -556,9 +594,9 @@ export default function ReceiptModal({
                     className="ml-4 text-red-600 transition-colors duration-200 border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-50"
                   >
                     {isUpdating ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
-                      <Trash2 className="w-4 h-4 mr-2" />
+                      <lucideReact.Trash2 className="w-4 h-4 mr-2" />
                     )}
                     Delete Receipt
                   </Button>
@@ -573,7 +611,7 @@ export default function ReceiptModal({
                 {/* Professional Header with Orange Theme */}
                 <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
                   <div className="flex items-center justify-center mb-3 space-x-3">
-                    <Heart className="w-8 h-8 text-orange-500" />
+                    <lucideReact.Heart className="w-8 h-8 text-orange-500" />
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900">
                         Ashram Donation Receipt
@@ -588,7 +626,7 @@ export default function ReceiptModal({
                       Receipt #{receipt.receiptNumber}
                     </p>
                     <p className="mt-1 text-sm text-orange-600">
-                      Issued on {formatDate(receipt.createdAt)}
+                      Issued on {safeFormatDate(receipt.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -599,7 +637,7 @@ export default function ReceiptModal({
                   <div className="space-y-3">
                     <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                       <h3 className="flex items-center mb-3 text-base font-bold text-gray-900">
-                        <User className="w-4 h-4 mr-2 text-orange-600" />
+                        <lucideReact.User className="w-4 h-4 mr-2 text-orange-600" />
                         Donor Information
                       </h3>
                       <div className="space-y-2 text-sm">
@@ -636,7 +674,7 @@ export default function ReceiptModal({
                           </span>
                           <span className="font-semibold text-gray-900">
                             {receipt.dateOfDonation
-                              ? formatDate(receipt.dateOfDonation)
+                              ? safeFormatDate(receipt.dateOfDonation)
                               : "N/A"}
                           </span>
                         </div>
@@ -666,10 +704,28 @@ export default function ReceiptModal({
                           Donation Type
                         </label>
                         <p className="text-sm font-bold text-orange-700">
-                          {receipt.donationType}
+                          {getDisplayDonationType(
+                            receipt.donationType as string,
+                            receipt.donationTypeLabel
+                          )}
                         </p>
                       </div>
                     </div>
+
+                    {/* show donation period when present */}
+                    {receipt.startDate && receipt.endDate && (
+                      <div className="text-center">
+                        <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                          <label className="block mb-1 text-xs font-medium text-gray-600">
+                            Donation Period
+                          </label>
+                          <p className="text-sm">
+                            {safeFormatDate(receipt.startDate)} —{" "}
+                            {safeFormatDate(receipt.endDate)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="text-center">
                       <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
@@ -677,7 +733,7 @@ export default function ReceiptModal({
                           Payment Mode
                         </label>
                         <div className="flex items-center justify-center space-x-1">
-                          <CreditCard className="w-3 h-3 text-gray-500" />
+                          <lucideReact.CreditCard className="w-3 h-3 text-gray-500" />
                           <span className="text-sm font-bold text-blue-700">
                             {receipt.paymentMode}
                           </span>
@@ -787,7 +843,7 @@ export default function ReceiptModal({
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  Last updated: {formatDateTime(receipt.createdAt)}
+                  Last updated: {safeFormatDateTime(receipt.createdAt)}
                 </div>
               </div>
             </TabsContent>
@@ -831,14 +887,14 @@ export default function ReceiptModal({
               <Card className="border-orange-200">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg text-gray-900">
-                    <History className="w-5 h-5 mr-2 text-orange-600" />
+                    <lucideReact.History className="w-5 h-5 mr-2 text-orange-600" />
                     Donation History
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loadingHistory ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
+                      <lucideReact.Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
                       <span className="ml-2 text-gray-600">
                         Loading history...
                       </span>
@@ -852,14 +908,12 @@ export default function ReceiptModal({
                         >
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">
-                              {donation.donation_type}
+                              {getDisplayDonationType(donation.donation_type)}
                             </p>
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
-                              <Calendar className="w-3 h-3" />
+                              <lucideReact.Calendar className="w-3 h-3" />
                               <span>
-                                {formatDate(
-                                  new Date(donation.date_of_donation)
-                                )}
+                                {safeFormatDate(donation.date_of_donation)}
                               </span>
                             </div>
                             {donation.notes && (
@@ -873,7 +927,7 @@ export default function ReceiptModal({
                               {formatCurrency(donation.amount)}
                             </p>
                             <div className="flex items-center justify-end space-x-1 text-xs text-gray-500">
-                              <CreditCard className="w-3 h-3" />
+                              <lucideReact.CreditCard className="w-3 h-3" />
                               <span>{donation.payment_mode}</span>
                             </div>
                           </div>
@@ -882,7 +936,7 @@ export default function ReceiptModal({
                     </div>
                   ) : (
                     <div className="py-8 text-center">
-                      <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <lucideReact.History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p className="text-gray-500">
                         No donation history found for this donor.
                       </p>
@@ -905,7 +959,7 @@ export default function ReceiptModal({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center text-gray-900">
-              <Mail className="w-5 h-5 mr-2 text-orange-600" />
+              <lucideReact.Mail className="w-5 h-5 mr-2 text-orange-600" />
               Send Receipt via Email
             </DialogTitle>
             <DialogDescription>
@@ -946,7 +1000,7 @@ export default function ReceiptModal({
               />
               {emailState.error && (
                 <p className="flex items-center text-sm text-red-600">
-                  <X className="w-3 h-3 mr-1" />
+                  <lucideReact.X className="w-3 h-3 mr-1" />
                   {emailState.error}
                 </p>
               )}
@@ -981,12 +1035,12 @@ export default function ReceiptModal({
             >
               {emailState.isSending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" />
+                  <lucideReact.Send className="w-4 h-4 mr-2" />
                   Send Email
                 </>
               )}
@@ -1000,13 +1054,13 @@ export default function ReceiptModal({
         <div className="fixed z-50 duration-300 top-4 right-4 animate-in slide-in-from-top-2">
           <div className="max-w-md px-4 py-3 text-orange-800 border border-l-4 border-orange-200 rounded shadow-lg bg-orange-50 border-l-orange-500">
             <div className="flex items-center">
-              <Check className="w-5 h-5 mr-2 text-orange-600" />
+              <lucideReact.Check className="w-5 h-5 mr-2 text-orange-600" />
               <p className="font-medium">{toastMessage}</p>
               <button
                 onClick={() => setShowToast(false)}
                 className="ml-4 text-orange-600 transition-colors duration-200 hover:text-orange-800"
               >
-                <X className="w-4 h-4" />
+                <lucideReact.X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1014,4 +1068,26 @@ export default function ReceiptModal({
       )}
     </>
   );
+}
+
+// --- ADDED: UI mapping and chooser so FE shows Nepali while BE keeps English keys ---
+const DONATION_TYPE_LABELS: Record<string, string> = {
+  "General Donation": "अक्षयकोष",
+  "Seva Donation": "मुठ्ठी दान",
+  Annadanam: "गुरुकुलमा",
+  "Vastra Danam": "जिन्सी सामग्री",
+  "Building Fund": "भण्डारा",
+  "Festival Sponsorship": "विशेष पूजा",
+  "Puja Sponsorship": "आजीवन सदस्यता",
+};
+
+// prefer an explicit label, then mapping, then fallback humanized english
+function getDisplayDonationType(
+  type?: string | null,
+  explicitLabel?: string | null
+) {
+  if (explicitLabel && String(explicitLabel).trim()) return explicitLabel;
+  if (type && DONATION_TYPE_LABELS[String(type)])
+    return DONATION_TYPE_LABELS[String(type)];
+  return humanizeDonationType(type ?? undefined);
 }
