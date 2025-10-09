@@ -614,7 +614,7 @@ export default function ReceiptModal({
                     <lucideReact.Heart className="w-8 h-8 text-orange-500" />
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900">
-                        Ashram Donation Receipt
+                        जगतगुरु आश्रम Receipt
                       </h1>
                       <p className="text-base font-medium text-orange-600">
                         Official Tax Receipt
