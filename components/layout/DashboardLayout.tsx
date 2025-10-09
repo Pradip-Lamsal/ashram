@@ -144,19 +144,31 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <Heart className="w-8 h-8 text-orange-500" />
-            <h1 className="text-xl font-bold text-gray-900">जगतगुरु आश्रम</h1>
+        <div className="relative px-4 py-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center flex-1 min-w-0 space-x-3">
+              <div className="flex-shrink-0 p-2 bg-white rounded-full shadow-sm">
+                <Heart className="w-6 h-6 text-orange-500 fill-current" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-bold leading-relaxed text-orange-900">
+                  श्री जगतगुरु आश्रम एवं जगत्-नारायाण मन्दिर व्यवस्थापन तथा
+                  सञ्चालन समिति
+                </h1>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0 ml-3 lg:hidden hover:bg-orange-200/50"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="w-5 h-5 text-orange-700" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="w-6 h-6" />
-          </Button>
+
+          {/* Decorative element */}
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-300 via-orange-500 to-orange-300"></div>
         </div>
 
         <nav className="px-3 mt-6">
@@ -224,18 +236,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Top navigation */}
-        <header className="bg-white border-b border-gray-200 shadow-sm">
+        {/* Top navigation - Mobile only */}
+        <header className="bg-white border-b border-gray-200 shadow-sm lg:hidden">
           <div className="flex items-center justify-between h-16 px-6">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
             </Button>
-            <div className="lg:hidden">
+            <div>
               <Button
                 variant="ghost"
                 size="icon"
