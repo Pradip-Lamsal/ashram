@@ -322,7 +322,7 @@ export const generateReceiptPDF = async (
         <div class="receipt-container">
           <!-- Header -->
           <div class="header">
-            <h1>🏛️ Ashram Donation Receipt</h1>
+            <h1>🏛️ जगतगुरु आश्रम Donation Receipt</h1>
             <div class="subtitle">Official Tax Receipt</div>
             <div class="receipt-number">
               <div class="number">Receipt #${receipt.receiptNumber}</div>

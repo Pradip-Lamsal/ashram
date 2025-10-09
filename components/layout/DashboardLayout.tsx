@@ -147,7 +147,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <Heart className="w-8 h-8 text-orange-500" />
-            <h1 className="text-xl font-bold text-gray-900">Ashram</h1>
+            <h1 className="text-xl font-bold text-gray-900">जगतगुरु आश्रम</h1>
           </div>
           <Button
             variant="ghost"

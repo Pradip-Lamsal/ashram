@@ -355,7 +355,7 @@ export default function ReceiptModal({
           <div class="receipt-container">
             <!-- Header -->
             <div class="header">
-              <div class="org-name">🏛️ ASHRAM</div>
+              <div class="org-name">🏛️ जगतगुरु आश्रम</div>
               <div class="receipt-title">DONATION RECEIPT</div>
               <div class="receipt-number">#${receipt.receiptNumber}</div>
             </div>
