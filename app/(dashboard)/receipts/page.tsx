@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getDonationTypeLabel } from "@/lib/donation-labels";
 import {
   donationsService,
   donorsService,
@@ -501,7 +502,9 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">
-                        {receipt.donation?.donation_type || "N/A"}
+                        {receipt.donation?.donation_type
+                          ? getDonationTypeLabel(receipt.donation.donation_type)
+                          : "N/A"}
                       </span>
                     </TableCell>
                     <TableCell>

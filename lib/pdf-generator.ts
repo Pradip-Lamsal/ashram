@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import { getDonationTypeLabel } from "./donation-labels";
 
 export interface ReceiptData {
   receiptNumber: string;
@@ -371,7 +372,9 @@ export const generateReceiptPDF = async (
             <div class="donation-grid">
               <div class="donation-item">
                 <div class="label">Donation Type</div>
-                <div class="value">${receipt.donationType}</div>
+                <div class="value">${getDonationTypeLabel(
+                  receipt.donationType
+                )}</div>
               </div>
               <div class="donation-item">
                 <div class="label">Payment Mode</div>

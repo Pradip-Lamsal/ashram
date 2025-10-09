@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getDonationTypeLabel } from "@/lib/donation-labels";
 import { donorsService, receiptsService } from "@/lib/supabase-services";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { type DonationType, type MembershipType } from "@/types";
@@ -464,7 +465,9 @@ export default function DonorsPage() {
                         </span>
                       </TableCell>
                       <TableCell className="min-w-[120px] hidden lg:table-cell">
-                        <span className="text-sm">{donor.donation_type}</span>
+                        <span className="text-sm">
+                          {getDonationTypeLabel(donor.donation_type)}
+                        </span>
                       </TableCell>
                       <TableCell className="min-w-[140px]">
                         <p className="text-sm font-medium sm:text-base">

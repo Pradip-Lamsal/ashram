@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DonationType, Donor, PaymentMode } from "@/types";
-import React, { useState } from "react";
+import { Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 interface ReceiptFormData {
   donorId: string;
@@ -99,6 +100,20 @@ export default function ReceiptForm({
   const [errors, setErrors] = useState<Partial<ReceiptFormError>>({});
   const [showQROption, setShowQROption] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [donorSearchTerm, setDonorSearchTerm] = useState("");
+
+  // Filter donors based on search term
+  const filteredDonors = useMemo(() => {
+    if (!donorSearchTerm.trim()) return donors;
+
+    const searchLower = donorSearchTerm.toLowerCase();
+    return donors.filter(
+      (donor) =>
+        donor.name.toLowerCase().includes(searchLower) ||
+        donor.phone?.toLowerCase().includes(searchLower) ||
+        donor.email?.toLowerCase().includes(searchLower)
+    );
+  }, [donors, donorSearchTerm]);
 
   const validateForm = () => {
     const newErrors: Partial<ReceiptFormError> = {};
@@ -214,8 +229,20 @@ export default function ReceiptForm({
             </div>
 
             {/* Donor Selection */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="donor">Select Donor *</Label>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by name, phone, or email..."
+                  value={donorSearchTerm}
+                  onChange={(e) => setDonorSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
               <Select
                 value={formData.donorId}
                 onValueChange={handleDonorChange}
@@ -225,17 +252,26 @@ export default function ReceiptForm({
                 >
                   <SelectValue placeholder="Choose a donor from the database" />
                 </SelectTrigger>
-                <SelectContent>
-                  {donors.map((donor) => (
-                    <SelectItem key={donor.id} value={donor.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{donor.name}</span>
-                        <span className="text-sm text-gray-500">
-                          {donor.phone || "No phone"}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                <SelectContent className="max-h-[200px]">
+                  {filteredDonors.length > 0 ? (
+                    filteredDonors.map((donor) => (
+                      <SelectItem key={donor.id} value={donor.id}>
+                        <div className="flex flex-col py-1">
+                          <span className="font-medium">{donor.name}</span>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            {donor.phone && <span>📞 {donor.phone}</span>}
+                            {donor.email && <span>✉️ {donor.email}</span>}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-sm text-gray-500">
+                      {donorSearchTerm
+                        ? "No donors found matching your search"
+                        : "No donors available"}
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
               {errors.donorId && (
