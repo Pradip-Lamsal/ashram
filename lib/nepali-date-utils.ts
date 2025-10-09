@@ -181,6 +181,28 @@ function formatEnglishDateTime(date: Date): string {
 }
 
 /**
+ * Format donation period for Seva Donation (Mutthi Dan)
+ */
+export function formatDonationPeriod(donation: {
+  donation_type: string;
+  start_date?: string;
+  end_date?: string;
+}): string | null {
+  if (
+    donation.donation_type === "Seva Donation" &&
+    donation.start_date &&
+    donation.end_date
+  ) {
+    const startNepali = englishToNepaliDateFormatted(
+      new Date(donation.start_date)
+    );
+    const endNepali = englishToNepaliDateFormatted(new Date(donation.end_date));
+    return `अवधि: ${startNepali} देखि ${endNepali} सम्म`;
+  }
+  return null;
+}
+
+/**
  * Get current date in format suitable for Nepali date picker
  */
 export function getCurrentNepaliDateString(): string {

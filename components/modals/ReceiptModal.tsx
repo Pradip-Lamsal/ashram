@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDonationPeriod } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { DonationType, PaymentMode } from "@/types";
 import * as lucideReact from "lucide-react";
@@ -484,16 +485,6 @@ export default function ReceiptModal({
     };
   }, [donorHistory]);
 
-  // display the period in the modal if provided
-  const renderDonationPeriod = () => {
-    if (receipt.startDate && receipt.endDate) {
-      return `${safeFormatDate(receipt.startDate)} — ${safeFormatDate(
-        receipt.endDate
-      )}`;
-    }
-    return null;
-  };
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -916,6 +907,14 @@ export default function ReceiptModal({
                                 {safeFormatDate(donation.date_of_donation)}
                               </span>
                             </div>
+                            {formatDonationPeriod(donation) && (
+                              <div className="flex items-center space-x-2 mt-1 text-xs text-emerald-600">
+                                <lucideReact.Clock className="w-3 h-3" />
+                                <span className="font-medium">
+                                  {formatDonationPeriod(donation)}
+                                </span>
+                              </div>
+                            )}
                             {donation.notes && (
                               <p className="mt-1 text-xs italic text-gray-500">
                                 {donation.notes}

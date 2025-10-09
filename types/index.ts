@@ -23,6 +23,8 @@ export interface Donation {
   paymentMode: PaymentMode;
   dateOfDonation: Date;
   notes?: string | null;
+  startDate?: Date | null; // For Seva Donation period start
+  endDate?: Date | null; // For Seva Donation period end
   createdBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +49,8 @@ export interface Receipt {
   createdBy?: string;
   dateOfDonation?: Date;
   notes?: string;
+  startDate?: Date | null; // For Seva Donation period start
+  endDate?: Date | null; // For Seva Donation period end
 }
 
 export interface SMSEvent {

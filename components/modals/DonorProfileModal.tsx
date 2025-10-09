@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDonationTypeLabel } from "@/lib/donation-labels";
+import { formatDonationPeriod } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Donor } from "@/types";
 import {
@@ -252,6 +253,11 @@ export default function DonorProfileModal({
                           <p className="text-xs text-gray-500">
                             {formatDate(new Date(donation.date_of_donation))}
                           </p>
+                          {formatDonationPeriod(donation) && (
+                            <p className="text-xs text-emerald-600 font-medium">
+                              {formatDonationPeriod(donation)}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
