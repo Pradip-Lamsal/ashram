@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import { getDonationTypeLabel } from "./donation-labels";
+import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
 export interface ReceiptData {
   receiptNumber: string;
@@ -19,11 +20,7 @@ export const generateReceiptPDF = async (
 ): Promise<Buffer> => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return englishToNepaliDateFormatted(new Date(dateString));
   };
 
   const formatCurrency = (amount: number) => {

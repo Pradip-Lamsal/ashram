@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { englishToNepaliDateTime } from "@/lib/nepali-date-utils";
 import {
   CheckCircle,
   Clock,
@@ -320,13 +321,7 @@ export default function AdminPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return englishToNepaliDateTime(new Date(dateString));
   };
 
   if (loading) {
