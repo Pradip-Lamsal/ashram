@@ -10,8 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDonationTypeLabel } from "@/lib/donation-labels";
-import { formatDonationDate } from "@/lib/nepali-date-utils";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  englishToNepaliDateFormatted,
+  formatDonationDate,
+} from "@/lib/nepali-date-utils";
+import { formatCurrency } from "@/lib/utils";
 import { Donor } from "@/types";
 import {
   Calendar,
@@ -84,7 +87,9 @@ export default function DonorProfileModal({
                   </Badge>
                   <span className="text-xs text-gray-500 sm:text-sm">
                     Joined{" "}
-                    {formatDate(new Date(donor.createdAt || "2024-01-01"))}
+                    {englishToNepaliDateFormatted(
+                      new Date(donor.createdAt || "2024-01-01")
+                    )}
                   </span>
                 </div>
               </div>
@@ -217,7 +222,9 @@ export default function DonorProfileModal({
                   </p>
                   <p className="text-base font-bold text-violet-800 sm:text-lg md:text-xl">
                     {donorHistory.length > 0
-                      ? formatDate(new Date(donorHistory[0].date_of_donation))
+                      ? englishToNepaliDateFormatted(
+                          new Date(donorHistory[0].date_of_donation)
+                        )
                       : "No donations"}
                   </p>
                 </div>

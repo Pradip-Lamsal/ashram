@@ -30,8 +30,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getDonationTypeLabel } from "@/lib/donation-labels";
+import { englishToNepaliDateFormatted } from "@/lib/nepali-date-utils";
 import { donorsService, receiptsService } from "@/lib/supabase-services";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { type DonationType, type MembershipType } from "@/types";
 import { Calendar, Edit, Eye, Mail, Phone, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -419,7 +420,9 @@ export default function DonorsPage() {
                           </p>
                           <p className="text-xs text-gray-500 sm:text-sm">
                             {donor.date_of_birth
-                              ? formatDate(new Date(donor.date_of_birth))
+                              ? englishToNepaliDateFormatted(
+                                  new Date(donor.date_of_birth)
+                                )
                               : "N/A"}
                           </p>
                           {/* Show contact info on mobile when Contact column is hidden */}
@@ -478,7 +481,9 @@ export default function DonorsPage() {
                         {donor.last_donation_date ? (
                           <div className="flex items-center text-sm">
                             <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                            {formatDate(new Date(donor.last_donation_date))}
+                            {englishToNepaliDateFormatted(
+                              new Date(donor.last_donation_date)
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400">No donations</span>
