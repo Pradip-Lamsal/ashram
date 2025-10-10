@@ -30,7 +30,7 @@ const donationTypes: DonationType[] = [
 const DONATION_TYPE_LABELS: Record<string, string> = {
   "General Donation": "अक्षयकोष",
   "Seva Donation": "मुठ्ठी दान",
-  Annadanam: "गुरुकुलमा",
+  Annadanam: "गुरुकुलम",
   "Vastra Danam": "जिन्सी सामग्री",
   "Building Fund": "भण्डारा",
   "Festival Sponsorship": "विशेष पूजा",
