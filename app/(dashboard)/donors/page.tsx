@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -34,7 +41,16 @@ import { englishToNepaliDateFormatted } from "@/lib/nepali-date-utils";
 import { donorsService, receiptsService } from "@/lib/supabase-services";
 import { formatCurrency } from "@/lib/utils";
 import { type DonationType, type MembershipType } from "@/types";
-import { Calendar, Edit, Eye, Mail, Phone, Plus, Search } from "lucide-react";
+import {
+  Calendar,
+  Edit,
+  Eye,
+  Filter,
+  Mail,
+  Phone,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Donor {
@@ -59,6 +75,7 @@ export default function DonorsPage() {
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [donationTypeFilter, setDonationTypeFilter] = useState<string>("all");
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -94,12 +111,18 @@ export default function DonorsPage() {
     }
   }, [appUser]);
 
-  const filteredDonors = donors.filter(
-    (donor) =>
+  const filteredDonors = donors.filter((donor) => {
+    const matchesSearch =
       donor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       donor.phone?.includes(searchTerm) ||
-      donor.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      donor.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDonationType =
+      donationTypeFilter === "all" ||
+      donor.donation_type === donationTypeFilter;
+
+    return matchesSearch && matchesDonationType;
+  });
 
   const handleViewProfile = async (donor: Donor) => {
     setSelectedDonor(donor);
@@ -375,7 +398,7 @@ export default function DonorsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center mb-6 space-x-4">
+          <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center">
             <div className="relative flex-1 w-full">
               <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
@@ -384,6 +407,43 @@ export default function DonorsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10"
               />
+            </div>
+            <div className="w-full sm:w-48">
+              <div className="relative">
+                <Filter className="absolute z-10 w-4 h-4 text-gray-400 left-3 top-3" />
+                <Select
+                  value={donationTypeFilter}
+                  onValueChange={setDonationTypeFilter}
+                >
+                  <SelectTrigger className="pl-10">
+                    <SelectValue placeholder="Filter by donation type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Donation Types</SelectItem>
+                    <SelectItem value="General Donation">
+                      {getDonationTypeLabel("General Donation")}
+                    </SelectItem>
+                    <SelectItem value="Seva Donation">
+                      {getDonationTypeLabel("Seva Donation")}
+                    </SelectItem>
+                    <SelectItem value="Annadanam">
+                      {getDonationTypeLabel("Annadanam")}
+                    </SelectItem>
+                    <SelectItem value="Vastra Danam">
+                      {getDonationTypeLabel("Vastra Danam")}
+                    </SelectItem>
+                    <SelectItem value="Building Fund">
+                      {getDonationTypeLabel("Building Fund")}
+                    </SelectItem>
+                    <SelectItem value="Festival Sponsorship">
+                      {getDonationTypeLabel("Festival Sponsorship")}
+                    </SelectItem>
+                    <SelectItem value="Puja Sponsorship">
+                      {getDonationTypeLabel("Puja Sponsorship")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -521,7 +581,9 @@ export default function DonorsPage() {
               <p className="text-gray-500">
                 {donors.length === 0
                   ? "No donors yet. Add your first donor to get started!"
-                  : "No donors found matching your search criteria."}
+                  : searchTerm || donationTypeFilter !== "all"
+                  ? "No donors found matching your search criteria or filter."
+                  : "No donors found."}
               </p>
             </div>
           )}

@@ -41,7 +41,6 @@ import { DonationType, Donor, PaymentMode } from "@/types";
 import {
   AlertCircle,
   Eye,
-  Filter,
   Loader2,
   Plus,
   Receipt as ReceiptIcon,
@@ -470,10 +469,6 @@ export default function ReceiptsPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
           </div>
 
           {/* Receipts Table */}
