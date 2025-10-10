@@ -148,6 +148,10 @@ export default function ReceiptsPage() {
     amount: number;
     paymentMode: PaymentMode;
     dateOfDonation: Date;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    startDateNepali?: string;
+    endDateNepali?: string;
     notes?: string;
   }) => {
     if (!appUser?.id) {
@@ -158,6 +162,9 @@ export default function ReceiptsPage() {
     try {
       setCreatingReceipt(true);
       setError(null);
+
+      // Debug: Log the received data
+      console.log("Receipt data received:", receiptData);
 
       // Validate input
       if (
@@ -175,6 +182,10 @@ export default function ReceiptsPage() {
         amount: receiptData.amount,
         paymentMode: receiptData.paymentMode,
         dateOfDonation: receiptData.dateOfDonation,
+        startDate: receiptData.startDate,
+        endDate: receiptData.endDate,
+        startDateNepali: receiptData.startDateNepali,
+        endDateNepali: receiptData.endDateNepali,
         notes: receiptData.notes,
         createdBy: appUser.id,
       });
@@ -594,7 +605,7 @@ export default function ReceiptsPage() {
           receipt={{
             id: selectedReceipt.id,
             receiptNumber: selectedReceipt.receipt_number,
-            issuedAt: new Date(selectedReceipt.issued_at),
+            createdAt: new Date(selectedReceipt.issued_at),
             donorName: selectedReceipt.donation?.donor?.name || "Unknown",
             donationType:
               (selectedReceipt.donation?.donation_type as DonationType) ||
@@ -609,10 +620,29 @@ export default function ReceiptsPage() {
             notes: selectedReceipt.donation?.notes,
             isPrinted: selectedReceipt.is_printed,
             isEmailSent: selectedReceipt.is_email_sent,
-            createdAt: new Date(selectedReceipt.created_at),
             donationId: selectedReceipt.id,
             donorId: selectedReceipt.donation?.donor_id || "",
             createdBy: "System",
+            startDate: (selectedReceipt.donation as Record<string, unknown>)
+              ?.start_date
+              ? new Date(
+                  (selectedReceipt.donation as Record<string, unknown>)
+                    .start_date as string
+                )
+              : null,
+            endDate: (selectedReceipt.donation as Record<string, unknown>)
+              ?.end_date
+              ? new Date(
+                  (selectedReceipt.donation as Record<string, unknown>)
+                    .end_date as string
+                )
+              : null,
+            startDateNepali:
+              ((selectedReceipt.donation as Record<string, unknown>)
+                ?.start_date_nepali as string) || undefined,
+            endDateNepali:
+              ((selectedReceipt.donation as Record<string, unknown>)
+                ?.end_date_nepali as string) || undefined,
           }}
           donorHistory={donorHistory}
           loadingHistory={loadingHistory}

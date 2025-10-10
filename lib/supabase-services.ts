@@ -226,8 +226,11 @@ export const donationsService = {
   },
 
   async create(donation: Omit<Donation, "id" | "createdAt" | "updatedAt">) {
+    // Debug: Log the received donation data
+    console.log("Creating donation with data:", donation);
+
     // Transform camelCase to snake_case for database
-    const dbDonation = {
+    const dbDonation: Record<string, string | number | null> = {
       donor_id: donation.donorId,
       donation_type: donation.donationType,
       amount: donation.amount,
@@ -235,26 +238,83 @@ export const donationsService = {
       date_of_donation: donation.dateOfDonation
         ? new Date(donation.dateOfDonation).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0],
+      start_date: donation.startDate
+        ? new Date(donation.startDate).toISOString().split("T")[0]
+        : null,
+      end_date: donation.endDate
+        ? new Date(donation.endDate).toISOString().split("T")[0]
+        : null,
       notes: donation.notes || null,
       created_by: donation.createdBy || null,
     };
 
-    const { data, error } = await supabase
-      .from("donations")
-      .insert([dbDonation])
-      .select()
-      .single();
+    // Add Nepali date fields if they exist (for backwards compatibility)
+    if (donation.startDateNepali || donation.endDateNepali) {
+      dbDonation.start_date_nepali = donation.startDateNepali || null;
+      dbDonation.end_date_nepali = donation.endDateNepali || null;
+    }
 
-    if (error) throw error;
+    // Debug: Log the database payload
+    console.log("Database payload:", dbDonation);
 
-    // Update donor's total donations and last donation date
-    await donorsService.updateDonationStats(
-      donation.donorId,
-      donation.amount,
-      new Date()
-    );
+    try {
+      const { data, error } = await supabase
+        .from("donations")
+        .insert([dbDonation])
+        .select()
+        .single();
 
-    return data;
+      if (error) {
+        console.error("Supabase error details:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        console.error("Error details:", error.details);
+        console.error("Error hint:", error.hint);
+
+        // If the error is about missing columns, try without Nepali date fields
+        if (
+          error.message?.includes("column") &&
+          error.message?.includes("nepali")
+        ) {
+          console.log(
+            "Nepali date columns not found, retrying without them..."
+          );
+          const dbDonationFallback = { ...dbDonation };
+          delete dbDonationFallback.start_date_nepali;
+          delete dbDonationFallback.end_date_nepali;
+
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("donations")
+            .insert([dbDonationFallback])
+            .select()
+            .single();
+
+          if (fallbackError) {
+            throw new Error(
+              `Database error: ${fallbackError.message} (Code: ${fallbackError.code})`
+            );
+          }
+
+          console.warn(
+            "Created donation without Nepali date fields. Please run the database migration."
+          );
+          return fallbackData;
+        }
+
+        throw new Error(
+          `Database error: ${error.message} (Code: ${error.code})`
+        );
+      }
+
+      return data;
+    } finally {
+      // Update donor's total donations and last donation date
+      await donorsService.updateDonationStats(
+        donation.donorId,
+        donation.amount,
+        new Date()
+      );
+    }
   },
 
   async getByDonor(donorId: string) {

@@ -10,6 +10,8 @@ export interface Receipt {
   donation_type?: string;
   start_date?: string;
   end_date?: string;
+  start_date_nepali?: string;
+  end_date_nepali?: string;
   notes?: string;
 }
 
@@ -26,24 +28,30 @@ const createTransporter = () => {
 
 // Helper function to format donation date for email
 const formatEmailDonationDate = (receipt: Receipt): string => {
-  if (
-    receipt.donation_type === "Seva Donation" &&
-    receipt.start_date &&
-    receipt.end_date
-  ) {
-    const startNepali = englishToNepaliDateFormatted(
-      new Date(receipt.start_date)
-    );
-    const endNepali = englishToNepaliDateFormatted(new Date(receipt.end_date));
-    return `${startNepali} देखि ${endNepali} सम्म`;
+  if (receipt.donation_type === "Seva Donation") {
+    // If we have Nepali date strings, use them directly (more accurate)
+    if (receipt.start_date_nepali && receipt.end_date_nepali) {
+      return `${receipt.start_date_nepali} देखि ${receipt.end_date_nepali} सम्म`;
+    }
+
+    // Fallback to converting English dates to Nepali
+    if (receipt.start_date && receipt.end_date) {
+      const startNepali = englishToNepaliDateFormatted(
+        new Date(receipt.start_date)
+      );
+      const endNepali = englishToNepaliDateFormatted(
+        new Date(receipt.end_date)
+      );
+      return `${startNepali} देखि ${endNepali} सम्म`;
+    }
   }
 
-  // For regular donations, show the donation date
-  return new Date(receipt.date).toLocaleDateString("en-IN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // For regular donations, show the donation date in Nepali format for consistency
+  if (receipt.date) {
+    return englishToNepaliDateFormatted(new Date(receipt.date));
+  }
+
+  return "N/A";
 };
 
 // Send receipt email to donor

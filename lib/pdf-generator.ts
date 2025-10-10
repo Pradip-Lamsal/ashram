@@ -2,7 +2,7 @@ import puppeteer from "puppeteer";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
-export interface ReceiptData {
+interface ReceiptData {
   receiptNumber: string;
   donorName: string;
   donorId?: string;
@@ -13,6 +13,8 @@ export interface ReceiptData {
   dateOfDonation?: string;
   startDate?: string;
   endDate?: string;
+  startDateNepali?: string;
+  endDateNepali?: string;
   notes?: string;
   createdBy?: string;
 }
@@ -30,16 +32,22 @@ export const generateReceiptPDF = async (
   };
 
   const formatDonationDateForPDF = () => {
-    if (
-      receipt.donationType === "Seva Donation" &&
-      receipt.startDate &&
-      receipt.endDate
-    ) {
-      const startNepali = englishToNepaliDateFormatted(
-        new Date(receipt.startDate)
-      );
-      const endNepali = englishToNepaliDateFormatted(new Date(receipt.endDate));
-      return `${startNepali} देखि ${endNepali} सम्म`;
+    if (receipt.donationType === "Seva Donation") {
+      // If we have Nepali date strings, use them directly (more accurate)
+      if (receipt.startDateNepali && receipt.endDateNepali) {
+        return `${receipt.startDateNepali} देखि ${receipt.endDateNepali} सम्म`;
+      }
+
+      // Fallback to converting English dates to Nepali
+      if (receipt.startDate && receipt.endDate) {
+        const startNepali = englishToNepaliDateFormatted(
+          new Date(receipt.startDate)
+        );
+        const endNepali = englishToNepaliDateFormatted(
+          new Date(receipt.endDate)
+        );
+        return `${startNepali} देखि ${endNepali} सम्म`;
+      }
     }
 
     // For regular donations, show the donation date

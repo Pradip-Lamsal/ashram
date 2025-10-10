@@ -1,5 +1,6 @@
 "use client";
 
+import { nepaliToEnglishDate } from "@/lib/nepali-date-utils";
 import dynamic from "next/dynamic";
 
 // Dynamic import to avoid SSR issues
@@ -22,7 +23,7 @@ const NepaliDatePickerLib = dynamic(
 
 interface NepaliDatePickerProps {
   value?: string;
-  onChange: (dateString: string, adDate?: Date) => void;
+  onChange: (nepaliDateString: string, approximateEnglishDate?: Date) => void;
   className?: string;
   disabled?: boolean;
   error?: boolean;
@@ -43,21 +44,29 @@ export function NepaliDatePicker({
     <NepaliDatePickerLib
       inputClassName={inputClassName}
       value={value}
-      onChange={(dateString: string) => {
-        // Convert Nepali date to English date for storage
+      onChange={(nepaliDateString: string) => {
+        // Now dateString is in Nepali format since valueLocale is "ne"
         try {
-          // For now, we'll pass the current date as English date
-          // The library should handle proper conversion
-          const currentDate = new Date();
-          onChange(dateString, currentDate);
+          const approximateEnglishDate = nepaliToEnglishDate(nepaliDateString);
+          if (approximateEnglishDate) {
+            console.log("Nepali date conversion:", {
+              input: nepaliDateString,
+              output: approximateEnglishDate.toDateString(),
+            });
+            onChange(nepaliDateString, approximateEnglishDate);
+          } else {
+            console.warn("Failed to convert Nepali date:", nepaliDateString);
+            // Use current date as fallback for storage, but keep Nepali string
+            onChange(nepaliDateString, new Date());
+          }
         } catch (error) {
           console.log("Date conversion error:", error);
-          onChange(dateString, new Date());
+          onChange(nepaliDateString, new Date());
         }
       }}
       options={{
         calenderLocale: "ne",
-        valueLocale: "en",
+        valueLocale: "ne",
       }}
     />
   );

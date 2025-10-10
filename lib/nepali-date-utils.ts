@@ -2,6 +2,8 @@
 // This file provides utilities for converting between English and Nepali dates
 // and formatting dates consistently across the application
 
+import NepaliDate from "nepali-date-converter";
+
 // Nepali months names
 export const NEPALI_MONTHS = [
   "बैशाख",
@@ -30,8 +32,7 @@ export const NEPALI_WEEKDAYS = [
 ];
 
 /**
- * Convert English date to Nepali date string using basic conversion
- * This is a simplified approach that adds ~57 years to approximate Nepali date
+ * Convert English date to Nepali date string using accurate conversion
  */
 export function englishToNepaliDate(englishDate: Date | string): string {
   try {
@@ -42,16 +43,9 @@ export function englishToNepaliDate(englishDate: Date | string): string {
       return "N/A";
     }
 
-    // Simple approximation: Add ~57 years to get Nepali year
-    // This is a basic conversion - for more accuracy, you'd need the full conversion library
-    const englishYear = date.getFullYear();
-    const nepaliYear = englishYear + 57; // Rough conversion
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-
-    return `${nepaliYear}/${String(month).padStart(2, "0")}/${String(
-      day
-    ).padStart(2, "0")}`;
+    // Use nepali-date-converter for accurate conversion
+    const nepaliDate = NepaliDate.fromAD(date);
+    return nepaliDate.format("YYYY/MM/DD");
   } catch (error) {
     console.warn("Error converting to Nepali date:", error);
     return formatEnglishDate(
@@ -74,13 +68,14 @@ export function englishToNepaliDateFormatted(
       return "N/A";
     }
 
-    const englishYear = date.getFullYear();
-    const nepaliYear = englishYear + 57;
-    const monthIndex = date.getMonth();
-    const day = date.getDate();
+    // Use nepali-date-converter for accurate conversion
+    const nepaliDate = NepaliDate.fromAD(date);
+    const day = nepaliDate.getDate();
+    const monthIndex = nepaliDate.getMonth(); // NepaliDate returns 0-based month (like JS Date)
+    const year = nepaliDate.getYear();
 
-    const monthName = NEPALI_MONTHS[monthIndex] || monthIndex + 1;
-    return `${day} ${monthName} ${nepaliYear}`;
+    const monthName = NEPALI_MONTHS[monthIndex] || `Month ${monthIndex + 1}`;
+    return `${day} ${monthName} ${year}`;
   } catch (error) {
     console.warn("Error formatting Nepali date:", error);
     return formatEnglishDate(
@@ -132,7 +127,7 @@ export function getTodayNepaliDateFormatted(): string {
 }
 
 /**
- * Convert Nepali date string to English Date object (simplified)
+ * Convert Nepali date string to English Date object using accurate conversion
  */
 export function nepaliToEnglishDate(nepaliDateStr: string): Date | null {
   try {
@@ -143,16 +138,16 @@ export function nepaliToEnglishDate(nepaliDateStr: string): Date | null {
     }
 
     const nepaliYear = parseInt(parts[0]);
-    const month = parseInt(parts[1]) - 1; // Month is 0-indexed in Date
+    const month = parseInt(parts[1]);
     const day = parseInt(parts[2]);
 
     if (isNaN(nepaliYear) || isNaN(month) || isNaN(day)) {
       return null;
     }
 
-    // Simple conversion: subtract ~57 years from Nepali year
-    const englishYear = nepaliYear - 57;
-    return new Date(englishYear, month, day);
+    // Use nepali-date-converter for accurate conversion
+    const nepaliDate = new NepaliDate(nepaliYear, month, day);
+    return nepaliDate.toJsDate();
   } catch (error) {
     console.warn("Error converting Nepali to English date:", error);
     return null;
@@ -210,18 +205,26 @@ export function formatDonationDate(donation: {
   date_of_donation?: string;
   start_date?: string;
   end_date?: string;
+  start_date_nepali?: string;
+  end_date_nepali?: string;
 }): string {
   // For Seva Donation with start and end dates, show the range
-  if (
-    donation.donation_type === "Seva Donation" &&
-    donation.start_date &&
-    donation.end_date
-  ) {
-    const startNepali = englishToNepaliDateFormatted(
-      new Date(donation.start_date)
-    );
-    const endNepali = englishToNepaliDateFormatted(new Date(donation.end_date));
-    return `${startNepali} देखि ${endNepali} सम्म`;
+  if (donation.donation_type === "Seva Donation") {
+    // First priority: Use stored Nepali date strings if available (more accurate)
+    if (donation.start_date_nepali && donation.end_date_nepali) {
+      return `${donation.start_date_nepali} देखि ${donation.end_date_nepali} सम्म`;
+    }
+
+    // Fallback: Convert English dates to Nepali
+    if (donation.start_date && donation.end_date) {
+      const startNepali = englishToNepaliDateFormatted(
+        new Date(donation.start_date)
+      );
+      const endNepali = englishToNepaliDateFormatted(
+        new Date(donation.end_date)
+      );
+      return `${startNepali} देखि ${endNepali} सम्म`;
+    }
   }
 
   // For all other cases (including Seva Donation without start/end dates), show the donation date

@@ -28,6 +28,8 @@ interface ReceiptFormData {
   notes: string;
   startDate?: Date | null;
   endDate?: Date | null;
+  startDateNepali?: string; // Store Nepali date string for display
+  endDateNepali?: string; // Store Nepali date string for display
 }
 
 interface ReceiptFormError {
@@ -95,6 +97,8 @@ export default function ReceiptForm({
     notes: initialData?.notes || "",
     startDate: initialData?.startDate ?? null,
     endDate: initialData?.endDate ?? null,
+    startDateNepali: initialData?.startDateNepali || "",
+    endDateNepali: initialData?.endDateNepali || "",
   });
 
   const [errors, setErrors] = useState<Partial<ReceiptFormError>>({});
@@ -149,6 +153,11 @@ export default function ReceiptForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      console.log("Form data being submitted:", formData);
+      console.log("Nepali dates:", {
+        startDateNepali: formData.startDateNepali,
+        endDateNepali: formData.endDateNepali,
+      });
       onSubmit(formData);
     }
   };
@@ -379,13 +388,21 @@ export default function ReceiptForm({
                       Start Date (नेपाली मिति)
                     </label>
                     <NepaliDatePicker
-                      value=""
-                      onChange={(dateString: string, adDate?: Date) => {
-                        if (adDate) {
-                          handleInputChange("startDate", adDate);
-                        } else {
-                          handleInputChange("startDate", new Date());
-                        }
+                      value={formData.startDateNepali || ""}
+                      onChange={(
+                        nepaliDateString: string,
+                        approximateEnglishDate?: Date
+                      ) => {
+                        console.log("Start date picker changed:", {
+                          nepaliDateString,
+                          approximateEnglishDate,
+                        });
+                        // Store both Nepali string and English date
+                        setFormData((prev) => ({
+                          ...prev,
+                          startDateNepali: nepaliDateString,
+                          startDate: approximateEnglishDate || null,
+                        }));
                       }}
                     />
                   </div>
@@ -394,13 +411,21 @@ export default function ReceiptForm({
                       End Date (नेपाली मिति)
                     </label>
                     <NepaliDatePicker
-                      value=""
-                      onChange={(dateString: string, adDate?: Date) => {
-                        if (adDate) {
-                          handleInputChange("endDate", adDate);
-                        } else {
-                          handleInputChange("endDate", new Date());
-                        }
+                      value={formData.endDateNepali || ""}
+                      onChange={(
+                        nepaliDateString: string,
+                        approximateEnglishDate?: Date
+                      ) => {
+                        console.log("End date picker changed:", {
+                          nepaliDateString,
+                          approximateEnglishDate,
+                        });
+                        // Store both Nepali string and English date
+                        setFormData((prev) => ({
+                          ...prev,
+                          endDateNepali: nepaliDateString,
+                          endDate: approximateEnglishDate || null,
+                        }));
                       }}
                     />
                   </div>

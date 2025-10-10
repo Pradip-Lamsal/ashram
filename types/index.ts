@@ -25,6 +25,8 @@ export interface Donation {
   notes?: string | null;
   startDate?: Date | null; // For Seva Donation period start
   endDate?: Date | null; // For Seva Donation period end
+  startDateNepali?: string; // Original Nepali date string for start
+  endDateNepali?: string; // Original Nepali date string for end
   createdBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -51,6 +53,8 @@ export interface Receipt {
   notes?: string;
   startDate?: Date | null; // For Seva Donation period start
   endDate?: Date | null; // For Seva Donation period end
+  startDateNepali?: string; // Original Nepali date string for start
+  endDateNepali?: string; // Original Nepali date string for end
 }
 
 export interface SMSEvent {

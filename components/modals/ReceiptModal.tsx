@@ -45,13 +45,11 @@ function safeFormatDateTime(d?: string | Date | null) {
 // --- end added helpers ---
 
 // explicit receipt shape used by this modal (includes optional UI-only fields)
-type ReceiptModalReceipt = {
+interface ReceiptModalReceipt {
   id: string;
   receiptNumber: string;
-  issuedAt: Date | string;
   donorName: string;
-  donationType: DonationType | string;
-  donationTypeLabel?: string;
+  donationType: DonationType;
   amount: number;
   paymentMode: PaymentMode | string;
   dateOfDonation?: Date | string | null;
@@ -64,7 +62,9 @@ type ReceiptModalReceipt = {
   createdBy?: string;
   startDate?: Date | string | null;
   endDate?: Date | string | null;
-};
+  startDateNepali?: string; // Original Nepali date string
+  endDateNepali?: string; // Original Nepali date string
+}
 
 interface ReceiptModalProps {
   receipt: ReceiptModalReceipt;
@@ -176,7 +176,7 @@ export default function ReceiptModal({
     try {
       const donationTypeDisplay = getDisplayDonationType(
         receipt.donationType as string,
-        receipt.donationTypeLabel
+        undefined // Use undefined since donationTypeLabel doesn't exist in the interface
       );
       const response = await fetch("/api/send-receipt-email", {
         method: "POST",
@@ -236,7 +236,7 @@ export default function ReceiptModal({
   const handleDownloadPDF = () => {
     const donationTypeLabel = getDisplayDonationType(
       receipt.donationType as string,
-      receipt.donationTypeLabel
+      undefined // Use undefined since donationTypeLabel doesn't exist in the interface
     );
     // safe createdAt/time values
     const createdAtDate = toDate(receipt.createdAt);
@@ -487,14 +487,18 @@ export default function ReceiptModal({
 
   // Helper function to format donation date for receipt display
   const formatReceiptDonationDate = () => {
-    if (
-      receipt.donationType === "Seva Donation" &&
-      receipt.startDate &&
-      receipt.endDate
-    ) {
-      const startNepali = safeFormatDate(receipt.startDate);
-      const endNepali = safeFormatDate(receipt.endDate);
-      return `${startNepali} देखि ${endNepali} सम्म`;
+    if (receipt.donationType === "Seva Donation") {
+      // If we have Nepali date strings, use them directly (more accurate)
+      if (receipt.startDateNepali && receipt.endDateNepali) {
+        return `${receipt.startDateNepali} देखि ${receipt.endDateNepali} सम्म`;
+      }
+
+      // Fallback to converting English dates to Nepali
+      if (receipt.startDate && receipt.endDate) {
+        const startNepali = safeFormatDate(receipt.startDate);
+        const endNepali = safeFormatDate(receipt.endDate);
+        return `${startNepali} देखि ${endNepali} सम्म`;
+      }
     }
 
     // For regular donations, show the donation date
@@ -715,7 +719,7 @@ export default function ReceiptModal({
                         <p className="text-sm font-bold text-orange-700">
                           {getDisplayDonationType(
                             receipt.donationType as string,
-                            receipt.donationTypeLabel
+                            undefined // Use undefined since donationTypeLabel doesn't exist in the interface
                           )}
                         </p>
                       </div>
@@ -728,9 +732,9 @@ export default function ReceiptModal({
                           <label className="block mb-1 text-xs font-medium text-gray-600">
                             Donation Period
                           </label>
-                          <p className="text-sm">
-                            {safeFormatDate(receipt.startDate)} —{" "}
-                            {safeFormatDate(receipt.endDate)}
+                          <p className="text-sm text-emerald-600 font-medium">
+                            {safeFormatDate(receipt.startDate)} देखि{" "}
+                            {safeFormatDate(receipt.endDate)} सम्म
                           </p>
                         </div>
                       </div>
