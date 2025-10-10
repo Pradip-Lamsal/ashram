@@ -357,7 +357,17 @@ export default function ReceiptModal({
           <div class="receipt-container">
             <!-- Header -->
             <div class="header">
-              <div class="org-name">🏛️ जगतगुरु आश्रम</div>
+              <div style="font-size: 10px; color: #666; margin-bottom: 8px;">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
+              <div style="font-size: 20px; color: #ea580c; margin-bottom: 8px;">ॐ</div>
+              <div style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">श्रीराधासर्वेश्वरो विजयते</div>
+              <div style="font-size: 10px; color: #666; margin-bottom: 8px;">पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१</div>
+              <div class="org-name">श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</div>
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">व्यवस्थापन तथा सञ्चालन समिति</div>
+              <div style="font-size: 11px; color: #555; line-height: 1.4;">
+                ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर<br>
+                फोन नं. ०१-५९१५६६७<br>
+                <span style="color: #2563eb;">E-mail: jashankhamul@gmail.com</span>
+              </div>
               <div class="receipt-title">DONATION RECEIPT</div>
               <div class="receipt-number">#${receipt.receiptNumber}</div>
             </div>
@@ -564,7 +574,10 @@ export default function ReceiptModal({
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => onMarkPrinted?.(receipt.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkPrinted?.(receipt.id);
+                  }}
                   disabled={receipt.isPrinted || isUpdating}
                   className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -594,7 +607,8 @@ export default function ReceiptModal({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (
                         confirm(
                           "Are you sure you want to delete this receipt? This action cannot be undone."
@@ -624,17 +638,38 @@ export default function ReceiptModal({
               >
                 {/* Professional Header with Orange Theme */}
                 <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
-                  <div className="flex items-center justify-center mb-3 space-x-3">
-                    <lucideReact.Heart className="w-8 h-8 text-orange-500" />
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900">
-                        जगतगुरु आश्रम Receipt
-                      </h1>
-                      <p className="text-base font-medium text-orange-600">
-                        Official Tax Receipt
+                  {/* Government Registration Info */}
+                  <div className="mb-2 text-xs text-gray-600">
+                    <p>ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
+                  </div>
+
+                  {/* Sacred Symbol */}
+                  <div className="mb-2 text-2xl text-orange-600">ॐ</div>
+
+                  {/* Main Organization Header */}
+                  <div className="mb-3">
+                    <div className="text-lg font-bold text-orange-700 mb-1">
+                      श्रीराधासर्वेश्वरो विजयते
+                    </div>
+                    <div className="text-xs text-gray-600 mb-2">
+                      पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१
+                    </div>
+                    <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                      श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर
+                    </h1>
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      व्यवस्थापन तथा सञ्चालन समिति
+                    </h2>
+                    <div className="mt-2 text-sm text-gray-700">
+                      <p>ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</p>
+                      <p>फोन नं. ०१-५९१५६६७</p>
+                      <p className="text-blue-600">
+                        E-mail: jashankhamul@gmail.com
                       </p>
                     </div>
                   </div>
+
+                  {/* Receipt Info */}
                   <div className="inline-block p-3 mt-3 border border-orange-200 rounded-lg bg-orange-50">
                     <p className="text-lg font-bold text-orange-800">
                       Receipt #{receipt.receiptNumber}
@@ -817,15 +852,6 @@ export default function ReceiptModal({
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="pt-3 mt-4 text-center border-t border-gray-200">
-                    <p className="mb-1 text-base font-semibold text-orange-700">
-                      🙏 Thank you for your generous donation! 🙏
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      Your contribution helps us serve the community better
-                    </p>
                   </div>
                 </div>
               </div>

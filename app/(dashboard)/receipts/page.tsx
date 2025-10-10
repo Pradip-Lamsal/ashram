@@ -236,6 +236,11 @@ export default function ReceiptsPage() {
         )
       );
 
+      // Update selectedReceipt if it's the same receipt
+      if (selectedReceipt && selectedReceipt.id === receiptId) {
+        setSelectedReceipt({ ...selectedReceipt, is_printed: true });
+      }
+
       showToast("Receipt marked as printed ✅", "default");
     } catch (error) {
       console.error("Error updating print status:", error);
@@ -257,6 +262,11 @@ export default function ReceiptsPage() {
         )
       );
 
+      // Update selectedReceipt if it's the same receipt
+      if (selectedReceipt && selectedReceipt.id === receiptId) {
+        setSelectedReceipt({ ...selectedReceipt, is_email_sent: true });
+      }
+
       showToast("Receipt marked as emailed 📧", "default");
     } catch (error) {
       console.error("Error updating email status:", error);
@@ -267,20 +277,18 @@ export default function ReceiptsPage() {
   };
 
   const handleDeleteReceipt = async (receiptId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this receipt? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
     try {
       setUpdatingReceipt(receiptId);
       await receiptsService.delete(receiptId);
 
       // Remove from local state
       setReceipts(receipts.filter((r) => r.id !== receiptId));
+
+      // Close modal if the deleted receipt was selected
+      if (selectedReceipt && selectedReceipt.id === receiptId) {
+        setSelectedReceipt(null);
+        setIsReceiptModalOpen(false);
+      }
 
       showToast("Receipt deleted successfully", "default");
     } catch (error) {
