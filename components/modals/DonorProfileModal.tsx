@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDonationTypeLabel } from "@/lib/donation-labels";
-import { formatDonationPeriod } from "@/lib/nepali-date-utils";
+import { formatDonationDate } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Donor } from "@/types";
 import {
@@ -35,6 +35,8 @@ interface DonorProfileModalProps {
     donation_type: string;
     payment_mode: string;
     date_of_donation: string;
+    start_date?: string;
+    end_date?: string;
     notes?: string;
     receipt_number?: string;
   }>;
@@ -66,7 +68,7 @@ export default function DonorProfileModal({
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] p-0 bg-white border-0 shadow-2xl rounded-2xl [&>button]:hidden mx-auto sm:w-[90vw] md:w-[85vw] lg:w-[80vw]">
         {/* Minimalist Header */}
-        <DialogHeader className="relative p-3 pb-0 flex-shrink-0 sm:p-4 md:p-6">
+        <DialogHeader className="relative flex-shrink-0 p-3 pb-0 sm:p-4 md:p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
               <div className="flex items-center justify-center w-10 h-10 text-base font-bold text-white rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 sm:w-12 sm:h-12 sm:text-lg md:w-16 md:h-16 md:text-2xl">
@@ -91,14 +93,14 @@ export default function DonorProfileModal({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="rounded-full w-10 h-10 p-0 hover:bg-gray-100 flex-shrink-0"
+              className="flex-shrink-0 w-10 h-10 p-0 rounded-full hover:bg-gray-100"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="px-3 pb-3 space-y-3 overflow-y-auto flex-1 sm:px-4 sm:pb-4 sm:space-y-4 md:px-6 md:pb-6 md:space-y-6">
+        <div className="flex-1 px-3 pb-3 space-y-3 overflow-y-auto sm:px-4 sm:pb-4 sm:space-y-4 md:px-6 md:pb-6 md:space-y-6">
           {/* Key Metrics - Responsive Grid */}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 md:gap-4">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100">
@@ -107,7 +109,7 @@ export default function DonorProfileModal({
                 <p className="text-base font-bold text-emerald-900 sm:text-lg md:text-2xl">
                   {formatCurrency(totalDonations)}
                 </p>
-                <p className="text-xs text-emerald-600 uppercase tracking-wide">
+                <p className="text-xs tracking-wide uppercase text-emerald-600">
                   Total Donated
                 </p>
               </CardContent>
@@ -119,7 +121,7 @@ export default function DonorProfileModal({
                 <p className="text-base font-bold text-blue-900 sm:text-lg md:text-2xl">
                   {donorHistory.length}
                 </p>
-                <p className="text-xs text-blue-600 uppercase tracking-wide">
+                <p className="text-xs tracking-wide text-blue-600 uppercase">
                   Donations
                 </p>
               </CardContent>
@@ -131,7 +133,7 @@ export default function DonorProfileModal({
                 <p className="text-base font-bold text-amber-900 sm:text-lg md:text-2xl">
                   {formatCurrency(averageDonation)}
                 </p>
-                <p className="text-xs text-amber-600 uppercase tracking-wide">
+                <p className="text-xs tracking-wide uppercase text-amber-600">
                   Average
                 </p>
               </CardContent>
@@ -148,7 +150,7 @@ export default function DonorProfileModal({
 
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 md:gap-4">
                 <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 sm:w-8 sm:h-8">
+                  <div className="flex items-center justify-center bg-gray-100 rounded-lg w-7 h-7 sm:w-8 sm:h-8">
                     <Phone className="w-3.5 h-3.5 text-gray-600 sm:w-4 sm:h-4" />
                   </div>
                   <div>
@@ -162,7 +164,7 @@ export default function DonorProfileModal({
                 </div>
 
                 <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 sm:w-8 sm:h-8">
+                  <div className="flex items-center justify-center bg-gray-100 rounded-lg w-7 h-7 sm:w-8 sm:h-8">
                     <Mail className="w-3.5 h-3.5 text-gray-600 sm:w-4 sm:h-4" />
                   </div>
                   <div className="min-w-0">
@@ -176,7 +178,7 @@ export default function DonorProfileModal({
                 </div>
 
                 <div className="flex items-start space-x-2.5 sm:col-span-2 sm:space-x-3">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 sm:w-8 sm:h-8">
+                  <div className="flex items-center justify-center bg-gray-100 rounded-lg w-7 h-7 sm:w-8 sm:h-8">
                     <MapPin className="w-3.5 h-3.5 text-gray-600 sm:w-4 sm:h-4" />
                   </div>
                   <div>
@@ -232,7 +234,7 @@ export default function DonorProfileModal({
 
               {loadingHistory ? (
                 <div className="flex items-center justify-center py-4 sm:py-6 md:py-8">
-                  <Loader2 className="w-4 h-4 animate-spin text-gray-400 sm:w-5 sm:h-5" />
+                  <Loader2 className="w-4 h-4 text-gray-400 animate-spin sm:w-5 sm:h-5" />
                   <span className="ml-2 text-xs text-gray-500 sm:text-sm">
                     Loading...
                   </span>
@@ -251,13 +253,8 @@ export default function DonorProfileModal({
                             {getDonationTypeLabel(donation.donation_type)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {formatDate(new Date(donation.date_of_donation))}
+                            {formatDonationDate(donation)}
                           </p>
-                          {formatDonationPeriod(donation) && (
-                            <p className="text-xs text-emerald-600 font-medium">
-                              {formatDonationPeriod(donation)}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="text-right">

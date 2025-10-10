@@ -30,12 +30,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getDonationTypeLabel } from "@/lib/donation-labels";
+import { formatDonationDate } from "@/lib/nepali-date-utils";
 import {
   donationsService,
   donorsService,
   receiptsService,
 } from "@/lib/supabase-services";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { DonationType, Donor, PaymentMode } from "@/types";
 import {
   AlertCircle,
@@ -522,10 +523,8 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell>
                       <p className="text-sm">
-                        {receipt.donation?.date_of_donation
-                          ? formatDate(
-                              new Date(receipt.donation.date_of_donation)
-                            )
+                        {receipt.donation && receipt.donation.date_of_donation
+                          ? formatDonationDate(receipt.donation)
                           : "N/A"}
                       </p>
                     </TableCell>

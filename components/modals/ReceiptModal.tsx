@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDonationPeriod } from "@/lib/nepali-date-utils";
+import { formatDonationDate } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { DonationType, PaymentMode } from "@/types";
 import * as lucideReact from "lucide-react";
@@ -76,6 +76,8 @@ interface ReceiptModalProps {
     donation_type: string;
     payment_mode: string;
     date_of_donation: string;
+    start_date?: string;
+    end_date?: string;
     notes?: string;
   }>;
   loadingHistory?: boolean;
@@ -399,9 +401,7 @@ export default function ReceiptModal({
               </div>
               <div class="row">
                 <span class="label">Donation Date:</span>
-                <span class="value">${safeFormatDate(
-                  receipt.dateOfDonation
-                )}</span>
+                <span class="value">${formatReceiptDonationDate()}</span>
               </div>
             </div>
 
@@ -484,6 +484,26 @@ export default function ReceiptModal({
       donationCount: donorHistory.length,
     };
   }, [donorHistory]);
+
+  // Helper function to format donation date for receipt display
+  const formatReceiptDonationDate = () => {
+    if (
+      receipt.donationType === "Seva Donation" &&
+      receipt.startDate &&
+      receipt.endDate
+    ) {
+      const startNepali = safeFormatDate(receipt.startDate);
+      const endNepali = safeFormatDate(receipt.endDate);
+      return `${startNepali} देखि ${endNepali} सम्म`;
+    }
+
+    // For regular donations, show the donation date
+    if (receipt.dateOfDonation) {
+      return safeFormatDate(receipt.dateOfDonation);
+    }
+
+    return "N/A";
+  };
 
   return (
     <>
@@ -664,9 +684,7 @@ export default function ReceiptModal({
                             Donation Date:
                           </span>
                           <span className="font-semibold text-gray-900">
-                            {receipt.dateOfDonation
-                              ? safeFormatDate(receipt.dateOfDonation)
-                              : "N/A"}
+                            {formatReceiptDonationDate()}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -903,18 +921,8 @@ export default function ReceiptModal({
                             </p>
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
                               <lucideReact.Calendar className="w-3 h-3" />
-                              <span>
-                                {safeFormatDate(donation.date_of_donation)}
-                              </span>
+                              <span>{formatDonationDate(donation)}</span>
                             </div>
-                            {formatDonationPeriod(donation) && (
-                              <div className="flex items-center space-x-2 mt-1 text-xs text-emerald-600">
-                                <lucideReact.Clock className="w-3 h-3" />
-                                <span className="font-medium">
-                                  {formatDonationPeriod(donation)}
-                                </span>
-                              </div>
-                            )}
                             {donation.notes && (
                               <p className="mt-1 text-xs italic text-gray-500">
                                 {donation.notes}

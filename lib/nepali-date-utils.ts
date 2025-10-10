@@ -203,6 +203,36 @@ export function formatDonationPeriod(donation: {
 }
 
 /**
+ * Format donation date - shows start and end dates for Seva Donation, regular date for others
+ */
+export function formatDonationDate(donation: {
+  donation_type: string;
+  date_of_donation?: string;
+  start_date?: string;
+  end_date?: string;
+}): string {
+  // For Seva Donation with start and end dates, show the range
+  if (
+    donation.donation_type === "Seva Donation" &&
+    donation.start_date &&
+    donation.end_date
+  ) {
+    const startNepali = englishToNepaliDateFormatted(
+      new Date(donation.start_date)
+    );
+    const endNepali = englishToNepaliDateFormatted(new Date(donation.end_date));
+    return `${startNepali} देखि ${endNepali} सम्म`;
+  }
+
+  // For all other cases (including Seva Donation without start/end dates), show the donation date
+  if (donation.date_of_donation) {
+    return englishToNepaliDateFormatted(new Date(donation.date_of_donation));
+  }
+
+  return "N/A";
+}
+
+/**
  * Get current date in format suitable for Nepali date picker
  */
 export function getCurrentNepaliDateString(): string {

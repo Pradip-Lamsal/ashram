@@ -11,6 +11,8 @@ export interface ReceiptData {
   donationType: string;
   paymentMode: string;
   dateOfDonation?: string;
+  startDate?: string;
+  endDate?: string;
   notes?: string;
   createdBy?: string;
 }
@@ -20,7 +22,32 @@ export const generateReceiptPDF = async (
 ): Promise<Buffer> => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
-    return englishToNepaliDateFormatted(new Date(dateString));
+    try {
+      return englishToNepaliDateFormatted(new Date(dateString));
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatDonationDateForPDF = () => {
+    if (
+      receipt.donationType === "Seva Donation" &&
+      receipt.startDate &&
+      receipt.endDate
+    ) {
+      const startNepali = englishToNepaliDateFormatted(
+        new Date(receipt.startDate)
+      );
+      const endNepali = englishToNepaliDateFormatted(new Date(receipt.endDate));
+      return `${startNepali} देखि ${endNepali} सम्म`;
+    }
+
+    // For regular donations, show the donation date
+    if (receipt.dateOfDonation) {
+      return englishToNepaliDateFormatted(new Date(receipt.dateOfDonation));
+    }
+
+    return "N/A";
   };
 
   const formatCurrency = (amount: number) => {
@@ -354,7 +381,7 @@ export const generateReceiptPDF = async (
               <h3>📋 Receipt Details</h3>
               <div class="info-row">
                 <span class="label">Donation Date:</span>
-                <span class="value">${formatDate(receipt.dateOfDonation)}</span>
+                <span class="value">${formatDonationDateForPDF()}</span>
               </div>
               <div class="info-row">
                 <span class="label">Issued By:</span>

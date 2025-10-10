@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
 export interface Receipt {
   id: string;
@@ -6,6 +7,9 @@ export interface Receipt {
   amount: number;
   date: string;
   receipt_type: string;
+  donation_type?: string;
+  start_date?: string;
+  end_date?: string;
   notes?: string;
 }
 
@@ -17,6 +21,28 @@ const createTransporter = () => {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD,
     },
+  });
+};
+
+// Helper function to format donation date for email
+const formatEmailDonationDate = (receipt: Receipt): string => {
+  if (
+    receipt.donation_type === "Seva Donation" &&
+    receipt.start_date &&
+    receipt.end_date
+  ) {
+    const startNepali = englishToNepaliDateFormatted(
+      new Date(receipt.start_date)
+    );
+    const endNepali = englishToNepaliDateFormatted(new Date(receipt.end_date));
+    return `${startNepali} देखि ${endNepali} सम्म`;
+  }
+
+  // For regular donations, show the donation date
+  return new Date(receipt.date).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 };
 
@@ -71,13 +97,9 @@ export const sendReceiptEmail = async (
                 </tr>
                 <tr style="background-color: #f9fafb;">
                   <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #f3f4f6;">Date:</td>
-                  <td style="padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">${new Date(
-                    receipt.date
-                  ).toLocaleDateString("en-IN", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}</td>
+                  <td style="padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">${formatEmailDonationDate(
+                    receipt
+                  )}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; font-weight: 600; color: #92400e; border-bottom: 1px solid #f3f4f6;">Type:</td>

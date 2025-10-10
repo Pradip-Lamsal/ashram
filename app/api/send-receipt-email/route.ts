@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
       amount: receipt.amount || 0,
       date: receipt.createdAt || new Date().toISOString(),
       receipt_type: receipt.donationType || "General Donation",
+      donation_type: receipt.donationType,
+      start_date: receipt.startDate,
+      end_date: receipt.endDate,
       notes: receipt.notes,
     };
 
@@ -48,6 +51,8 @@ export async function POST(request: NextRequest) {
           donationType: receipt.donationType || "General Donation",
           paymentMode: receipt.paymentMode || "Unknown",
           dateOfDonation: receipt.dateOfDonation,
+          startDate: receipt.startDate,
+          endDate: receipt.endDate,
           notes: receipt.notes,
           createdBy: receipt.createdBy,
         });
