@@ -124,8 +124,7 @@ export default function ReceiptModal({
   // to avoid TypeScript errors across react-to-print versions.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const printOptions: any = {
-    getContent: () => printRef.current,
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: `Receipt-${receipt.receiptNumber}`,
     pageStyle: `
       @page { size: A4; margin: 1.5cm; }
@@ -732,7 +731,7 @@ export default function ReceiptModal({
                           <label className="block mb-1 text-xs font-medium text-gray-600">
                             Donation Period
                           </label>
-                          <p className="text-sm text-emerald-600 font-medium">
+                          <p className="text-sm font-medium text-emerald-600">
                             {safeFormatDate(receipt.startDate)} देखि{" "}
                             {safeFormatDate(receipt.endDate)} सम्म
                           </p>
