@@ -45,6 +45,7 @@ import {
   Calendar,
   Edit,
   Eye,
+  FileDown,
   Filter,
   Mail,
   Phone,
@@ -52,6 +53,7 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 
 interface Donor {
   id: string;
@@ -247,6 +249,76 @@ export default function DonorsPage() {
       showToast(
         "Failed to Add Donor",
         "There was an error adding the donor. Please check your information and try again.",
+        "destructive"
+      );
+    }
+  };
+
+  // Excel export function
+  const handleExportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredDonors.map((donor, index) => ({
+        "S.N.": index + 1,
+        Name: donor.name,
+        Phone: donor.phone || "N/A",
+        Email: donor.email || "N/A",
+        "Date of Birth": donor.date_of_birth
+          ? englishToNepaliDateFormatted(new Date(donor.date_of_birth))
+          : "N/A",
+        Address: donor.address || "N/A",
+        "Membership Type": donor.membership,
+        "Donation Type": getDonationTypeLabel(donor.donation_type),
+        "Total Contributions": `Rs. ${Number(
+          donor.total_donations || 0
+        ).toLocaleString()}`,
+        "Last Donation Date": donor.last_donation_date
+          ? englishToNepaliDateFormatted(new Date(donor.last_donation_date))
+          : "No donations",
+        Notes: donor.notes || "N/A",
+      }));
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths for better formatting
+      const colWidths = [
+        { wch: 8 }, // S.N.
+        { wch: 25 }, // Name
+        { wch: 15 }, // Phone
+        { wch: 30 }, // Email
+        { wch: 15 }, // Date of Birth
+        { wch: 30 }, // Address
+        { wch: 15 }, // Membership Type
+        { wch: 20 }, // Donation Type
+        { wch: 18 }, // Total Contributions
+        { wch: 18 }, // Last Donation Date
+        { wch: 30 }, // Notes
+      ];
+      worksheet["!cols"] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Donors");
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split("T")[0];
+      const filename = `donors_export_${currentDate}.xlsx`;
+
+      // Save the file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      showToast(
+        "Export Successful! 📊",
+        `Donor data has been exported to ${filename}`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      showToast(
+        "Export Failed",
+        "There was an error exporting the data. Please try again.",
         "destructive"
       );
     }
@@ -448,6 +520,14 @@ export default function DonorsPage() {
                 </Select>
               </div>
             </div>
+            <Button
+              onClick={handleExportToExcel}
+              variant="outline"
+              className="flex items-center w-full gap-2 text-green-700 border-green-200 sm:w-auto bg-green-50 hover:bg-green-100 hover:border-green-300"
+            >
+              <FileDown className="w-4 h-4" />
+              Export to Excel
+            </Button>
           </div>
 
           {/* Donors Table */}

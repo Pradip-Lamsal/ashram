@@ -16,6 +16,7 @@ import { formatDonationDate } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { DonationType, PaymentMode } from "@/types";
 import * as lucideReact from "lucide-react";
+import Image from "next/image";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 
@@ -357,16 +358,31 @@ export default function ReceiptModal({
           <div class="receipt-container">
             <!-- Header -->
             <div class="header">
-              <div style="font-size: 10px; color: #666; margin-bottom: 8px;">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
-              <div style="font-size: 20px; color: #ea580c; margin-bottom: 8px;">ॐ</div>
-              <div style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">श्रीराधासर्वेश्वरो विजयते</div>
-              <div style="font-size: 10px; color: #666; margin-bottom: 8px;">पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१</div>
-              <div class="org-name">श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</div>
-              <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">व्यवस्थापन तथा सञ्चालन समिति</div>
-              <div style="font-size: 11px; color: #555; line-height: 1.4;">
-                ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर<br>
-                फोन नं. ०१-५९१५६६७<br>
-                <span style="color: #2563eb;">E-mail: jashankhamul@gmail.com</span>
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
+                <!-- Left Logo -->
+                <div style="flex-shrink: 0;">
+                  <img src="/logo11.jpeg" alt="Logo 1" style="width: 50px; height: 50px; object-fit: contain;" />
+                </div>
+                
+                <!-- Center Content -->
+                <div style="flex: 1; margin: 0 16px; text-align: center;">
+                  <div style="font-size: 10px; color: #666; margin-bottom: 8px;">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
+                  <div style="font-size: 20px; color: #ea580c; margin-bottom: 8px;">ॐ</div>
+                  <div style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">श्रीराधासर्वेश्वरो विजयते</div>
+                  <div style="font-size: 10px; color: #666; margin-bottom: 8px;">पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१</div>
+                  <div class="org-name">श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</div>
+                  <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">व्यवस्थापन तथा सञ्चालन समिति</div>
+                  <div style="font-size: 11px; color: #555; line-height: 1.4;">
+                    ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर<br>
+                    फोन नं. ०१-५९१५६६७<br>
+                    <span style="color: #2563eb;">E-mail: jashankhamul@gmail.com</span>
+                  </div>
+                </div>
+                
+                <!-- Right Logo -->
+                <div style="flex-shrink: 0;">
+                  <img src="/logo22.jpeg" alt="Logo 2" style="width: 50px; height: 50px; object-fit: contain;" />
+                </div>
               </div>
               <div class="receipt-title">DONATION RECEIPT</div>
               <div class="receipt-number">#${receipt.receiptNumber}</div>
@@ -445,10 +461,6 @@ export default function ReceiptModal({
 
             <!-- Footer -->
             <div class="footer">
-              <div class="thank-you">🙏 THANK YOU FOR YOUR DONATION! 🙏</div>
-              <div style="font-size: 10px; margin: 10px 0;">
-                Your contribution helps us serve the community
-              </div>
               <div class="divider">--- KEEP THIS RECEIPT FOR YOUR RECORDS ---</div>
               <div class="timestamp">
                 Generated: ${new Date().toLocaleString()}
@@ -638,34 +650,62 @@ export default function ReceiptModal({
               >
                 {/* Professional Header with Orange Theme */}
                 <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
-                  {/* Government Registration Info */}
-                  <div className="mb-2 text-xs text-gray-600">
-                    <p>ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
-                  </div>
-
-                  {/* Sacred Symbol */}
-                  <div className="mb-2 text-2xl text-orange-600">ॐ</div>
-
-                  {/* Main Organization Header */}
-                  <div className="mb-3">
-                    <div className="text-lg font-bold text-orange-700 mb-1">
-                      श्रीराधासर्वेश्वरो विजयते
+                  {/* Header with Logos */}
+                  <div className="flex items-start justify-between mb-4">
+                    {/* Left Logo */}
+                    <div className="flex-shrink-0">
+                      <Image
+                        src="/logo11.jpeg"
+                        alt="Logo 1"
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
                     </div>
-                    <div className="text-xs text-gray-600 mb-2">
-                      पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१
+
+                    {/* Center Content */}
+                    <div className="flex-1 mx-4">
+                      {/* Government Registration Info */}
+                      <div className="mb-2 text-xs text-gray-600">
+                        <p>ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
+                      </div>
+
+                      {/* Sacred Symbol */}
+                      <div className="mb-2 text-2xl text-orange-600">ॐ</div>
+
+                      {/* Main Organization Header */}
+                      <div className="mb-3">
+                        <div className="text-lg font-bold text-orange-700 mb-1">
+                          श्रीराधासर्वेश्वरो विजयते
+                        </div>
+                        <div className="text-xs text-gray-600 mb-2">
+                          पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१
+                        </div>
+                        <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                          श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर
+                        </h1>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                          व्यवस्थापन तथा सञ्चालन समिति
+                        </h2>
+                        <div className="mt-2 text-sm text-gray-700">
+                          <p>ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</p>
+                          <p>फोन नं. ०१-५९१५६६७</p>
+                          <p className="text-blue-600">
+                            E-mail: jashankhamul@gmail.com
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                      श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर
-                    </h1>
-                    <h2 className="text-lg font-semibold text-gray-800">
-                      व्यवस्थापन तथा सञ्चालन समिति
-                    </h2>
-                    <div className="mt-2 text-sm text-gray-700">
-                      <p>ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</p>
-                      <p>फोन नं. ०१-५९१५६६७</p>
-                      <p className="text-blue-600">
-                        E-mail: jashankhamul@gmail.com
-                      </p>
+
+                    {/* Right Logo */}
+                    <div className="flex-shrink-0">
+                      <Image
+                        src="/logo22.jpeg"
+                        alt="Logo 2"
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
                     </div>
                   </div>
 
