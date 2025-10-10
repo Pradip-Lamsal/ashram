@@ -111,6 +111,17 @@ export default function DonorsPage() {
     }
   }, [appUser]);
 
+  // Function to refresh donors list
+  const refreshDonors = async () => {
+    try {
+      const data = await donorsService.getAll();
+      setDonors(data);
+    } catch (error) {
+      console.error("Error refreshing donors:", error);
+      showToast("Failed to refresh donors list", "destructive");
+    }
+  };
+
   const filteredDonors = donors.filter((donor) => {
     const matchesSearch =
       donor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,7 +171,7 @@ export default function DonorsPage() {
     if (!donorToEdit) return;
 
     try {
-      await donorsService.update(donorToEdit.id, {
+      const updatedDonor = await donorsService.update(donorToEdit.id, {
         name: donorData.name,
         dateOfBirth: donorData.dateOfBirth
           ? new Date(donorData.dateOfBirth)
@@ -173,29 +184,17 @@ export default function DonorsPage() {
         notes: donorData.notes,
       });
 
-      // Update the donor in the local state
+      // Update the donor in the local state with the data returned from the database
       setDonors(
-        donors.map((d) =>
-          d.id === donorToEdit.id
-            ? {
-                ...d,
-                name: donorData.name,
-                date_of_birth: donorData.dateOfBirth,
-                phone: donorData.phone,
-                address: donorData.address,
-                email: donorData.email,
-                donation_type: donorData.donationType,
-                membership: donorData.membership,
-                notes: donorData.notes,
-                updated_at: new Date().toISOString(),
-              }
-            : d
-        )
+        donors.map((d) => (d.id === donorToEdit.id ? updatedDonor : d))
       );
 
       setIsEditDialogOpen(false);
       setDonorToEdit(null);
       showToast(`${donorData.name} updated successfully! ✅`, "default");
+
+      // Refresh the list to ensure we have the latest data
+      await refreshDonors();
     } catch (error) {
       console.error("Error updating donor:", error);
       showToast("Failed to update donor", "destructive");
@@ -228,6 +227,7 @@ export default function DonorsPage() {
         lastDonationDate: null,
       });
 
+      // Add the new donor returned from the database to the top of the list
       setDonors([newDonor, ...donors]);
       setIsAddDialogOpen(false);
 
@@ -237,6 +237,9 @@ export default function DonorsPage() {
         `${donorData.name} has been added to the database with ${donorData.membership} membership.`,
         "success"
       );
+
+      // Refresh the list to ensure we have the latest data
+      await refreshDonors();
     } catch (error) {
       console.error("Error adding donor:", error);
 
