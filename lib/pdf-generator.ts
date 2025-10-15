@@ -22,7 +22,8 @@ interface ReceiptData {
 }
 
 export const generateReceiptPDF = async (
-  receipt: ReceiptData
+  receipt: ReceiptData,
+  options?: { includeLogos?: boolean }
 ): Promise<Buffer> => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
@@ -77,22 +78,35 @@ export const generateReceiptPDF = async (
     }
   };
 
-  const logoLeft = getDataUrl("logo11.jpeg");
-  const logoRight = getDataUrl("logo22.jpeg");
+  const includeLogos = options?.includeLogos ?? true;
+  const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
+  const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
   // embed Devanagari font (place TTF at public/fonts/NotoSansDevanagari-Regular.ttf)
-  const embedFontBase64 = (filename: string) => {
-    try {
-      const fontPath = path.resolve(process.cwd(), "public", "fonts", filename);
-      const fontData = fs.readFileSync(fontPath);
-      return fontData.toString("base64");
-    } catch (err) {
-      console.warn("Could not load font", filename, err);
-      return "";
+  const embedFontBase64 = (filenames: string[] | string) => {
+    const names = Array.isArray(filenames) ? filenames : [filenames];
+    for (const name of names) {
+      try {
+        const fontPath = path.resolve(process.cwd(), "public", "fonts", name);
+        if (fs.existsSync(fontPath)) {
+          const fontData = fs.readFileSync(fontPath);
+          console.log("Using embedded font:", fontPath);
+          return fontData.toString("base64");
+        }
+      } catch {
+        // continue to next
+      }
     }
+    console.warn("Could not find any of the font files:", names);
+    return "";
   };
 
-  const notoDevaBase64 = embedFontBase64("NotoSansDevanagari-Regular.ttf");
+  // Try a few common filenames (regular TTF, variable font) so user can drop either one
+  const notoDevaBase64 = embedFontBase64([
+    "NotoSansDevanagari-Regular.ttf",
+    "NotoSansDevanagari-Regular.woff",
+    "NotoSansDevanagari-VariableFont_wdth,wght.ttf",
+  ]);
 
   // inject into the top of your <style>
   const embeddedFontCss = notoDevaBase64
@@ -107,31 +121,35 @@ export const generateReceiptPDF = async (
 
   const htmlContent = `
     <!DOCTYPE html>
-    <html>
+    <html lang="ne">
       <head>
         <meta charset="UTF-8">
         <title>Receipt ${receipt.receiptNumber}</title>
         <style>
+          /* Embedded Devanagari font (if available) */
+          ${embeddedFontCss}
+
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
           }
-          
+
           body {
+            /* prefer embedded Devanagari font for Nepali text */
             font-family: 'NotoDeva', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.4;
             color: #374151;
             background-color: white;
             padding: 20px;
           }
-          
+
           .receipt-container {
             max-width: 100%;
             margin: 0 auto;
             background-color: white;
           }
-          
+
           /* Header layout: left logo with PAN above, center title, right reg above logo */
           .header {
             border-bottom: 3px solid #ea580c;
@@ -384,24 +402,7 @@ export const generateReceiptPDF = async (
             color: #6b7280;
           }
           
-          .thank-you {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-          }
-          
-          .thank-you .message {
-            color: #ea580c;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-          }
-          
-          .thank-you .submessage {
-            color: #6b7280;
-            font-size: 12px;
-          }
+          /* compact footer and no thank-you message for printable receipts */
           
           ${embeddedFontCss}
           
@@ -409,7 +410,7 @@ export const generateReceiptPDF = async (
             body {
               padding: 0;
             }
-            
+
             .receipt-container {
               max-width: none;
             }
@@ -557,11 +558,7 @@ export const generateReceiptPDF = async (
             </div>
           </div>
 
-          <!-- Thank You Message -->
-          <div class="thank-you">
-            <div class="message">🙏 Thank you for your generous donation! 🙏</div>
-            <div class="submessage">Your contribution helps us serve the community better</div>
-          </div>
+          <!-- (intentionally omitted thank-you message in printable PDF) -->
         </div>
       </body>
     </html>

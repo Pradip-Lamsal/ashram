@@ -267,7 +267,7 @@ export default function ReceiptsPage() {
         setSelectedReceipt({ ...selectedReceipt, is_email_sent: true });
       }
 
-      showToast("Receipt marked as emailed 📧", "default");
+      showToast("Receipt marked as emailed 📧", "True");
     } catch (error) {
       console.error("Error updating email status:", error);
       showToast("Failed to update email status", "destructive");

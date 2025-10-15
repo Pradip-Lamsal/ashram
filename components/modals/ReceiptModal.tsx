@@ -233,260 +233,51 @@ export default function ReceiptModal({
     }
   }, [emailState.address, receipt, onMarkEmailed]);
 
-  const handleDownloadPDF = () => {
-    const donationTypeLabel = getDisplayDonationType(
-      receipt.donationType as string,
-      undefined // Use undefined since donationTypeLabel doesn't exist in the interface
-    );
-    // safe createdAt/time values
-    const createdAtDate = toDate(receipt.createdAt);
-    const createdTime = createdAtDate ? createdAtDate.toLocaleTimeString() : "";
-    // Generate supermarket-style receipt that matches the print design
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Receipt ${receipt.receiptNumber}</title>
-          <style>
-            @page {
-              size: A4;
-              margin: 1cm;
-            }
-            body { 
-              font-family: 'Courier New', monospace; 
-              margin: 0; 
-              padding: 20px;
-              max-width: 400px;
-              margin: 0 auto;
-              background: white;
-              color: black;
-            }
-            .receipt-container {
-              border: 2px dashed #333;
-              padding: 20px;
-              background: white;
-            }
-            .header {
-              text-align: center;
-              border-bottom: 2px solid #333;
-              padding-bottom: 15px;
-              margin-bottom: 15px;
-            }
-            .org-name {
-              font-size: 18px;
-              font-weight: bold;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-              margin-bottom: 5px;
-            }
-            .receipt-title {
-              font-size: 14px;
-              margin-bottom: 10px;
-            }
-            .receipt-number {
-              font-size: 16px;
-              font-weight: bold;
-              background: #f0f0f0;
-              padding: 5px;
-              border: 1px solid #333;
-            }
-            .section {
-              margin: 15px 0;
-              border-bottom: 1px dotted #666;
-              padding-bottom: 10px;
-            }
-            .row {
-              display: flex;
-              justify-content: space-between;
-              margin: 5px 0;
-              font-size: 12px;
-            }
-            .label {
-              font-weight: normal;
-              text-transform: uppercase;
-            }
-            .value {
-              font-weight: bold;
-              text-align: right;
-            }
-            .amount-section {
-              background: #f9f9f9;
-              border: 2px solid #333;
-              padding: 15px;
-              margin: 15px 0;
-              text-align: center;
-            }
-            .amount-label {
-              font-size: 12px;
-              margin-bottom: 5px;
-              text-transform: uppercase;
-            }
-            .amount-value {
-              font-size: 24px;
-              font-weight: bold;
-              font-family: 'Arial', sans-serif;
-            }
-            .amount-words {
-              font-size: 10px;
-              margin-top: 10px;
-              text-transform: uppercase;
-              border-top: 1px solid #333;
-              padding-top: 10px;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 20px;
-              border-top: 2px solid #333;
-              padding-top: 15px;
-            }
-            .thank-you {
-              font-size: 14px;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .timestamp {
-              font-size: 10px;
-              color: #666;
-            }
-            .divider {
-              text-align: center;
-              margin: 10px 0;
-              font-size: 12px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="receipt-container">
-            <!-- Header -->
-            <div class="header">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
-                <!-- Left Logo -->
-                <div style="flex-shrink: 0;">
-                  <img src="/logo11.jpeg" alt="Logo 1" style="width: 50px; height: 50px; object-fit: contain;" />
-                </div>
-                
-                <!-- Center Content -->
-                <div style="flex: 1; margin: 0 16px; text-align: center;">
-                  <div style="font-size: 10px; color: #666; margin-bottom: 8px;">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
-                  <div style="font-size: 20px; color: #ea580c; margin-bottom: 8px;">ॐ</div>
-                  <div style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">श्रीराधासर्वेश्वरो विजयते</div>
-                  <div style="font-size: 10px; color: #666; margin-bottom: 8px;">पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१</div>
-                  <div class="org-name">श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</div>
-                  <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">व्यवस्थापन तथा सञ्चालन समिति</div>
-                  <div style="font-size: 11px; color: #555; line-height: 1.4;">
-                    ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर<br>
-                    फोन नं. ०१-५९१५६६७<br>
-                    <span style="color: #2563eb;">E-mail: jashankhamul@gmail.com</span>
-                  </div>
-                </div>
-                
-                <!-- Right Logo -->
-                <div style="flex-shrink: 0;">
-                  <img src="/logo22.jpeg" alt="Logo 2" style="width: 50px; height: 50px; object-fit: contain;" />
-                </div>
-              </div>
-              <div class="receipt-title">DONATION RECEIPT</div>
-              <div class="receipt-number">#${receipt.receiptNumber}</div>
-            </div>
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await fetch("/api/download-receipt-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          receipt: {
+            receiptNumber: receipt.receiptNumber,
+            donorName: receipt.donorName,
+            donorId: receipt.donorId,
+            amount: receipt.amount,
+            createdAt: receipt.createdAt,
+            donationType: receipt.donationType,
+            paymentMode: receipt.paymentMode,
+            dateOfDonation: receipt.dateOfDonation,
+            startDate: receipt.startDate,
+            endDate: receipt.endDate,
+            notes: receipt.notes,
+            createdBy: receipt.createdBy,
+          },
+          includeLogos: true, // Include logos for downloaded PDFs
+        }),
+      });
 
-            <!-- Date & Time -->
-            <div class="section">
-              <div class="row">
-                <span class="label">Date:</span>
-                <span class="value">${safeFormatDate(receipt.createdAt)}</span>
-              </div>
-              <div class="row">
-                <span class="label">Time:</span>
-                <span class="value">${createdTime}</span>
-              </div>
-            </div>
+      if (response.ok) {
+        // Download the PDF file
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Receipt-${receipt.receiptNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-            <!-- Donor Details -->
-            <div class="section">
-              <div class="divider">--- DONOR INFORMATION ---</div>
-              <div class="row">
-                <span class="label">Name:</span>
-                <span class="value">${receipt.donorName}</span>
-              </div>
-              <div class="row">
-                <span class="label">Donor ID:</span>
-                <span class="value">${receipt.donorId}</span>
-              </div>
-            </div>
-
-            <!-- Transaction Details -->
-            <div class="section">
-              <div class="divider">--- TRANSACTION DETAILS ---</div>
-              <div class="row">
-                <span class="label">Type:</span>
-                <span class="value">${donationTypeLabel}</span>
-              </div>
-              <div class="row">
-                <span class="label">Payment:</span>
-                <span class="value">${receipt.paymentMode}</span>
-              </div>
-              <div class="row">
-                <span class="label">Donation Date:</span>
-                <span class="value">${formatReceiptDonationDate()}</span>
-              </div>
-            </div>
-
-            <!-- Amount Section -->
-            <div class="amount-section">
-              <div class="amount-label">TOTAL AMOUNT</div>
-              <div class="amount-value">रु ${
-                receipt.amount?.toLocaleString("en-IN") || "0"
-              }</div>
-              <div class="amount-words">
-                ${
-                  receipt.amount
-                    ? `Rupees ${receipt.amount.toLocaleString("en-IN")} Only`
-                    : "Amount not specified"
-                }
-              </div>
-            </div>
-
-            ${
-              receipt.notes
-                ? `
-            <!-- Notes -->
-            <div class="section">
-              <div class="divider">--- NOTES ---</div>
-              <div style="font-size: 11px; text-align: center; font-style: italic;">
-                "${receipt.notes}"
-              </div>
-            </div>
-            `
-                : ""
-            }
-
-            <!-- Footer -->
-            <div class="footer">
-              <div class="divider">--- KEEP THIS RECEIPT FOR YOUR RECORDS ---</div>
-              <div class="timestamp">
-                Generated: ${new Date().toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // Create and download the receipt
-    const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Receipt-${receipt.receiptNumber}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    // Also open for printing
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
+        showToastNotification("PDF downloaded successfully");
+      } else {
+        throw new Error("Failed to generate PDF");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      showToastNotification("Failed to download PDF. Please try again.");
     }
   };
 
