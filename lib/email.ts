@@ -66,7 +66,7 @@ export const sendReceiptEmail = async (
     const mailOptions = {
       from: `"Ashram Management" <${process.env.GMAIL_USER}>`,
       to: donorEmail,
-      subject: `🙏 Thank You - Donation Receipt ${receipt.id} | Ashram Management`,
+      subject: `🙏 श्री जगद्गुरु आश्रममा  सहयाेग गर्नु भएकाेमा धन्यवाद- Donation Receipt ${receipt.id} | Ashram Management`,
       html: `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
           <!-- Header -->
