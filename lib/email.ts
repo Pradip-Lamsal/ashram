@@ -71,8 +71,8 @@ export const sendReceiptEmail = async (
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #ea580c, #dc2626); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🙏 Thank You for Your Donation</h1>
-            <p style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px;">Your generosity supports our spiritual community</p>
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🙏 तपाईंको योगदानका लागि धन्यवाद।</h1>
+            <p style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px;">तपाईंको उदारताले हाम्रो आध्यात्मिक समुदायलाई सहयोग गर्दछ</p>
           </div>
           
           <!-- Main Content -->
@@ -84,7 +84,7 @@ export const sendReceiptEmail = async (
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-              We are deeply grateful for your generous donation to our ashram. Your contribution helps us continue our spiritual and community work, supporting devotees and maintaining our sacred space.
+              हामी हाम्रो आश्रमका लागि तपाईंको उदार योगदानप्रति गहिरो आभार व्यक्त गर्दछौं। तपाईंको सहयोगले हामीलाई हाम्रो आध्यात्मिक र सामुदायिक कार्य निरन्तरता दिन, भक्तजनहरूलाई सहयोग गर्न र हाम्रो पवित्र स्थानलाई संरक्षण गर्न मद्दत गर्दछ।
             </p>
             
             <!-- Receipt Details Card -->
@@ -131,7 +131,7 @@ export const sendReceiptEmail = async (
             <!-- Tax Information -->
             <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin: 25px 0;">
               <p style="color: #065f46; font-size: 14px; margin: 0; text-align: center;">
-                <strong>💡 Tax Information:</strong> This receipt serves as confirmation of your donation for tax deduction purposes. Please keep this for your records.
+                <strong>💡 Tax Information:</strong>यो रसिद कर कटौतीका प्रयोजनका लागि तपाईंको योगदानको पुष्टि स्वरूप हो। कृपया यसलाई आफ्नो अभिलेखका लागि सुरक्षित राख्नुहोस्।
               </p>
               ${
                 pdfBuffer
@@ -145,7 +145,7 @@ export const sendReceiptEmail = async (
               `
                   : `
               <p style="color: #f59e0b; font-size: 14px; margin: 10px 0 0 0; text-align: center;">
-                <strong>📧 Email Receipt:</strong> Your receipt details are included in this email. You can print this email for your records.
+                <strong>📧 Email Receipt:</strong>तपाईंको रसिदको विवरण यस इमेलमा समावेश गरिएको छ। तपाईं यस इमेललाई आफ्नो अभिलेखका लागि प्रिन्ट गर्न सक्नुहुन्छ।
               </p>
               `
               }
@@ -158,8 +158,8 @@ export const sendReceiptEmail = async (
             <div style="text-align: center; margin: 30px 0;">
               <p style="color: #ea580c; font-size: 20px; font-weight: 600; margin-bottom: 10px;">🙏 May your generosity bring you blessings 🙏</p>
               <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">
-                Your donation helps us maintain our sacred space, support spiritual programs,<br>
-                and serve our community with love and devotion.
+                तपाईंको योगदानले हामीलाई हाम्रो पवित्र स्थान संरक्षण गर्न र आध्यात्मिक कार्यक्रमहरूलाई सहयोग गर्न मद्दत गर्दछ।,<br>
+                र हाम्रो समुदायलाई प्रेम र समर्पणका साथ सेवा गर्न मद्दत गर्दछ।<br>
                 श्री जगद्गुरु आश्रममा  सहयाेग गर्नु भएकाेमा धन्यवाद ।।।
               </p>
             </div>
