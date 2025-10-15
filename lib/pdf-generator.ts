@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import puppeteer from "puppeteer";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
@@ -62,6 +64,47 @@ export const generateReceiptPDF = async (
     return `रु ${new Intl.NumberFormat("en-IN").format(amount)}`;
   };
 
+  // load logos from public folder and convert to data URLs (fallback to empty string)
+  const getDataUrl = (filename: string) => {
+    try {
+      const imgPath = path.resolve(process.cwd(), "public", filename);
+      const data = fs.readFileSync(imgPath);
+      const ext = path.extname(imgPath).slice(1).toLowerCase();
+      return `data:image/${ext};base64,${data.toString("base64")}`;
+    } catch (err) {
+      console.warn("Could not load image", filename, err);
+      return "";
+    }
+  };
+
+  const logoLeft = getDataUrl("logo11.jpeg");
+  const logoRight = getDataUrl("logo22.jpeg");
+
+  // embed Devanagari font (place TTF at public/fonts/NotoSansDevanagari-Regular.ttf)
+  const embedFontBase64 = (filename: string) => {
+    try {
+      const fontPath = path.resolve(process.cwd(), "public", "fonts", filename);
+      const fontData = fs.readFileSync(fontPath);
+      return fontData.toString("base64");
+    } catch (err) {
+      console.warn("Could not load font", filename, err);
+      return "";
+    }
+  };
+
+  const notoDevaBase64 = embedFontBase64("NotoSansDevanagari-Regular.ttf");
+
+  // inject into the top of your <style>
+  const embeddedFontCss = notoDevaBase64
+    ? `@font-face{
+         font-family: 'NotoDeva';
+         src: url("data:font/ttf;base64,${notoDevaBase64}") format('truetype');
+         font-weight: normal;
+         font-style: normal;
+         font-display: swap;
+       }`
+    : "";
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -76,7 +119,7 @@ export const generateReceiptPDF = async (
           }
           
           body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'NotoDeva', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.4;
             color: #374151;
             background-color: white;
@@ -89,22 +132,42 @@ export const generateReceiptPDF = async (
             background-color: white;
           }
           
+          /* Header layout: left logo with PAN above, center title, right reg above logo */
           .header {
-            text-align: center;
             border-bottom: 3px solid #ea580c;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
           }
-          
-          .header h1 {
-            color: #ea580c;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
+          .header-top {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            justify-content: space-between;
+            gap: 12px;
+          }
+          .header-left, .header-center, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          .header-left { flex: 0 0 160px; flex-direction: column; align-items: flex-start; }
+          .header-center { flex: 1 1 auto; flex-direction: column; align-items: center; text-align: center; }
+          .header-right { flex: 0 0 160px; flex-direction: column; align-items: flex-end; }
+
+          .pan, .reg {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+            font-weight: 600;
+          }
+
+          .logo { width: 64px; height: 64px; object-fit: contain; border-radius: 4px; }
+
+          .header-center h1 {
+            color: #ea580c;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
           }
           
           .header .subtitle {
@@ -340,6 +403,8 @@ export const generateReceiptPDF = async (
             font-size: 12px;
           }
           
+          ${embeddedFontCss}
+          
           @media print {
             body {
               padding: 0;
@@ -355,11 +420,39 @@ export const generateReceiptPDF = async (
         <div class="receipt-container">
           <!-- Header -->
           <div class="header">
-            <h1>🏛️ जगतगुरु आश्रम Donation Receipt</h1>
-            <div class="subtitle">Official Tax Receipt</div>
-            <div class="receipt-number">
-              <div class="number">Receipt #${receipt.receiptNumber}</div>
-              <div class="date">Issued on ${formatDate(receipt.createdAt)}</div>
+            <div class="header-top">
+              <div class="header-left">
+                <div class="pan">पान नं ६००५९५६९०</div>
+                ${
+                  logoLeft
+                    ? `<img src="${logoLeft}" class="logo" alt="logo-left" />`
+                    : `<div style="font-size:12px;color:#6b7280">Logo</div>`
+                }
+              </div>
+
+              <div class="header-center">
+                <h1>जगतगुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
+                <div class="subtitle">व्यवस्थापन तथा सञ्चालन समिति</div>
+                <div class="subtitle" style="font-size:13px;color:#374151;margin-top:6px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
+              </div>
+
+              <div class="header-right">
+                <div class="reg">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
+                ${
+                  logoRight
+                    ? `<img src="${logoRight}" class="logo" alt="logo-right" />`
+                    : `<div style="font-size:12px;color:#6b7280">Logo</div>`
+                }
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:center;margin-top:10px;">
+              <div class="receipt-number">
+                <div class="number">Receipt #${receipt.receiptNumber}</div>
+                <div class="date">Issued on ${formatDate(
+                  receipt.createdAt
+                )}</div>
+              </div>
             </div>
           </div>
 

@@ -160,6 +160,7 @@ export const sendReceiptEmail = async (
               <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">
                 Your donation helps us maintain our sacred space, support spiritual programs,<br>
                 and serve our community with love and devotion.
+                श्री जगद्गुरु आश्रममा  सहयाेग गर्नु भएकाेमा धन्यवाद ।।।
               </p>
             </div>
           </div>
