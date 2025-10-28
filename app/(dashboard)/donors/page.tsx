@@ -78,6 +78,7 @@ export default function DonorsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [donationTypeFilter, setDonationTypeFilter] = useState<string>("all");
+  const [membershipFilter, setMembershipFilter] = useState<string>("all");
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -134,7 +135,10 @@ export default function DonorsPage() {
       donationTypeFilter === "all" ||
       donor.donation_type === donationTypeFilter;
 
-    return matchesSearch && matchesDonationType;
+    const matchesMembership =
+      membershipFilter === "all" || donor.membership === membershipFilter;
+
+    return matchesSearch && matchesDonationType && matchesMembership;
   });
 
   const handleViewProfile = async (donor: Donor) => {
@@ -473,7 +477,7 @@ export default function DonorsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center">
             <div className="relative flex-1 w-full">
               <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <Input
@@ -516,6 +520,25 @@ export default function DonorsPage() {
                     <SelectItem value="Puja Sponsorship">
                       {getDonationTypeLabel("Puja Sponsorship")}
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="w-full sm:w-48">
+              <div className="relative">
+                <Filter className="absolute z-10 w-4 h-4 text-gray-400 left-3 top-3" />
+                <Select
+                  value={membershipFilter}
+                  onValueChange={setMembershipFilter}
+                >
+                  <SelectTrigger className="pl-10">
+                    <SelectValue placeholder="Filter by membership" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Memberships</SelectItem>
+                    <SelectItem value="Regular">Regular</SelectItem>
+                    <SelectItem value="Life">Life</SelectItem>
+                    <SelectItem value="Special">Special</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
