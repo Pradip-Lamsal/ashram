@@ -407,7 +407,10 @@ export const receiptsService = {
   async updatePrintStatus(id: string, isPrinted: boolean) {
     const { data, error } = await supabase
       .from("receipts")
-      .update({ is_printed: isPrinted })
+      .update({
+        is_printed: isPrinted,
+        // removed updated_at - let the database trigger handle it
+      })
       .eq("id", id)
       .select()
       .single();
@@ -419,7 +422,10 @@ export const receiptsService = {
   async updateEmailStatus(id: string, isEmailSent: boolean) {
     const { data, error } = await supabase
       .from("receipts")
-      .update({ is_email_sent: isEmailSent })
+      .update({
+        is_email_sent: isEmailSent,
+        // removed updated_at - let the database trigger handle it
+      })
       .eq("id", id)
       .select()
       .single();
