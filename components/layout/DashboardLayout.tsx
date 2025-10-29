@@ -152,7 +152,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-sm font-bold leading-relaxed text-orange-900">
-                  श्री जगतगुरु आश्रम एवं जगत्-नारायाण मन्दिर व्यवस्थापन तथा
+                  श्री जगद्गुरु आश्रम एवं जगत्-नारायाण मन्दिर व्यवस्थापन तथा
                   सञ्चालन समिति
                 </h1>
               </div>

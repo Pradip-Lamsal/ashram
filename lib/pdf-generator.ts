@@ -423,6 +423,7 @@ export const generateReceiptPDF = async (
           <div class="header">
             <div class="header-top">
               <div class="header-left">
+                <div class="pan">जि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
                 <div class="pan">पान नं ६००५९५६९०</div>
                 ${
                   logoLeft
@@ -432,13 +433,17 @@ export const generateReceiptPDF = async (
               </div>
 
               <div class="header-center">
-                <h1>जगतगुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
+                <div style="margin-bottom: 8px; font-size: 24px; color: #ea580c;">ॐ</div>
+                <div style="margin-bottom: 8px; font-size: 18px; font-weight: 700; color: #ea580c;">श्रीराधासर्वेश्वरो विजयते</div>
+                <h1>श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
                 <div class="subtitle">व्यवस्थापन तथा सञ्चालन समिति</div>
                 <div class="subtitle" style="font-size:13px;color:#374151;margin-top:6px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
+                <div class="subtitle" style="font-size:13px;color:#374151;">फोन नं. ०१-५९१५६६७</div>
+                <div class="subtitle" style="font-size:13px;color:#2563eb;">E-mail: jashankhamul@gmail.com</div>
               </div>
 
               <div class="header-right">
-                <div class="reg">ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
+                <div class="reg">स.क.प.आवद्धता नं. ३५०९१</div>
                 ${
                   logoRight
                     ? `<img src="${logoRight}" class="logo" alt="logo-right" />`
@@ -536,17 +541,6 @@ export const generateReceiptPDF = async (
 
           <!-- Footer -->
           <div class="footer">
-            <div class="footer-section">
-              <h4>Important Information:</h4>
-              <ul>
-                <li>• This receipt is valid for tax deduction purposes</li>
-                <li>• Please preserve this receipt for your records</li>
-                <li>• For any queries, contact our office</li>
-                <li>• Receipt generated on ${new Date().toLocaleDateString(
-                  "en-IN"
-                )}</li>
-              </ul>
-            </div>
             <div class="footer-section">
               <div class="signature-area">
                 <div class="signature-text">Authorized Signature</div>

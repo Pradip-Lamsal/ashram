@@ -443,8 +443,12 @@ export default function ReceiptModal({
                 <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
                   {/* Header with Logos */}
                   <div className="flex items-start justify-between mb-4">
-                    {/* Left Logo */}
+                    {/* Left Logo with Registration Numbers */}
                     <div className="flex-shrink-0">
+                      <div className="mb-2 text-xs text-center text-gray-600">
+                        <p>जि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
+                        <p>पान नं ६००५९५६९०</p>
+                      </div>
                       <Image
                         src="/logo11.jpeg"
                         alt="Logo 1"
@@ -456,23 +460,15 @@ export default function ReceiptModal({
 
                     {/* Center Content */}
                     <div className="flex-1 mx-4">
-                      {/* Government Registration Info */}
-                      <div className="mb-2 text-xs text-gray-600">
-                        <p>ि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
-                      </div>
-
                       {/* Sacred Symbol */}
                       <div className="mb-2 text-2xl text-orange-600">ॐ</div>
 
                       {/* Main Organization Header */}
                       <div className="mb-3">
-                        <div className="text-lg font-bold text-orange-700 mb-1">
+                        <div className="mb-1 text-lg font-bold text-orange-700">
                           श्रीराधासर्वेश्वरो विजयते
                         </div>
-                        <div className="text-xs text-gray-600 mb-2">
-                          पान नं ६००५९५६९० | स.क.प.आवद्धता नं. ३५०९१
-                        </div>
-                        <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                        <h1 className="text-xl font-bold leading-tight text-gray-900">
                           श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर
                         </h1>
                         <h2 className="text-lg font-semibold text-gray-800">
@@ -488,8 +484,11 @@ export default function ReceiptModal({
                       </div>
                     </div>
 
-                    {/* Right Logo */}
+                    {/* Right Logo with Association Number */}
                     <div className="flex-shrink-0">
+                      <div className="mb-2 text-xs text-center text-gray-600">
+                        <p>स.क.प.आवद्धता नं. ३५०९१</p>
+                      </div>
                       <Image
                         src="/logo22.jpeg"
                         alt="Logo 2"
@@ -661,27 +660,15 @@ export default function ReceiptModal({
 
                 {/* Compact Footer */}
                 <div className="pt-4 mt-6 border-t-2 border-orange-500 print-footer">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <h4 className="mb-2 text-sm font-bold text-gray-900">
-                        Important Information:
-                      </h4>
-                      <ul className="space-y-1 text-xs text-gray-700">
-                        <li>• Valid for tax deduction purposes</li>
-                        <li>• Preserve this receipt for your records</li>
-                        <li>• Contact our office for any queries</li>
-                      </ul>
-                    </div>
-                    <div className="text-right">
-                      <div className="pt-3 mt-3 border-t border-gray-300">
-                        <p className="mb-2 text-xs text-gray-600">
-                          Authorized Signature
-                        </p>
-                        <div className="h-8 mb-2 border-b border-gray-300"></div>
-                        <p className="text-xs text-gray-500">
-                          Generated: {formatDateTime(new Date())}
-                        </p>
-                      </div>
+                  <div className="text-right">
+                    <div className="pt-3 mt-3 border-t border-gray-300">
+                      <p className="mb-2 text-xs text-gray-600">
+                        Authorized Signature
+                      </p>
+                      <div className="h-8 mb-2 border-b border-gray-300"></div>
+                      <p className="text-xs text-gray-500">
+                        Generated: {formatDateTime(new Date())}
+                      </p>
                     </div>
                   </div>
                 </div>
