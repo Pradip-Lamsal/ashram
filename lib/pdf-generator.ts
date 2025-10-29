@@ -65,6 +65,107 @@ export const generateReceiptPDF = async (
     return `रु ${new Intl.NumberFormat("en-IN").format(amount)}`;
   };
 
+  // Function to convert numbers to Nepali words
+  const convertToNepaliWords = (amount: number): string => {
+    const ones = [
+      "",
+      "एक",
+      "दुई",
+      "तीन",
+      "चार",
+      "पाँच",
+      "छ",
+      "सात",
+      "आठ",
+      "नौ",
+    ];
+    const teens = [
+      "दस",
+      "एघार",
+      "बाह्र",
+      "तेह्र",
+      "चौध",
+      "पन्ध्र",
+      "सोह्र",
+      "सत्र",
+      "अठार",
+      "उन्नाइस",
+    ];
+    const tens = [
+      "",
+      "",
+      "बीस",
+      "तीस",
+      "चालीस",
+      "पचास",
+      "साठी",
+      "सत्तरी",
+      "अस्सी",
+      "नब्बे",
+    ];
+    const hundreds = [
+      "",
+      "एक सय",
+      "दुई सय",
+      "तीन सय",
+      "चार सय",
+      "पाँच सय",
+      "छ सय",
+      "सात सय",
+      "आठ सय",
+      "नौ सय",
+    ];
+
+    if (amount === 0) return "शून्य";
+    if (amount < 0) return "ऋणात्मक " + convertToNepaliWords(-amount);
+
+    let words = "";
+
+    // Handle crores (करोड)
+    if (amount >= 10000000) {
+      const crores = Math.floor(amount / 10000000);
+      words += convertToNepaliWords(crores) + " करोड ";
+      amount %= 10000000;
+    }
+
+    // Handle lakhs (लाख)
+    if (amount >= 100000) {
+      const lakhs = Math.floor(amount / 100000);
+      words += convertToNepaliWords(lakhs) + " लाख ";
+      amount %= 100000;
+    }
+
+    // Handle thousands (हजार)
+    if (amount >= 1000) {
+      const thousands = Math.floor(amount / 1000);
+      words += convertToNepaliWords(thousands) + " हजार ";
+      amount %= 1000;
+    }
+
+    // Handle hundreds (सय)
+    if (amount >= 100) {
+      const hundredDigit = Math.floor(amount / 100);
+      words += hundreds[hundredDigit] + " ";
+      amount %= 100;
+    }
+
+    // Handle tens and ones
+    if (amount >= 20) {
+      const tensDigit = Math.floor(amount / 10);
+      const onesDigit = amount % 10;
+      words += tens[tensDigit];
+      if (onesDigit > 0) {
+        words += " " + ones[onesDigit];
+      }
+    } else if (amount >= 10) {
+      words += teens[amount - 10];
+    } else if (amount > 0) {
+      words += ones[amount];
+    }
+
+    return words.trim();
+  };
+
   // load logos from public folder and convert to data URLs (fallback to empty string)
   const getDataUrl = (filename: string) => {
     try {
@@ -138,10 +239,11 @@ export const generateReceiptPDF = async (
           body {
             /* prefer embedded Devanagari font for Nepali text */
             font-family: 'NotoDeva', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.4;
+            line-height: 1.3;
             color: #374151;
             background-color: white;
-            padding: 20px;
+            padding: 15px;
+            font-size: 12px;
           }
 
           .receipt-container {
@@ -152,106 +254,106 @@ export const generateReceiptPDF = async (
 
           /* Header layout: left logo with PAN above, center title, right reg above logo */
           .header {
-            border-bottom: 3px solid #ea580c;
-            padding-bottom: 14px;
-            margin-bottom: 20px;
+            border-bottom: 2px solid #ea580c;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
           }
           .header-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
           }
           .header-left, .header-center, .header-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
           }
-          .header-left { flex: 0 0 160px; flex-direction: column; align-items: flex-start; }
+          .header-left { flex: 0 0 140px; flex-direction: column; align-items: flex-start; }
           .header-center { flex: 1 1 auto; flex-direction: column; align-items: center; text-align: center; }
-          .header-right { flex: 0 0 160px; flex-direction: column; align-items: flex-end; }
+          .header-right { flex: 0 0 140px; flex-direction: column; align-items: flex-end; }
 
           .pan, .reg {
-            font-size: 12px;
+            font-size: 10px;
             color: #6b7280;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             font-weight: 600;
           }
 
-          .logo { width: 64px; height: 64px; object-fit: contain; border-radius: 4px; }
+          .logo { width: 50px; height: 50px; object-fit: contain; border-radius: 4px; }
 
           .header-center h1 {
             color: #ea580c;
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: block;
           }
           
           .header .subtitle {
             color: #dc2626;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
           }
           
           .receipt-number {
             background: linear-gradient(135deg, #fef3c7, #fed7aa);
             border: 2px solid #ea580c;
-            border-radius: 8px;
-            padding: 12px 20px;
+            border-radius: 6px;
+            padding: 8px 15px;
             display: inline-block;
           }
           
           .receipt-number .number {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #ea580c;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           
           .receipt-number .date {
-            font-size: 14px;
+            font-size: 12px;
             color: #dc2626;
           }
           
           .content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 20px;
           }
           
           .info-card {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 6px;
+            padding: 15px;
           }
           
           .info-card.donor {
-            border-left: 4px solid #ea580c;
+            border-left: 3px solid #ea580c;
           }
           
           .info-card.receipt {
-            border-left: 4px solid #dc2626;
+            border-left: 3px solid #dc2626;
           }
           
           .info-card h3 {
             color: #ea580c;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
           }
           
           .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 6px;
+            font-size: 12px;
           }
           
           .info-row .label {
@@ -268,123 +370,129 @@ export const generateReceiptPDF = async (
           .donation-details {
             background: linear-gradient(135deg, #fef3c7, #fed7aa);
             border: 2px solid #ea580c;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
           }
           
           .donation-details h3 {
             color: #ea580c;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
           }
           
           .donation-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
           }
           
           .donation-item {
             background-color: white;
             border: 1px solid #fed7aa;
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 6px;
+            padding: 10px;
             text-align: center;
           }
           
           .donation-item .label {
-            font-size: 12px;
+            font-size: 10px;
             color: #92400e;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
           }
           
           .donation-item .value {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
             color: #374151;
           }
           
           .donation-item .amount {
             color: #ea580c;
-            font-size: 20px;
+            font-size: 16px;
           }
           
           .notes {
             background-color: white;
             border: 1px solid #fed7aa;
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 6px;
+            padding: 10px;
           }
           
           .notes .label {
-            font-size: 12px;
+            font-size: 10px;
             color: #92400e;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
           }
           
           .notes .value {
             font-style: italic;
             color: #374151;
+            font-size: 11px;
           }
           
           .amount-words {
             background: linear-gradient(135deg, #fef3c7, #fed7aa);
             border: 2px dashed #ea580c;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
             text-align: center;
           }
           
           .amount-words h4 {
             color: #ea580c;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
           }
           
           .amount-words .words {
             background-color: white;
             border: 2px solid #ea580c;
-            border-radius: 6px;
-            padding: 12px;
-            font-size: 18px;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 13px;
             font-weight: 700;
             color: #ea580c;
+            margin-bottom: 6px;
+          }
+          
+          .amount-words .words.nepali {
+            font-size: 14px;
+            margin-bottom: 0;
           }
           
           .footer {
-            border-top: 3px solid #ea580c;
-            padding-top: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            border-top: 2px solid #ea580c;
+            padding-top: 15px;
+            display: flex;
+            justify-content: flex-end;
           }
           
           .footer-section h4 {
             color: #374151;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
           }
           
           .footer-section ul {
             list-style: none;
-            font-size: 12px;
+            font-size: 10px;
             color: #6b7280;
-            line-height: 1.6;
+            line-height: 1.4;
           }
           
           .footer-section li {
-            margin-bottom: 4px;
+            margin-bottom: 3px;
           }
           
           .signature-area {
@@ -393,12 +501,12 @@ export const generateReceiptPDF = async (
           
           .signature-line {
             border-bottom: 1px solid #d1d5db;
-            height: 50px;
-            margin-bottom: 8px;
+            height: 40px;
+            margin-bottom: 6px;
           }
           
           .signature-text {
-            font-size: 12px;
+            font-size: 10px;
             color: #6b7280;
           }
           
@@ -433,13 +541,13 @@ export const generateReceiptPDF = async (
               </div>
 
               <div class="header-center">
-                <div style="margin-bottom: 8px; font-size: 24px; color: #ea580c;">ॐ</div>
-                <div style="margin-bottom: 8px; font-size: 18px; font-weight: 700; color: #ea580c;">श्रीराधासर्वेश्वरो विजयते</div>
+                <div style="margin-bottom: 6px; font-size: 20px; color: #ea580c;">ॐ</div>
+                <div style="margin-bottom: 6px; font-size: 14px; font-weight: 700; color: #ea580c;">श्रीराधासर्वेश्वरो विजयते</div>
                 <h1>श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
                 <div class="subtitle">व्यवस्थापन तथा सञ्चालन समिति</div>
-                <div class="subtitle" style="font-size:13px;color:#374151;margin-top:6px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
-                <div class="subtitle" style="font-size:13px;color:#374151;">फोन नं. ०१-५९१५६६७</div>
-                <div class="subtitle" style="font-size:13px;color:#2563eb;">E-mail: jashankhamul@gmail.com</div>
+                <div class="subtitle" style="font-size:11px;color:#374151;margin-top:4px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
+                <div class="subtitle" style="font-size:11px;color:#374151;">फोन नं. ०१-५९१५६६७</div>
+                <div class="subtitle" style="font-size:11px;color:#2563eb;">E-mail: jashankhamul@gmail.com</div>
               </div>
 
               <div class="header-right">
@@ -452,7 +560,7 @@ export const generateReceiptPDF = async (
               </div>
             </div>
 
-            <div style="display:flex;justify-content:center;margin-top:10px;">
+            <div style="display:flex;justify-content:center;margin-top:8px;">
               <div class="receipt-number">
                 <div class="number">Receipt #${receipt.receiptNumber}</div>
                 <div class="date">Issued on ${formatDate(
@@ -536,6 +644,9 @@ export const generateReceiptPDF = async (
             <h4>Amount in Words</h4>
             <div class="words">
               Rupees ${receipt.amount.toLocaleString("en-IN")} Only
+            </div>
+            <div class="words nepali">
+              रुपैयाँ ${convertToNepaliWords(receipt.amount)} मात्र
             </div>
           </div>
 
