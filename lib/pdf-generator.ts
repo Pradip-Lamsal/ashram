@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer";
+import BrowserPool from "./browser-pool";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
@@ -670,11 +671,50 @@ export const generateReceiptPDF = async (
   `;
 
   try {
-    // Try to launch browser with Puppeteer
-    console.log("Attempting to generate PDF with Puppeteer...");
+    // Try to use browser pool first for better performance
+    console.log("Attempting to generate PDF with browser pool...");
+    const browserPool = BrowserPool.getInstance();
 
+    let page;
+    try {
+      page = await browserPool.getPage();
+
+      // Set content without waiting for network idle to speed up
+      await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
+
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        margin: {
+          top: "1.5cm",
+          right: "1.5cm",
+          bottom: "1.5cm",
+          left: "1.5cm",
+        },
+        printBackground: true,
+        timeout: 10000, // Add timeout to prevent hanging
+      });
+
+      await page.close(); // Close the page but keep browser alive
+      console.log("PDF generated successfully with browser pool");
+      return Buffer.from(pdfBuffer);
+    } catch (poolError) {
+      console.warn(
+        "Browser pool failed, falling back to single browser:",
+        poolError
+      );
+      if (page) {
+        await page.close().catch(() => {}); // Clean up page if it exists
+      }
+      throw poolError; // Re-throw to trigger fallback
+    }
+  } catch (poolError) {
+    // Fallback to single browser instance
+    console.log(
+      "Using fallback single browser instance...",
+      poolError instanceof Error ? poolError.message : String(poolError)
+    );
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: true, // Keep as boolean for compatibility
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -683,11 +723,19 @@ export const generateReceiptPDF = async (
         "--no-first-run",
         "--no-zygote",
         "--single-process",
+        "--disable-extensions",
+        "--disable-plugins",
+        "--disable-images", // Don't load images for faster rendering
+        "--disable-javascript", // Disable JS since we don't need it
+        "--disable-web-security",
+        "--memory-pressure-off",
       ],
     });
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+    // Set content without waiting for network idle to speed up
+    await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
 
     const pdfBuffer = await page.pdf({
       format: "A4",
@@ -698,16 +746,11 @@ export const generateReceiptPDF = async (
         left: "1.5cm",
       },
       printBackground: true,
+      timeout: 10000, // Add timeout to prevent hanging
     });
 
     await browser.close();
-    console.log("PDF generated successfully with Puppeteer");
+    console.log("PDF generated successfully with fallback browser");
     return Buffer.from(pdfBuffer);
-  } catch (error) {
-    console.error("Error generating PDF with Puppeteer:", error);
-    console.log("PDF generation failed - Puppeteer not available");
-
-    // Re-throw the error so the API can handle it gracefully
-    throw new Error("PDF generation failed - Puppeteer not available");
   }
 };
