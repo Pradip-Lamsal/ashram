@@ -482,7 +482,7 @@ export default function ReceiptsPage() {
           </div>
 
           {/* Receipts Table */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-hidden border rounded-lg">
             <div className="overflow-x-auto">
               <Table className="min-w-full">
                 <TableHeader>
@@ -492,16 +492,16 @@ export default function ReceiptsPage() {
                     </TableHead>
                     <TableHead className="whitespace-nowrap">Donor</TableHead>
                     <TableHead className="whitespace-nowrap">Amount</TableHead>
-                    <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                    <TableHead className="hidden whitespace-nowrap sm:table-cell">
                       Donation Type
                     </TableHead>
-                    <TableHead className="whitespace-nowrap hidden md:table-cell">
+                    <TableHead className="hidden whitespace-nowrap md:table-cell">
                       Payment Mode
                     </TableHead>
-                    <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                    <TableHead className="hidden whitespace-nowrap lg:table-cell">
                       Date
                     </TableHead>
-                    <TableHead className="whitespace-nowrap hidden xl:table-cell">
+                    <TableHead className="hidden whitespace-nowrap xl:table-cell">
                       Status
                     </TableHead>
                     <TableHead className="whitespace-nowrap">Actions</TableHead>
@@ -512,19 +512,19 @@ export default function ReceiptsPage() {
                     <TableRow key={receipt.id}>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex items-center">
-                          <ReceiptIcon className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0" />
+                          <ReceiptIcon className="flex-shrink-0 w-4 h-4 mr-2 text-orange-600" />
                           <span className="font-mono text-xs sm:text-sm">
                             {receipt.receipt_number}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[120px] sm:max-w-none">
-                        <p className="font-medium text-sm truncate">
+                        <p className="text-sm font-medium truncate">
                           {receipt.donation?.donor?.name || "Unknown Donor"}
                         </p>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <p className="font-bold text-green-600 text-sm">
+                        <p className="text-sm font-bold text-green-600">
                           {formatCurrency(
                             Number(receipt.donation?.amount || 0)
                           )}

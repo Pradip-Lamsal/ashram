@@ -243,7 +243,7 @@ export default function ReceiptForm({
 
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
                 <Input
                   placeholder="Search by name, phone, or email..."
                   value={donorSearchTerm}
@@ -275,7 +275,7 @@ export default function ReceiptForm({
                       </SelectItem>
                     ))
                   ) : (
-                    <div className="p-3 text-center text-sm text-gray-500">
+                    <div className="p-3 text-sm text-center text-gray-500">
                       {donorSearchTerm
                         ? "No donors found matching your search"
                         : "No donors available"}
@@ -315,12 +315,31 @@ export default function ReceiptForm({
                 <Label htmlFor="amount">Amount (रु) *</Label>
                 <Input
                   id="amount"
-                  type="number"
-                  min="1"
+                  type="text"
                   value={formData.amount || ""}
-                  onChange={(e) =>
-                    handleInputChange("amount", Number(e.target.value))
-                  }
+                  onChange={(e) => {
+                    // Only allow numeric input
+                    const value = e.target.value.replace(/[^0-9]/g, "");
+                    handleInputChange("amount", value ? Number(value) : 0);
+                  }}
+                  onKeyDown={(e) => {
+                    // Allow: backspace, delete, tab, escape, enter, and navigation keys
+                    if (
+                      [8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                      // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                      (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode))
+                    ) {
+                      return;
+                    }
+                    // Prevent if not a number
+                    if (
+                      (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
+                      (e.keyCode < 96 || e.keyCode > 105)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onWheel={(e) => e.preventDefault()}
                   placeholder="Enter donation amount"
                   className={errors.amount ? "border-red-500" : ""}
                 />
@@ -439,13 +458,18 @@ export default function ReceiptForm({
             )}
 
             {/* Form Actions */}
-            <div className="flex justify-end pt-4 space-x-4">
-              <Button type="button" variant="outline" onClick={onCancel}>
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end sm:space-x-4 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-orange-600 sm:w-auto hover:bg-orange-700"
               >
                 {initialData ? "Update Receipt" : "Create Receipt"}
               </Button>
