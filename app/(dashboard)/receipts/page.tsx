@@ -331,7 +331,7 @@ export default function ReceiptsPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 mx-auto max-w-7xl">
+      <div className="px-4 py-6 mx-auto sm:px-6 sm:py-8 max-w-7xl">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="w-12 h-12 mx-auto mb-4 text-orange-500 animate-spin" />
@@ -344,7 +344,7 @@ export default function ReceiptsPage() {
 
   if (error) {
     return (
-      <div className="px-6 py-8 mx-auto max-w-7xl">
+      <div className="px-4 py-6 mx-auto sm:px-6 sm:py-8 max-w-7xl">
         <div className="flex items-center justify-center h-64">
           <Card className="p-6 text-center border-red-200 bg-red-50">
             <CardContent>
@@ -368,37 +368,39 @@ export default function ReceiptsPage() {
   }
 
   return (
-    <div className="px-6 py-8 mx-auto max-w-7xl">
+    <div className="px-4 py-6 mx-auto sm:px-6 sm:py-8 max-w-7xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+      <div className="flex flex-col items-start justify-between gap-4 mb-8 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Receipt Management
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 sm:text-base">
             Generate and manage donation receipts
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              className="bg-orange-600 hover:bg-orange-700"
+              className="w-full bg-orange-600 hover:bg-orange-700 sm:w-auto"
               disabled={creatingReceipt}
             >
               {creatingReceipt ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
+                  <span className="hidden sm:inline">Generating...</span>
+                  <span className="sm:hidden">Loading...</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 mr-2" />
-                  Generate Receipt
+                  <span className="hidden sm:inline">Generate Receipt</span>
+                  <span className="sm:hidden">Generate</span>
                 </>
               )}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>Generate New Receipt</DialogTitle>
               <DialogDescription>
@@ -415,44 +417,44 @@ export default function ReceiptsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-4 sm:gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                 {totalReceipts}
               </p>
-              <p className="text-sm text-gray-600">Total Receipts</p>
+              <p className="text-xs text-gray-600 sm:text-sm">Total Receipts</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                 {formatCurrency(totalAmount)}
               </p>
-              <p className="text-sm text-gray-600">Total Amount</p>
+              <p className="text-xs text-gray-600 sm:text-sm">Total Amount</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                 {printedReceipts}
               </p>
-              <p className="text-sm text-gray-600">Printed</p>
+              <p className="text-xs text-gray-600 sm:text-sm">Printed</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                 {emailedReceipts}
               </p>
-              <p className="text-sm text-gray-600">Emailed</p>
+              <p className="text-xs text-gray-600 sm:text-sm">Emailed</p>
             </div>
           </CardContent>
         </Card>
@@ -461,12 +463,12 @@ export default function ReceiptsPage() {
       {/* Search and Filters */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Receipt Database</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Receipt Database</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Search and manage all generated receipts
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center mb-6 space-x-4">
             <div className="relative flex-1">
               <Search className="absolute w-4 h-4 text-gray-400 left-3 top-3" />
@@ -480,114 +482,134 @@ export default function ReceiptsPage() {
           </div>
 
           {/* Receipts Table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Receipt Number</TableHead>
-                  <TableHead>Donor</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Donation Type</TableHead>
-                  <TableHead>Payment Mode</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReceipts.map((receipt) => (
-                  <TableRow key={receipt.id}>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <ReceiptIcon className="w-4 h-4 mr-2 text-orange-600" />
-                        <span className="font-mono text-sm">
-                          {receipt.receipt_number}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-medium">
-                        {receipt.donation?.donor?.name || "Unknown Donor"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-bold text-green-600">
-                        {formatCurrency(Number(receipt.donation?.amount || 0))}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {receipt.donation?.donation_type
-                          ? getDonationTypeLabel(receipt.donation.donation_type)
-                          : "N/A"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          receipt.donation?.payment_mode === "Online"
-                            ? "bg-blue-100 text-blue-800"
-                            : receipt.donation?.payment_mode === "QR Payment"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {receipt.donation?.payment_mode || "N/A"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">
-                        {receipt.donation && receipt.donation.date_of_donation
-                          ? formatDonationDate(receipt.donation)
-                          : "N/A"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              receipt.is_printed
-                                ? "bg-green-500"
-                                : "bg-gray-300"
-                            }`}
-                          />
-                          <span className="text-xs">
-                            {receipt.is_printed ? "Printed" : "Not Printed"}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              receipt.is_email_sent
-                                ? "bg-blue-500"
-                                : "bg-gray-300"
-                            }`}
-                          />
-                          <span className="text-xs">
-                            {receipt.is_email_sent ? "Emailed" : "Not Emailed"}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewReceiptWithHistory(receipt)}
-                          title="View Receipt & Manage Actions"
-                          className="hover:bg-orange-50 hover:border-orange-200"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">View</span>
-                        </Button>
-                      </div>
-                    </TableCell>
+          <div className="border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="min-w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">
+                      Receipt Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap">Donor</TableHead>
+                    <TableHead className="whitespace-nowrap">Amount</TableHead>
+                    <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                      Donation Type
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap hidden md:table-cell">
+                      Payment Mode
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                      Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap hidden xl:table-cell">
+                      Status
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredReceipts.map((receipt) => (
+                    <TableRow key={receipt.id}>
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center">
+                          <ReceiptIcon className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0" />
+                          <span className="font-mono text-xs sm:text-sm">
+                            {receipt.receipt_number}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[120px] sm:max-w-none">
+                        <p className="font-medium text-sm truncate">
+                          {receipt.donation?.donor?.name || "Unknown Donor"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <p className="font-bold text-green-600 text-sm">
+                          {formatCurrency(
+                            Number(receipt.donation?.amount || 0)
+                          )}
+                        </p>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <span className="text-xs sm:text-sm">
+                          {receipt.donation?.donation_type
+                            ? getDonationTypeLabel(
+                                receipt.donation.donation_type
+                              )
+                            : "N/A"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            receipt.donation?.payment_mode === "Online"
+                              ? "bg-blue-100 text-blue-800"
+                              : receipt.donation?.payment_mode === "QR Payment"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {receipt.donation?.payment_mode || "N/A"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <p className="text-xs sm:text-sm">
+                          {receipt.donation && receipt.donation.date_of_donation
+                            ? formatDonationDate(receipt.donation)
+                            : "N/A"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                receipt.is_printed
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="text-xs">
+                              {receipt.is_printed ? "Printed" : "Not Printed"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                receipt.is_email_sent
+                                  ? "bg-blue-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="text-xs">
+                              {receipt.is_email_sent
+                                ? "Emailed"
+                                : "Not Emailed"}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleViewReceiptWithHistory(receipt)
+                            }
+                            title="View Receipt & Manage Actions"
+                            className="hover:bg-orange-50 hover:border-orange-200"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            <span className="hidden sm:inline">View</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {filteredReceipts.length === 0 && !loading && (
