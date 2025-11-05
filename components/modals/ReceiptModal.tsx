@@ -114,6 +114,10 @@ export default function ReceiptModal({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
+  // Loading states for actions
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
   // Simple toast function
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -142,6 +146,21 @@ export default function ReceiptModal({
   };
 
   const handlePrint = useReactToPrint(printOptions);
+
+  const handlePrintWithLoading = useCallback(async () => {
+    setIsPrinting(true);
+    try {
+      await handlePrint();
+      showToastNotification("Receipt printed successfully");
+      // Mark receipt as printed
+      onMarkPrinted?.(receipt.id);
+    } catch (error) {
+      console.error("Error printing receipt:", error);
+      showToastNotification("Failed to print receipt. Please try again.");
+    } finally {
+      setIsPrinting(false);
+    }
+  }, [handlePrint, receipt.id, onMarkPrinted]);
 
   const handleEmailReceipt = useCallback(() => {
     // Open email dialog to get email address
@@ -234,6 +253,7 @@ export default function ReceiptModal({
   }, [emailState.address, receipt, onMarkEmailed]);
 
   const handleDownloadPDF = async () => {
+    setIsDownloading(true);
     try {
       const response = await fetch("/api/download-receipt-pdf", {
         method: "POST",
@@ -278,6 +298,8 @@ export default function ReceiptModal({
     } catch (error) {
       console.error("Error downloading PDF:", error);
       showToastNotification("Failed to download PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -353,11 +375,16 @@ export default function ReceiptModal({
               {/* Enhanced Action Buttons with Orange Theme */}
               <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 no-print">
                 <Button
-                  onClick={handlePrint}
-                  className="flex items-center justify-center h-12 font-medium text-white transition-all duration-200 bg-orange-600 shadow-sm hover:bg-orange-700 hover:shadow-md"
+                  onClick={handlePrintWithLoading}
+                  disabled={isPrinting}
+                  className="flex items-center justify-center h-12 font-medium text-white transition-all duration-200 bg-orange-600 shadow-sm hover:bg-orange-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <lucideReact.Printer className="w-4 h-4 mr-2" />
-                  Print Receipt
+                  {isPrinting ? (
+                    <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <lucideReact.Printer className="w-4 h-4 mr-2" />
+                  )}
+                  {isPrinting ? "Printing..." : "Print Receipt"}
                 </Button>
                 <Button
                   variant="outline"
@@ -370,10 +397,15 @@ export default function ReceiptModal({
                 <Button
                   variant="outline"
                   onClick={handleDownloadPDF}
-                  className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                  disabled={isDownloading}
+                  className="flex items-center justify-center h-12 font-medium text-orange-700 transition-all duration-200 border-orange-200 hover:bg-orange-50 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <lucideReact.Download className="w-4 h-4 mr-2" />
-                  Download
+                  {isDownloading ? (
+                    <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <lucideReact.Download className="w-4 h-4 mr-2" />
+                  )}
+                  {isDownloading ? "Downloading..." : "Download"}
                 </Button>
                 <Button
                   variant="outline"

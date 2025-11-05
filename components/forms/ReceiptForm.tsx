@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DonationType, Donor, PaymentMode } from "@/types";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
 interface ReceiptFormData {
@@ -47,6 +47,7 @@ interface ReceiptFormProps {
   onSubmit: (data: ReceiptFormData) => void;
   onCancel: () => void;
   initialData?: Partial<ReceiptFormData>;
+  isSubmitting?: boolean;
 }
 
 const donationTypes: DonationType[] = [
@@ -86,6 +87,7 @@ export default function ReceiptForm({
   onSubmit,
   onCancel,
   initialData,
+  isSubmitting = false,
 }: ReceiptFormProps) {
   const [formData, setFormData] = useState<ReceiptFormData>({
     donorId: initialData?.donorId || "",
@@ -458,20 +460,31 @@ export default function ReceiptForm({
             )}
 
             {/* Form Actions */}
-            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end sm:space-x-4 sm:gap-0">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:justify-end sm:space-y-0 sm:space-x-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 className="w-full sm:w-auto"
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="w-full bg-orange-600 sm:w-auto hover:bg-orange-700"
+                className="w-full bg-orange-600 sm:w-auto hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
-                {initialData ? "Update Receipt" : "Create Receipt"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {initialData ? "Updating..." : "Creating..."}
+                  </>
+                ) : initialData ? (
+                  "Update Receipt"
+                ) : (
+                  "Create Receipt"
+                )}
               </Button>
             </div>
           </form>

@@ -48,6 +48,7 @@ import {
   Eye,
   FileDown,
   Filter,
+  Loader2,
   Mail,
   Phone,
   Plus,
@@ -101,6 +102,10 @@ export default function DonorsPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+
+  // Form submission loading states
+  const [isSubmittingDonor, setIsSubmittingDonor] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const loadDonors = async () => {
@@ -197,6 +202,7 @@ export default function DonorsPage() {
   }) => {
     if (!donorToEdit) return;
 
+    setIsSubmittingDonor(true);
     try {
       const updatedDonor = await donorsService.update(donorToEdit.id, {
         name: donorData.name,
@@ -225,6 +231,8 @@ export default function DonorsPage() {
     } catch (error) {
       console.error("Error updating donor:", error);
       showToast("Failed to update donor", "destructive");
+    } finally {
+      setIsSubmittingDonor(false);
     }
   };
 
@@ -238,6 +246,7 @@ export default function DonorsPage() {
     membership: string;
     notes: string;
   }) => {
+    setIsSubmittingDonor(true);
     try {
       const newDonor = await donorsService.create({
         name: donorData.name,
@@ -276,11 +285,14 @@ export default function DonorsPage() {
         "There was an error adding the donor. Please check your information and try again.",
         "destructive"
       );
+    } finally {
+      setIsSubmittingDonor(false);
     }
   };
 
   // Excel export function
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
+    setIsExporting(true);
     try {
       // Prepare data for export
       const exportData = filteredDonors.map((donor, index) => ({
@@ -346,6 +358,8 @@ export default function DonorsPage() {
         "There was an error exporting the data. Please try again.",
         "destructive"
       );
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -403,6 +417,7 @@ export default function DonorsPage() {
             <DonorForm
               onSubmit={handleAddDonor}
               onCancel={() => setIsAddDialogOpen(false)}
+              isSubmitting={isSubmittingDonor}
             />
           </DialogContent>
         </Dialog>
@@ -435,6 +450,7 @@ export default function DonorsPage() {
                   setIsEditDialogOpen(false);
                   setDonorToEdit(null);
                 }}
+                isSubmitting={isSubmittingDonor}
               />
             )}
           </DialogContent>
@@ -566,11 +582,16 @@ export default function DonorsPage() {
             </div>
             <Button
               onClick={handleExportToExcel}
+              disabled={isExporting}
               variant="outline"
-              className="flex items-center w-full gap-2 text-green-700 border-green-200 sm:w-auto bg-green-50 hover:bg-green-100 hover:border-green-300"
+              className="flex items-center w-full gap-2 text-green-700 border-green-200 sm:w-auto bg-green-50 hover:bg-green-100 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FileDown className="w-4 h-4" />
-              Export to Excel
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              {isExporting ? "Exporting..." : "Export to Excel"}
             </Button>
           </div>
 

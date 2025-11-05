@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DonationType, Donor, MembershipType } from "@/types";
+import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
 
 const donationTypes: DonationType[] = [
@@ -65,12 +66,14 @@ interface DonorFormProps {
   onSubmit: (data: DonorFormData) => void;
   onCancel: () => void;
   initialData?: Partial<Donor>;
+  isSubmitting?: boolean;
 }
 
 export default function DonorForm({
   onSubmit,
   onCancel,
   initialData,
+  isSubmitting = false,
 }: DonorFormProps) {
   const [formData, setFormData] = useState<DonorFormData>({
     name: initialData?.name || "",
@@ -386,11 +389,29 @@ export default function DonorForm({
 
           {/* Form Actions */}
           <div className="flex justify-end pt-4 space-x-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-              {initialData ? "Update Donor" : "Add Donor"}
+            <Button
+              type="submit"
+              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {initialData ? "Updating..." : "Adding..."}
+                </>
+              ) : initialData ? (
+                "Update Donor"
+              ) : (
+                "Add Donor"
+              )}
             </Button>
           </div>
         </form>

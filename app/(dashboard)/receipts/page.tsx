@@ -104,6 +104,9 @@ export default function ReceiptsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
 
+  // Form submission loading state
+  const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
       if (!appUser) return;
@@ -174,6 +177,7 @@ export default function ReceiptsPage() {
       return;
     }
 
+    setIsSubmittingReceipt(true);
     try {
       setCreatingReceipt(true);
       setError(null);
@@ -236,6 +240,7 @@ export default function ReceiptsPage() {
       setError(errorMessage);
       showToast(`Error creating receipt: ${errorMessage}`, "destructive");
     } finally {
+      setIsSubmittingReceipt(false);
       setCreatingReceipt(false);
     }
   };
@@ -259,8 +264,15 @@ export default function ReceiptsPage() {
 
       showToast("Receipt marked as printed ✅", "default");
     } catch (error) {
-      console.error("Error updating print status:", error);
-      showToast("Failed to update print status", "destructive");
+      // Handle print status update error gracefully
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.warn("Failed to update print status:", errorMessage);
+      showToast(
+        "Could not update print status",
+        "The receipt action was attempted but the status could not be updated.",
+        "destructive"
+      );
     } finally {
       setUpdatingReceipt(null);
     }
@@ -285,8 +297,15 @@ export default function ReceiptsPage() {
 
       showToast("Receipt marked as emailed 📧", "default");
     } catch (error) {
-      console.error("Error updating email status:", error);
-      showToast("Failed to update email status", "destructive");
+      // Handle email status update error gracefully
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.warn("Failed to update email status:", errorMessage);
+      showToast(
+        "Could not update email status",
+        "The receipt action was attempted but the status could not be updated.",
+        "destructive"
+      );
     } finally {
       setUpdatingReceipt(null);
     }
@@ -308,8 +327,15 @@ export default function ReceiptsPage() {
 
       showToast("Receipt deleted successfully", "default");
     } catch (error) {
-      console.error("Error deleting receipt:", error);
-      showToast("Failed to delete receipt", "destructive");
+      // Handle receipt deletion error gracefully
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.warn("Failed to delete receipt:", errorMessage);
+      showToast(
+        "Could not delete receipt",
+        "The receipt could not be deleted. Please try again.",
+        "destructive"
+      );
     } finally {
       setUpdatingReceipt(null);
     }
@@ -427,6 +453,7 @@ export default function ReceiptsPage() {
               donors={donors}
               onSubmit={handleCreateReceipt}
               onCancel={() => setIsAddDialogOpen(false)}
+              isSubmitting={isSubmittingReceipt}
             />
           </DialogContent>
         </Dialog>
