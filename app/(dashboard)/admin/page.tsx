@@ -403,7 +403,7 @@ export default function AdminPage() {
       {/* Search and Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <Input
@@ -413,10 +413,10 @@ export default function AdminPage() {
                 className="pl-10"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Filter className="w-4 h-4 text-gray-500" />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -438,32 +438,141 @@ export default function AdminPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="pending">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+              <TabsTrigger value="pending" className="text-xs sm:text-sm">
                 Pending ({stats.pending})
               </TabsTrigger>
-              <TabsTrigger value="approved">
+              <TabsTrigger value="approved" className="text-xs sm:text-sm">
                 Approved ({stats.approved})
               </TabsTrigger>
-              <TabsTrigger value="rejected">
+              <TabsTrigger value="rejected" className="text-xs sm:text-sm">
                 Rejected ({stats.rejected})
               </TabsTrigger>
-              <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                All ({stats.total})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-6">
-              <div className="border rounded-md">
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-4">
+                {filteredUsers
+                  .filter(
+                    (user) => activeTab === "all" || user.status === activeTab
+                  )
+                  .map((user, index) => (
+                    <Card key={user.id} className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">
+                            {user.name || "N/A"}
+                          </h3>
+                          <p className="text-sm text-gray-600 break-all">
+                            {user.email}
+                          </p>
+                        </div>
+                        <div className="ml-2">
+                          {getStatusBadge(user.status)}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <div>
+                          <span className="text-gray-500">Role:</span>
+                          <span className="ml-1 capitalize">{user.role}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">SN:</span>
+                          <span className="ml-1">{index + 1}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-500">Registered:</span>
+                          <span className="ml-1">
+                            {formatDate(user.created_at)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={updating === user.id}
+                            >
+                              {updating === user.id ? (
+                                <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <MoreHorizontal className="w-4 h-4 mr-2" />
+                              )}
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-green-600">
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            {user.status !== "approved" && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateUserStatus(user.id, "approved")
+                                }
+                                className="text-green-600"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve
+                              </DropdownMenuItem>
+                            )}
+                            {user.status !== "rejected" && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateUserStatus(user.id, "rejected")
+                                }
+                                className="text-red-600"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </DropdownMenuItem>
+                            )}
+                            {user.status !== "pending" && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateUserStatus(user.id, "pending")
+                                }
+                                className="text-yellow-600"
+                              >
+                                <Clock className="w-4 h-4 mr-2" />
+                                Set Pending
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block border rounded-md overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">SN</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Registration Date</TableHead>
-                      <TableHead>Last Updated</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="min-w-[120px]">Name</TableHead>
+                      <TableHead className="min-w-[200px]">Email</TableHead>
+                      <TableHead className="min-w-[80px]">Role</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[120px]">
+                        Registration Date
+                      </TableHead>
+                      <TableHead className="min-w-[120px]">
+                        Last Updated
+                      </TableHead>
+                      <TableHead className="min-w-[100px] text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -480,13 +589,19 @@ export default function AdminPage() {
                           <TableCell className="font-medium">
                             {user.name || "N/A"}
                           </TableCell>
-                          <TableCell>{user.email}</TableCell>
+                          <TableCell className="break-all">
+                            {user.email}
+                          </TableCell>
                           <TableCell className="capitalize">
                             {user.role}
                           </TableCell>
                           <TableCell>{getStatusBadge(user.status)}</TableCell>
-                          <TableCell>{formatDate(user.created_at)}</TableCell>
-                          <TableCell>{formatDate(user.updated_at)}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatDate(user.created_at)}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatDate(user.updated_at)}
+                          </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -552,11 +667,11 @@ export default function AdminPage() {
 
               {filteredUsers.filter(
                 (user) => activeTab === "all" || user.status === activeTab
-              ).length === 0 && (
+              ).length === 0 ? (
                 <div className="py-8 text-center text-gray-500">
                   No users found matching your criteria.
                 </div>
-              )}
+              ) : null}
             </TabsContent>
           </Tabs>
         </CardContent>
