@@ -16,24 +16,22 @@ export interface QRModalProps {
 export default function QRModal({ isOpen, onClose }: QRModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl mx-auto">
+      <DialogContent className="max-w-sm sm:max-w-md md:max-w-lg mx-4 p-4">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">
+          <DialogTitle className="text-lg sm:text-xl font-semibold text-gray-900 text-center">
             QR Payment Code
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col items-center py-4">
-          <div
-            className="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-white shadow-lg"
-            style={{ width: "640px", height: "640px" }}
-          >
+        <div className="flex justify-center py-2">
+          <div className="relative w-full max-w-xs sm:max-w-sm aspect-square border-2 border-gray-200 rounded-lg overflow-hidden bg-white shadow-lg">
             <Image
               src="/Qr.jpeg"
               alt="Payment QR Code"
               fill
-              className="object-contain p-3"
+              className="object-contain p-2 sm:p-3"
               priority
+              sizes="(max-width: 640px) 90vw, 400px"
             />
           </div>
         </div>
