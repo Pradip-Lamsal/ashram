@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -97,6 +98,10 @@ export default function DonorsPage() {
   >([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
   useEffect(() => {
     const loadDonors = async () => {
       try {
@@ -140,6 +145,22 @@ export default function DonorsPage() {
 
     return matchesSearch && matchesDonationType && matchesMembership;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredDonors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDonors = filteredDonors.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const resetToFirstPage = () => {
+    setCurrentPage(1);
+  };
+
+  // Update useEffect to reset page when search/filter changes
+  useEffect(() => {
+    resetToFirstPage();
+  }, [searchTerm, donationTypeFilter, membershipFilter]);
 
   const handleViewProfile = async (donor: Donor) => {
     setSelectedDonor(donor);
@@ -577,7 +598,7 @@ export default function DonorsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDonors.map((donor) => (
+                  {paginatedDonors.map((donor) => (
                     <TableRow key={donor.id}>
                       <TableCell className="min-w-[150px]">
                         <div>
@@ -681,6 +702,20 @@ export default function DonorsPage() {
               </Table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {filteredDonors.length > 0 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredDonors.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            </div>
+          )}
 
           {filteredDonors.length === 0 && !loading && (
             <div className="py-8 text-center">

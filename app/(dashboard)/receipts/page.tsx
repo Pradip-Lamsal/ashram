@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -99,6 +100,10 @@ export default function ReceiptsPage() {
   >([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
   useEffect(() => {
     const loadData = async () => {
       if (!appUser) return;
@@ -139,6 +144,17 @@ export default function ReceiptsPage() {
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase())
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReceipts = filteredReceipts.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleCreateReceipt = async (receiptData: {
     donorId: string;
@@ -508,7 +524,7 @@ export default function ReceiptsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReceipts.map((receipt) => (
+                  {paginatedReceipts.map((receipt) => (
                     <TableRow key={receipt.id}>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex items-center">
@@ -611,6 +627,20 @@ export default function ReceiptsPage() {
               </Table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {filteredReceipts.length > 0 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredReceipts.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            </div>
+          )}
 
           {filteredReceipts.length === 0 && !loading && (
             <div className="py-8 text-center">
