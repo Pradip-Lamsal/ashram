@@ -1,4 +1,72 @@
 import puppeteer, { Browser, Page } from "puppeteer";
+import puppeteerCore from "puppeteer-core";
+
+// Function to get browser launch configuration based on environment
+const getBrowserConfig = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const isVercel = process.env.VERCEL === "1";
+
+  if (isVercel || isProduction) {
+    // Use puppeteer-core with chrome-aws-lambda or custom Chrome
+    const executablePath =
+      process.env.CHROME_EXECUTABLE_PATH ||
+      "/opt/render/bin/chrome" || // Render.com
+      "/usr/bin/google-chrome" || // Some cloud providers
+      undefined;
+
+    return {
+      launch: puppeteerCore.launch,
+      config: {
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process",
+          "--disable-extensions",
+          "--disable-plugins",
+          "--disable-images",
+          "--disable-javascript",
+          "--disable-web-security",
+          "--memory-pressure-off",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+          "--disable-features=TranslateUI",
+          "--disable-ipc-flooding-protection",
+        ],
+        executablePath,
+        headless: true,
+      },
+    };
+  } else {
+    // Local development
+    return {
+      launch: puppeteer.launch,
+      config: {
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process",
+          "--disable-extensions",
+          "--disable-plugins",
+          "--disable-images",
+          "--disable-javascript",
+          "--disable-web-security",
+          "--memory-pressure-off",
+          "--max_old_space_size=512",
+        ],
+      },
+    };
+  }
+};
 
 class BrowserPool {
   private static instance: BrowserPool;
@@ -38,25 +106,8 @@ class BrowserPool {
   private async _createBrowser(): Promise<void> {
     try {
       console.log("Creating new browser instance...");
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--no-first-run",
-          "--no-zygote",
-          "--single-process",
-          "--disable-extensions",
-          "--disable-plugins",
-          "--disable-images",
-          "--disable-javascript",
-          "--disable-web-security",
-          "--memory-pressure-off",
-          "--max_old_space_size=512", // Limit memory usage
-        ],
-      });
+      const browserConfig = getBrowserConfig();
+      this.browser = await browserConfig.launch(browserConfig.config);
       console.log("Browser created successfully");
     } catch (error) {
       console.error("Failed to create browser:", error);

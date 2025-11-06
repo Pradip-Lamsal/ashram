@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { generateClientSidePDF } from "@/lib/client-pdf-generator";
 import { formatDonationDate } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { DonationType, PaymentMode } from "@/types";
@@ -399,10 +400,51 @@ export default function ReceiptModal({
       console.log("PDF download completed successfully");
       showToastNotification("PDF downloaded successfully");
     } catch (error) {
-      console.error("Error downloading PDF:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      showToastNotification(`Failed to download PDF: ${errorMessage}`);
+      console.error("Error downloading PDF via server:", error);
+
+      // Try client-side PDF generation as fallback
+      console.log("Attempting client-side PDF generation as fallback...");
+      try {
+        await generateClientSidePDF({
+          receiptNumber: receipt.receiptNumber,
+          donorName: receipt.donorName,
+          donorId: receipt.donorId,
+          amount: receipt.amount,
+          createdAt:
+            typeof receipt.createdAt === "string"
+              ? receipt.createdAt
+              : receipt.createdAt.toISOString(),
+          donationType: receipt.donationType,
+          paymentMode: receipt.paymentMode,
+          dateOfDonation: receipt.dateOfDonation
+            ? typeof receipt.dateOfDonation === "string"
+              ? receipt.dateOfDonation
+              : receipt.dateOfDonation.toISOString()
+            : undefined,
+          startDate: receipt.startDate
+            ? typeof receipt.startDate === "string"
+              ? receipt.startDate
+              : receipt.startDate.toISOString()
+            : undefined,
+          endDate: receipt.endDate
+            ? typeof receipt.endDate === "string"
+              ? receipt.endDate
+              : receipt.endDate.toISOString()
+            : undefined,
+          notes: receipt.notes,
+          createdBy: receipt.createdBy,
+        });
+
+        console.log("Client-side PDF generation successful");
+        showToastNotification(
+          "PDF downloaded successfully (client-side generation)"
+        );
+      } catch (clientError) {
+        console.error("Client-side PDF generation also failed:", clientError);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        showToastNotification(`Failed to download PDF: ${errorMessage}`);
+      }
     } finally {
       setIsDownloading(false);
     }

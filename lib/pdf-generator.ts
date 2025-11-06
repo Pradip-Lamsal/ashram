@@ -1,9 +1,76 @@
 import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
 import BrowserPool from "./browser-pool";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
+
+// Function to get browser launch configuration based on environment
+const getBrowserConfig = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const isVercel = process.env.VERCEL === "1";
+
+  if (isVercel || isProduction) {
+    // Use environment variable or system Chrome for production
+    const executablePath =
+      process.env.CHROME_EXECUTABLE_PATH ||
+      "/opt/render/bin/chrome" || // Render.com
+      "/usr/bin/google-chrome" || // Some cloud providers
+      undefined;
+
+    return {
+      launch: puppeteerCore.launch,
+      config: {
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process",
+          "--disable-extensions",
+          "--disable-plugins",
+          "--disable-images",
+          "--disable-javascript",
+          "--disable-web-security",
+          "--memory-pressure-off",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+          "--disable-features=TranslateUI",
+          "--disable-ipc-flooding-protection",
+        ],
+        executablePath,
+        headless: true,
+      },
+    };
+  } else {
+    // Local development
+    return {
+      launch: puppeteer.launch,
+      config: {
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process",
+          "--disable-extensions",
+          "--disable-plugins",
+          "--disable-images",
+          "--disable-javascript",
+          "--disable-web-security",
+          "--memory-pressure-off",
+        ],
+      },
+    };
+  }
+};
 
 interface ReceiptData {
   receiptNumber: string;
@@ -713,24 +780,9 @@ export const generateReceiptPDF = async (
       "Using fallback single browser instance...",
       poolError instanceof Error ? poolError.message : String(poolError)
     );
-    const browser = await puppeteer.launch({
-      headless: true, // Keep as boolean for compatibility
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-zygote",
-        "--single-process",
-        "--disable-extensions",
-        "--disable-plugins",
-        "--disable-images", // Don't load images for faster rendering
-        "--disable-javascript", // Disable JS since we don't need it
-        "--disable-web-security",
-        "--memory-pressure-off",
-      ],
-    });
+
+    const browserConfig = getBrowserConfig();
+    const browser = await browserConfig.launch(browserConfig.config);
 
     const page = await browser.newPage();
 

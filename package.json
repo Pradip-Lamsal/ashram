@@ -31,6 +31,8 @@
     "@types/nodemailer": "^7.0.1",
     "@types/qrcode": "^1.5.5",
     "antd": "^5.27.1",
+    "@sparticuz/chromium": "^119.0.0",
+    "chrome-aws-lambda": "^10.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
