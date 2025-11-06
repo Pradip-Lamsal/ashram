@@ -1033,7 +1033,7 @@ export default function ReceiptModal({
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
               disabled={isUpdating}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="text-gray-700 border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
@@ -1045,7 +1045,7 @@ export default function ReceiptModal({
                 onClose();
               }}
               disabled={isUpdating}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="text-white bg-red-600 hover:bg-red-700"
             >
               {isUpdating ? (
                 <>

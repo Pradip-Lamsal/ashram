@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -30,14 +37,17 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { englishToNepaliDateTime } from "@/lib/nepali-date-utils";
+import { usersService } from "@/lib/supabase-services";
 import {
+  AlertTriangle,
   CheckCircle,
   Clock,
-  Eye,
   Filter,
+  Loader2,
   MoreHorizontal,
   RefreshCw,
   Search,
+  Trash2,
   Users,
   XCircle,
 } from "lucide-react";
@@ -80,6 +90,14 @@ export default function AdminPage() {
     rejected: 0,
   });
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [showUserDeleteConfirm, setShowUserDeleteConfirm] = useState<{
+    show: boolean;
+    user: { id: string; email: string; role: string } | null;
+  }>({
+    show: false,
+    user: null,
+  });
   const { showToast } = useToast();
 
   // Protection logic - redirect if not admin
@@ -201,6 +219,43 @@ export default function AdminPage() {
       );
     } finally {
       setUpdating(null);
+    }
+  };
+
+  // Delete user function - soft delete
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setDeletingUser(userId);
+
+      await usersService.delete(userId);
+
+      // Remove from local state
+      setUsers((prev) => prev.filter((user) => user.id !== userId));
+      setFilteredUsers((prev) => prev.filter((user) => user.id !== userId));
+
+      // Update stats
+      const updatedUsers = users.filter((user) => user.id !== userId);
+      const total = updatedUsers.length;
+      const pending = updatedUsers.filter((u) => u.status === "pending").length;
+      const approved = updatedUsers.filter(
+        (u) => u.status === "approved"
+      ).length;
+      const rejected = updatedUsers.filter(
+        (u) => u.status === "rejected"
+      ).length;
+      setStats({ total, pending, approved, rejected });
+
+      showToast("Success", "User deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      showToast(
+        "Error",
+        error instanceof Error ? error.message : "Failed to delete user",
+        "destructive"
+      );
+    } finally {
+      setDeletingUser(null);
+      setShowUserDeleteConfirm({ show: false, user: null });
     }
   };
 
@@ -510,9 +565,22 @@ export default function AdminPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="text-green-600">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setShowUserDeleteConfirm({
+                                  show: true,
+                                  user: {
+                                    id: user.id,
+                                    email: user.email,
+                                    role: user.role,
+                                  },
+                                });
+                              }}
+                              disabled={deletingUser === user.id}
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete User
                             </DropdownMenuItem>
                             {user.status !== "approved" && (
                               <DropdownMenuItem
@@ -619,9 +687,22 @@ export default function AdminPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-green-600">
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setShowUserDeleteConfirm({
+                                      show: true,
+                                      user: {
+                                        id: user.id,
+                                        email: user.email,
+                                        role: user.role,
+                                      },
+                                    });
+                                  }}
+                                  disabled={deletingUser === user.id}
+                                  className="text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete User
                                 </DropdownMenuItem>
                                 {user.status !== "approved" && (
                                   <DropdownMenuItem
@@ -676,6 +757,74 @@ export default function AdminPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* User Delete Confirmation Dialog */}
+      <Dialog
+        open={showUserDeleteConfirm.show}
+        onOpenChange={(open) =>
+          setShowUserDeleteConfirm({ show: open, user: null })
+        }
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Delete User Account
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the account for{" "}
+              <span className="font-semibold">
+                {showUserDeleteConfirm.user?.email}
+              </span>
+              ?
+              <br />
+              <br />
+              <span className="text-red-600 font-medium">
+                This user will lose access to the system immediately.
+              </span>
+              <br />
+              <span className="text-orange-600">
+                This action can be undone by an administrator.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setShowUserDeleteConfirm({ show: false, user: null })
+              }
+              disabled={deletingUser !== null}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (showUserDeleteConfirm.user) {
+                  handleDeleteUser(showUserDeleteConfirm.user.id);
+                }
+              }}
+              disabled={deletingUser !== null}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletingUser ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete User
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
