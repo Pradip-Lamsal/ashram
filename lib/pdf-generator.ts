@@ -4,6 +4,7 @@ import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
 import BrowserPool from "./browser-pool";
 import { getDonationTypeLabel } from "./donation-labels";
+import { getFontAsBase64 } from "./font-loader";
 import { verifyFontDeployment } from "./font-verification";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
@@ -309,137 +310,45 @@ export async function generateReceiptPDF(
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // embed Devanagari font with comprehensive error handling
-  const embedFontBase64 = (filenames: string[] | string) => {
-    const names = Array.isArray(filenames) ? filenames : [filenames];
+  // Simple, direct font loading
+  console.log("� Loading Nepali font for PDF generation...");
+  const notoDevaBase64 = getFontAsBase64();
 
-    console.log("🔍 Starting font embedding process...");
-    console.log("📂 Current working directory:", process.cwd());
-    console.log("🎯 Looking for fonts:", names);
-
-    for (const name of names) {
-      try {
-        const fontPath = path.resolve(process.cwd(), "public", "fonts", name);
-        console.log(`📍 Checking font path: ${fontPath}`);
-
-        if (fs.existsSync(fontPath)) {
-          const fontData = fs.readFileSync(fontPath);
-          const fontBase64 = fontData.toString("base64");
-
-          console.log(`✅ Successfully loaded font: ${name}`);
-          console.log(`📊 Font size: ${fontData.length} bytes`);
-          console.log(`📏 Base64 length: ${fontBase64.length} characters`);
-
-          // Validate that we have actual font data
-          if (fontBase64.length > 1000) {
-            // Font should be at least 1KB
-            return fontBase64;
-          } else {
-            console.warn(
-              `⚠️ Font ${name} seems too small: ${fontBase64.length} chars`
-            );
-          }
-        } else {
-          console.log(`❌ Font file not found: ${fontPath}`);
-
-          // Try alternative paths in production environments
-          const alternativePaths = [
-            path.resolve(process.cwd(), "fonts", name),
-            path.resolve("/tmp", "fonts", name),
-            path.resolve("./public/fonts", name),
-            path.resolve(__dirname, "..", "..", "public", "fonts", name),
-          ];
-
-          for (const altPath of alternativePaths) {
-            console.log(`🔄 Trying alternative path: ${altPath}`);
-            if (fs.existsSync(altPath)) {
-              const fontData = fs.readFileSync(altPath);
-              const fontBase64 = fontData.toString("base64");
-              console.log(`✅ Found font at alternative path: ${altPath}`);
-              if (fontBase64.length > 1000) {
-                return fontBase64;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`💥 Error loading font ${name}:`, error);
-      }
-    }
-
-    console.error("🚫 Could not find any of the font files:", names);
-    return "";
-  };
-
-  // Try a few common filenames (regular TTF, variable font) so user can drop either one
-  const notoDevaBase64 = embedFontBase64([
-    "NotoSansDevanagari-VariableFont_wdth,wght.ttf",
-    "NotoSansDevanagari-Regular.ttf",
-    "NotoSansDevanagari-Regular.woff",
-    "NotoSansDevanagari-Regular.woff2",
-  ]);
-
-  console.log(
-    `🎨 Font embedding result: ${notoDevaBase64 ? "SUCCESS" : "FAILED"}`
-  );
   if (notoDevaBase64) {
-    console.log(`📏 Embedded font size: ${notoDevaBase64.length} characters`);
+    console.log(
+      `✅ Font loaded successfully (${notoDevaBase64.length} characters)`
+    );
+  } else {
+    console.log("❌ Font loading failed - will use system fonts");
   }
 
-  // Enhanced font CSS with aggressive production loading
-  const embeddedFontCss = `/* Force UTF-8 encoding */
+  // Simple, aggressive font CSS that forces loading
+  const embeddedFontCss = notoDevaBase64
+    ? `/* FORCE NEPALI FONT LOADING */
        @charset "UTF-8";
        
-       /* Multiple font loading strategies for maximum compatibility */
        @font-face {
-         font-family: 'NotoSansDevanagari';
-         src: ${
-           notoDevaBase64
-             ? `url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),`
-             : ""
-         }
-              url("/api/fonts/noto-devanagari") format('truetype'),
-              url("/noto-devanagari.ttf") format('truetype'),
-              url("/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf") format('truetype'),
-              local('Noto Sans Devanagari');
+         font-family: 'NepaliFont';
+         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
          font-weight: normal;
          font-style: normal;
          font-display: block;
-         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
        
-       /* Backup font face */
-       @font-face {
-         font-family: 'DevanagariSans';
-         src: ${
-           notoDevaBase64
-             ? `url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),`
-             : ""
-         }
-              url("/api/fonts/noto-devanagari") format('truetype'),
-              url("/noto-devanagari.ttf") format('truetype'),
-              url("/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf") format('truetype'),
-              local('Noto Sans Devanagari'),
-              local('Mangal'),
-              local('Devanagari Sangam MN'),
-              local('Sanskrit Text'),
-              local('Kokila'),
-              local('Aparajita'),
-              local('Siddhanta');
-         font-weight: normal;
-         font-style: normal;
-         font-display: block;
-         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+       /* Force ALL text to use the Nepali font */
+       *, body, h1, h2, h3, h4, h5, h6, p, div, span {
+         font-family: 'NepaliFont', 'Noto Sans Devanagari', 'Mangal', Arial, sans-serif !important;
        }
        
-       /* Force all Devanagari text to use proper fonts */
-       .nepali-text, .devanagari, [lang="ne"], [lang="hi"], 
-       h1, .subtitle, .header-center * {
-         font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
-         font-feature-settings: "kern" 1, "liga" 1;
-         text-rendering: optimizeLegibility;
-         -webkit-font-smoothing: antialiased;
-         -moz-osx-font-smoothing: grayscale;
+       /* Extra specific selectors for Nepali content */
+       .nepali-text, .header-center, .header-center * {
+         font-family: 'NepaliFont' !important;
+       }`
+    : `/* FALLBACK FONTS ONLY */
+       @charset "UTF-8";
+       
+       *, body, h1, h2, h3, h4, h5, h6, p, div, span {
+         font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif !important;
        }`;
 
   // Create receipt object for template rendering
@@ -940,8 +849,16 @@ export async function generateReceiptPDF(
     try {
       page = await browserPool.getPage();
 
-      // Set content without waiting for network idle to speed up
+      // Set content and wait for fonts to load
       await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
+
+      // Wait for fonts to load
+      await page.evaluateOnNewDocument(() => {
+        return document.fonts.ready;
+      });
+
+      // Add small delay to ensure font rendering
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const pdfBuffer = await page.pdf({
         format: "A4",
@@ -980,8 +897,11 @@ export async function generateReceiptPDF(
 
     const page = await browser.newPage();
 
-    // Set content without waiting for network idle to speed up
+    // Set content and wait for fonts to load
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
+
+    // Wait for fonts to load in fallback browser too
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const pdfBuffer = await page.pdf({
       format: "A4",
