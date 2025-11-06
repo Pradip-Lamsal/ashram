@@ -315,49 +315,94 @@ export default function ReceiptModal({
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
     try {
+      console.log("Starting PDF download for receipt:", receipt.receiptNumber);
+
+      const requestBody = {
+        receipt: {
+          receiptNumber: receipt.receiptNumber,
+          donorName: receipt.donorName,
+          donorId: receipt.donorId,
+          amount: receipt.amount,
+          createdAt: receipt.createdAt,
+          donationType: receipt.donationType,
+          paymentMode: receipt.paymentMode,
+          dateOfDonation: receipt.dateOfDonation,
+          startDate: receipt.startDate,
+          endDate: receipt.endDate,
+          notes: receipt.notes,
+          createdBy: receipt.createdBy,
+        },
+        includeLogos: true, // Include logos for downloaded PDFs
+      };
+
+      console.log("Sending request to PDF API with data:", requestBody);
+
       const response = await fetch("/api/download-receipt-pdf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          receipt: {
-            receiptNumber: receipt.receiptNumber,
-            donorName: receipt.donorName,
-            donorId: receipt.donorId,
-            amount: receipt.amount,
-            createdAt: receipt.createdAt,
-            donationType: receipt.donationType,
-            paymentMode: receipt.paymentMode,
-            dateOfDonation: receipt.dateOfDonation,
-            startDate: receipt.startDate,
-            endDate: receipt.endDate,
-            notes: receipt.notes,
-            createdBy: receipt.createdBy,
-          },
-          includeLogos: true, // Include logos for downloaded PDFs
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (response.ok) {
-        // Download the PDF file
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Receipt-${receipt.receiptNumber}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      console.log("PDF API response status:", response.status);
+      console.log(
+        "PDF API response headers:",
+        Object.fromEntries(response.headers)
+      );
 
-        showToastNotification("PDF downloaded successfully");
-      } else {
-        throw new Error("Failed to generate PDF");
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = "Failed to generate PDF";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use default error message
+          errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      // Check if the response has the correct content type
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/pdf")) {
+        console.warn("Unexpected content type:", contentType);
+        // Try to read as text to see the actual response
+        const responseText = await response.text();
+        console.error("Response text:", responseText);
+        throw new Error("Response is not a PDF file");
+      }
+
+      // Download the PDF file
+      console.log("Creating blob from response...");
+      const blob = await response.blob();
+      console.log("Blob created, size:", blob.size, "bytes");
+
+      if (blob.size === 0) {
+        throw new Error("PDF file is empty");
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Receipt-${receipt.receiptNumber}.pdf`;
+      link.style.display = "none"; // Hide the link
+
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      console.log("Triggering download...");
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log("PDF download completed successfully");
+      showToastNotification("PDF downloaded successfully");
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showToastNotification("Failed to download PDF. Please try again.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      showToastNotification(`Failed to download PDF: ${errorMessage}`);
     } finally {
       setIsDownloading(false);
     }
