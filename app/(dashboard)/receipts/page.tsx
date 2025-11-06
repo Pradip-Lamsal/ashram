@@ -314,6 +314,8 @@ export default function ReceiptsPage() {
   const handleDeleteReceipt = async (receiptId: string) => {
     try {
       setUpdatingReceipt(receiptId);
+      console.log("Delete receipt handler called for:", receiptId);
+
       await receiptsService.delete(receiptId);
 
       // Remove from local state
@@ -327,13 +329,21 @@ export default function ReceiptsPage() {
 
       showToast("Receipt deleted successfully", "default");
     } catch (error) {
-      // Handle receipt deletion error gracefully
+      // Handle receipt deletion error gracefully with detailed logging
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      console.warn("Failed to delete receipt:", errorMessage);
+      console.error("Failed to delete receipt:", error);
+      console.error("Error details:", {
+        receiptId,
+        error: errorMessage,
+        fullError: error,
+      });
+
       showToast(
         "Could not delete receipt",
-        "The receipt could not be deleted. Please try again.",
+        errorMessage.includes("permission")
+          ? "You don't have permission to delete this receipt."
+          : "The receipt could not be deleted. Please try again.",
         "destructive"
       );
     } finally {

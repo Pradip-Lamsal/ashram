@@ -12,6 +12,7 @@ export const usersService = {
     const { data, error } = await supabase
       .from("users")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -23,6 +24,7 @@ export const usersService = {
       .from("users")
       .select("*")
       .eq("id", id)
+      .is("deleted_at", null)
       .single();
 
     if (error) throw error;
@@ -60,6 +62,18 @@ export const usersService = {
               : ["dashboard:read"],
         },
       ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { data, error } = await supabase
+      .from("users")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
       .select()
       .single();
 
@@ -328,6 +342,18 @@ export const donationsService = {
     if (error) throw error;
     return data;
   },
+
+  async delete(id: string) {
+    const { data, error } = await supabase
+      .from("donations")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
 };
 
 // Receipts service
@@ -338,15 +364,17 @@ export const receiptsService = {
       .select(
         `
         *,
-        donation:donations(
+        donation:donations!inner(
           *,
-          donor:donors(
+          donor:donors!inner(
             id, name, email, phone, address, donation_type, membership
           )
         )
       `
       )
       .is("deleted_at", null)
+      .is("donation.deleted_at", null)
+      .is("donation.donor.deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -359,9 +387,9 @@ export const receiptsService = {
       .select(
         `
         *,
-        donation:donations(
+        donation:donations!inner(
           *,
-          donor:donors(
+          donor:donors!inner(
             id, name, email, phone, address, donation_type, membership
           )
         )
@@ -369,6 +397,8 @@ export const receiptsService = {
       )
       .eq("id", id)
       .is("deleted_at", null)
+      .is("donation.deleted_at", null)
+      .is("donation.donor.deleted_at", null)
       .single();
 
     if (error) throw error;
@@ -435,15 +465,25 @@ export const receiptsService = {
   },
 
   async delete(id: string) {
-    const { data, error } = await supabase
-      .from("receipts")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single();
+    try {
+      console.log("Attempting to soft delete receipt:", id);
 
-    if (error) throw error;
-    return data;
+      // Use RPC function to avoid trigger conflicts
+      const { error } = await supabase.rpc("soft_delete_receipt", {
+        receipt_id: id,
+      });
+
+      if (error) {
+        console.error("Supabase RPC delete error:", error);
+        throw new Error(`Failed to delete receipt: ${error.message}`);
+      }
+
+      console.log("Successfully soft deleted receipt using RPC");
+      return { id, deleted_at: new Date().toISOString() };
+    } catch (error) {
+      console.error("Receipt delete service error:", error);
+      throw error;
+    }
   },
 
   async getDonorHistory(donorId: string) {
@@ -494,7 +534,10 @@ export const dashboardService = {
   async getStats() {
     try {
       // Get users count
-      const { data: users } = await supabase.from("users").select("role");
+      const { data: users } = await supabase
+        .from("users")
+        .select("role")
+        .is("deleted_at", null);
 
       // Get donors count
       const { data: donors } = await supabase
@@ -600,6 +643,7 @@ export const dashboardService = {
     const { data: allUsers } = await supabase
       .from("users")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     const { data: allDonors } = await supabase
       .from("donors")
@@ -611,23 +655,26 @@ export const dashboardService = {
       .select(
         `
       *,
-      donation:donations(
+      donation:donations!inner(
         *,
-        donor:donors(*)
+        donor:donors!inner(*)
       )
     `
       )
       .is("deleted_at", null)
+      .is("donation.deleted_at", null)
+      .is("donation.donor.deleted_at", null)
       .order("created_at", { ascending: false });
     const { data: allDonations } = await supabase
       .from("donations")
       .select(
         `
       *,
-      donor:donors(*)
+      donor:donors!inner(*)
     `
       )
       .is("deleted_at", null)
+      .is("donor.deleted_at", null)
       .order("created_at", { ascending: false });
     const { data: allEvents } = await supabase
       .from("events")

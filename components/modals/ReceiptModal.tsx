@@ -118,6 +118,9 @@ export default function ReceiptModal({
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   // Simple toast function
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -134,13 +137,70 @@ export default function ReceiptModal({
     pageStyle: `
       @page { size: A4; margin: 1.5cm; }
       @media print {
-        body { font-size: 11pt; line-height: 1.4; color: black !important; background: white !important; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: Arial, sans-serif; 
+          font-size: 10pt !important; 
+          line-height: 1.2 !important; 
+          color: black !important; 
+          background: white !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .no-print { display: none !important; }
-        .print-page { max-height: none !important; page-break-inside: avoid; }
-        .print-section { margin-bottom: 1rem; }
-        .print-header { border-bottom: 2px solid #ea580c; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-        .print-amount { font-size: 16pt; font-weight: bold; }
-        .print-footer { border-top: 2px solid #ea580c; padding-top: 1rem; margin-top: 1.5rem; }
+        .print-page { 
+          max-height: none !important; 
+          page-break-inside: avoid; 
+          padding: 0 !important;
+          margin: 0 !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        .print-section { margin-bottom: 0.8rem !important; }
+        .print-header { 
+          border-bottom: 2px solid #ea580c; 
+          padding-bottom: 0.6rem !important; 
+          margin-bottom: 1rem !important; 
+        }
+        .print-footer { 
+          border-top: 2px solid #ea580c; 
+          padding-top: 0.8rem !important; 
+          margin-top: 1rem !important; 
+        }
+        
+        /* Compact header styles */
+        .print-page .header .text-2xl { font-size: 14pt !important; }
+        .print-page .header .text-lg { font-size: 12pt !important; }
+        .print-page .header .text-base { font-size: 10pt !important; }
+        .print-page .header .text-sm { font-size: 9pt !important; }
+        .print-page .header .text-xs { font-size: 8pt !important; }
+        
+        /* Compact content styles */
+        .print-page .grid { gap: 0.8rem !important; }
+        .print-page .space-y-3 > * + * { margin-top: 0.5rem !important; }
+        .print-page .space-y-2 > * + * { margin-top: 0.3rem !important; }
+        .print-page .mb-6 { margin-bottom: 1rem !important; }
+        .print-page .mb-4 { margin-bottom: 0.8rem !important; }
+        .print-page .mb-3 { margin-bottom: 0.6rem !important; }
+        .print-page .mb-2 { margin-bottom: 0.4rem !important; }
+        .print-page .p-6 { padding: 1rem !important; }
+        .print-page .p-4 { padding: 0.8rem !important; }
+        .print-page .p-3 { padding: 0.6rem !important; }
+        .print-page .py-8 { padding-top: 0.8rem !important; padding-bottom: 0.8rem !important; }
+        
+        /* Image sizing for print */
+        .print-page img { 
+          width: 40px !important; 
+          height: 40px !important; 
+          object-fit: contain !important; 
+        }
+        
+        /* Amount styling */
+        .print-amount { font-size: 14pt !important; font-weight: bold !important; }
+        
+        /* Ensure single page layout */
+        .print-page .border-2 { border-width: 1px !important; }
+        .print-page .rounded-lg { border-radius: 4px !important; }
       }
     `,
   };
@@ -435,8 +495,8 @@ export default function ReceiptModal({
                       Danger Zone
                     </h4>
                     <p className="text-sm text-red-700">
-                      Permanently delete this receipt. This action cannot be
-                      undone.
+                      Delete this receipt. This action can be undone by an
+                      administrator.
                     </p>
                   </div>
                   <Button
@@ -444,14 +504,7 @@ export default function ReceiptModal({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (
-                        confirm(
-                          "Are you sure you want to delete this receipt? This action cannot be undone."
-                        )
-                      ) {
-                        onDeleteReceipt?.(receipt.id);
-                        onClose();
-                      }
+                      setShowDeleteConfirm(true);
                     }}
                     disabled={isUpdating}
                     className="ml-4 text-red-600 transition-colors duration-200 border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-50"
@@ -469,23 +522,23 @@ export default function ReceiptModal({
               {/* Enhanced Receipt Content for Printing */}
               <div
                 ref={printRef}
-                className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm print-page"
+                className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm print-page"
               >
-                {/* Professional Header with Orange Theme */}
-                <div className="pb-4 mb-6 text-center border-b-2 border-orange-500 print-header">
+                {/* Compact Professional Header with Orange Theme */}
+                <div className="pb-3 mb-4 text-center border-b-2 border-orange-500 print-header">
                   {/* Header with Logos */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-3">
                     {/* Left Logo with Registration Numbers */}
                     <div className="flex-shrink-0">
-                      <div className="mb-2 text-xs text-center text-gray-600">
+                      <div className="mb-1 text-xs text-center text-gray-600">
                         <p>जि.प्र.का.ल.पु.द.नं. ४५४५/०६८</p>
                         <p>पान नं ६००५९५६९०</p>
                       </div>
                       <Image
                         src="/logo11.jpeg"
                         alt="Logo 1"
-                        width={64}
-                        height={64}
+                        width={50}
+                        height={50}
                         className="object-contain"
                       />
                     </div>
@@ -493,20 +546,20 @@ export default function ReceiptModal({
                     {/* Center Content */}
                     <div className="flex-1 mx-4">
                       {/* Sacred Symbol */}
-                      <div className="mb-2 text-2xl text-orange-600">ॐ</div>
+                      <div className="mb-1 text-xl text-orange-600">ॐ</div>
 
                       {/* Main Organization Header */}
-                      <div className="mb-3">
-                        <div className="mb-1 text-lg font-bold text-orange-700">
+                      <div className="mb-2">
+                        <div className="mb-1 text-xs font-bold text-orange-700">
                           श्रीराधासर्वेश्वरो विजयते
                         </div>
-                        <h1 className="text-xl font-bold leading-tight text-gray-900">
+                        <h1 className="text-base font-bold leading-tight text-gray-900">
                           श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर
                         </h1>
-                        <h2 className="text-lg font-semibold text-gray-800">
+                        <h2 className="text-xs font-semibold text-gray-800">
                           व्यवस्थापन तथा सञ्चालन समिति
                         </h2>
-                        <div className="mt-2 text-sm text-gray-700">
+                        <div className="mt-1 text-xs text-gray-700">
                           <p>ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</p>
                           <p>फोन नं. ०१-५९१५६६७</p>
                           <p className="text-blue-600">
@@ -518,40 +571,40 @@ export default function ReceiptModal({
 
                     {/* Right Logo with Association Number */}
                     <div className="flex-shrink-0">
-                      <div className="mb-2 text-xs text-center text-gray-600">
+                      <div className="mb-1 text-xs text-center text-gray-600">
                         <p>स.क.प.आवद्धता नं. ३५०९१</p>
                       </div>
                       <Image
                         src="/logo22.jpeg"
                         alt="Logo 2"
-                        width={64}
-                        height={64}
+                        width={50}
+                        height={50}
                         className="object-contain"
                       />
                     </div>
                   </div>
 
                   {/* Receipt Info */}
-                  <div className="inline-block p-3 mt-3 border border-orange-200 rounded-lg bg-orange-50">
-                    <p className="text-lg font-bold text-orange-800">
+                  <div className="inline-block p-2 mt-2 border border-orange-200 rounded-lg bg-orange-50">
+                    <p className="text-sm font-bold text-orange-800">
                       Receipt #{receipt.receiptNumber}
                     </p>
-                    <p className="mt-1 text-sm text-orange-600">
+                    <p className="mt-1 text-xs text-orange-600">
                       Issued on {safeFormatDate(receipt.createdAt)}
                     </p>
                   </div>
                 </div>
 
                 {/* Compact Two Column Layout for Receipt Details */}
-                <div className="grid grid-cols-1 gap-4 mb-6 print-section md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 mb-4 print-section md:grid-cols-2">
                   {/* Donor Information */}
-                  <div className="space-y-3">
-                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                      <h3 className="flex items-center mb-3 text-base font-bold text-gray-900">
+                  <div className="space-y-2">
+                    <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <h3 className="flex items-center mb-2 text-sm font-bold text-gray-900">
                         <lucideReact.User className="w-4 h-4 mr-2 text-orange-600" />
                         Donor Information
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">
                             Name:
@@ -573,12 +626,12 @@ export default function ReceiptModal({
                   </div>
 
                   {/* Receipt Information */}
-                  <div className="space-y-3">
-                    <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
-                      <h3 className="mb-3 text-base font-bold text-gray-900">
+                  <div className="space-y-2">
+                    <div className="p-3 border border-orange-200 rounded-lg bg-orange-50">
+                      <h3 className="mb-2 text-sm font-bold text-gray-900">
                         Receipt Details
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">
                             Donation Date:
@@ -601,14 +654,14 @@ export default function ReceiptModal({
                 </div>
 
                 {/* Enhanced Donation Details - Compact Layout */}
-                <div className="p-4 mb-6 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
-                  <h3 className="mb-4 text-lg font-bold text-center text-orange-800">
+                <div className="p-3 mb-4 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
+                  <h3 className="mb-3 text-sm font-bold text-center text-orange-800">
                     Donation Information
                   </h3>
 
-                  <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-3">
                     <div className="text-center">
-                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                      <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
                         <label className="block mb-1 text-xs font-medium text-gray-600">
                           Donation Type
                         </label>
@@ -624,7 +677,7 @@ export default function ReceiptModal({
                     {/* show donation period when present */}
                     {receipt.startDate && receipt.endDate && (
                       <div className="text-center">
-                        <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                        <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
                           <label className="block mb-1 text-xs font-medium text-gray-600">
                             Donation Period
                           </label>
@@ -637,7 +690,7 @@ export default function ReceiptModal({
                     )}
 
                     <div className="text-center">
-                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                      <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
                         <label className="block mb-1 text-xs font-medium text-gray-600">
                           Payment Mode
                         </label>
@@ -651,11 +704,11 @@ export default function ReceiptModal({
                     </div>
 
                     <div className="text-center">
-                      <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                      <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
                         <label className="block mb-1 text-xs font-medium text-gray-600">
                           Amount Donated
                         </label>
-                        <p className="text-xl font-bold text-orange-600 print-amount">
+                        <p className="text-lg font-bold text-orange-600 print-amount">
                           {formatCurrency(receipt.amount || 0)}
                         </p>
                       </div>
@@ -663,11 +716,11 @@ export default function ReceiptModal({
                   </div>
 
                   {receipt.notes && (
-                    <div className="p-3 bg-white border border-orange-100 rounded-lg shadow-sm">
+                    <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
                       <label className="block mb-1 text-xs font-medium text-gray-600">
                         Special Notes
                       </label>
-                      <p className="text-sm italic text-gray-700">
+                      <p className="text-xs italic text-gray-700">
                         &ldquo;{receipt.notes}&rdquo;
                       </p>
                     </div>
@@ -675,12 +728,12 @@ export default function ReceiptModal({
                 </div>
 
                 {/* Amount in Words - Compact */}
-                <div className="p-4 mb-6 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
-                  <h4 className="mb-2 text-base font-bold text-center text-orange-800">
+                <div className="p-3 mb-4 border-2 border-orange-200 rounded-lg print-section bg-orange-50">
+                  <h4 className="mb-2 text-sm font-bold text-center text-orange-800">
                     Amount in Words
                   </h4>
-                  <div className="p-3 bg-white border-2 border-orange-300 border-dashed rounded-lg">
-                    <p className="text-base font-bold text-center text-orange-900">
+                  <div className="p-2 bg-white border-2 border-orange-300 border-dashed rounded-lg">
+                    <p className="text-sm font-bold text-center text-orange-900">
                       {receipt.amount
                         ? `Rupees ${receipt.amount.toLocaleString(
                             "en-IN"
@@ -691,15 +744,15 @@ export default function ReceiptModal({
                 </div>
 
                 {/* Compact Footer */}
-                <div className="pt-4 mt-6 border-t-2 border-orange-500 print-footer">
+                <div className="pt-3 mt-4 border-t-2 border-orange-500 print-footer">
                   <div className="text-right">
-                    <div className="pt-3 mt-3 border-t border-gray-300">
+                    <div className="pt-2 mt-2 border-t border-gray-300">
                       <p className="mb-2 text-xs text-gray-600">
                         Authorized Signature
                       </p>
-                      <div className="h-8 mb-2 border-b border-gray-300"></div>
+                      <div className="h-6 mb-1 border-b border-gray-300"></div>
                       <p className="text-xs text-gray-500">
-                        Generated: {formatDateTime(new Date())}
+                        Date: {new Date().toLocaleDateString("en-IN")}
                       </p>
                     </div>
                   </div>
@@ -952,6 +1005,63 @@ export default function ReceiptModal({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <lucideReact.AlertTriangle className="w-5 h-5 mr-2" />
+              Delete Receipt
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete receipt{" "}
+              <span className="font-mono font-semibold">
+                #{receipt.receiptNumber}
+              </span>{" "}
+              for <span className="font-semibold">{receipt.donorName}</span>?
+              <br />
+              <br />
+              <span className="text-orange-600">
+                This action can be undone by an administrator.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isUpdating}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDeleteReceipt?.(receipt.id);
+                setShowDeleteConfirm(false);
+                onClose();
+              }}
+              disabled={isUpdating}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isUpdating ? (
+                <>
+                  <lucideReact.Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <lucideReact.Trash2 className="w-4 h-4 mr-2" />
+                  Delete Receipt
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
