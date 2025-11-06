@@ -41,6 +41,10 @@ const getBrowserConfig = () => {
           "--disable-renderer-backgrounding",
           "--disable-features=TranslateUI",
           "--disable-ipc-flooding-protection",
+          "--font-render-hinting=none",
+          "--disable-font-subpixel-positioning",
+          "--enable-font-antialiasing",
+          "--force-color-profile=srgb",
         ],
         executablePath,
         headless: true,
@@ -66,6 +70,10 @@ const getBrowserConfig = () => {
           "--disable-javascript",
           "--disable-web-security",
           "--memory-pressure-off",
+          "--font-render-hinting=none",
+          "--disable-font-subpixel-positioning",
+          "--enable-font-antialiasing",
+          "--force-color-profile=srgb",
         ],
       },
     };
@@ -251,18 +259,24 @@ export const generateReceiptPDF = async (
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // embed Devanagari font (place TTF at public/fonts/NotoSansDevanagari-Regular.ttf)
+  // embed Devanagari font with better error handling and multiple formats
   const embedFontBase64 = (filenames: string[] | string) => {
     const names = Array.isArray(filenames) ? filenames : [filenames];
     for (const name of names) {
       try {
         const fontPath = path.resolve(process.cwd(), "public", "fonts", name);
+        console.log("Trying to load font from:", fontPath);
         if (fs.existsSync(fontPath)) {
           const fontData = fs.readFileSync(fontPath);
-          console.log("Using embedded font:", fontPath);
+          console.log(
+            `Successfully loaded font: ${name}, size: ${fontData.length} bytes`
+          );
           return fontData.toString("base64");
+        } else {
+          console.log("Font file not found:", fontPath);
         }
-      } catch {
+      } catch (error) {
+        console.warn(`Failed to load font ${name}:`, error);
         // continue to next
       }
     }
@@ -272,27 +286,52 @@ export const generateReceiptPDF = async (
 
   // Try a few common filenames (regular TTF, variable font) so user can drop either one
   const notoDevaBase64 = embedFontBase64([
+    "NotoSansDevanagari-VariableFont_wdth,wght.ttf",
     "NotoSansDevanagari-Regular.ttf",
     "NotoSansDevanagari-Regular.woff",
-    "NotoSansDevanagari-VariableFont_wdth,wght.ttf",
+    "NotoSansDevanagari-Regular.woff2",
   ]);
 
-  // inject into the top of your <style>
+  // Enhanced font CSS with better fallbacks and multiple font formats
   const embeddedFontCss = notoDevaBase64
     ? `@font-face{
-         font-family: 'NotoDeva';
-         src: url("data:font/ttf;base64,${notoDevaBase64}") format('truetype');
+         font-family: 'NotoSansDevanagari';
+         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
          font-weight: normal;
          font-style: normal;
          font-display: swap;
+         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+       }
+       
+       /* Fallback font for system fonts */
+       @font-face{
+         font-family: 'DevanagariSans';
+         src: local('Noto Sans Devanagari'), 
+              local('Mangal'), 
+              local('Devanagari Sangam MN'),
+              local('Sanskrit Text'),
+              local('Kokila');
+         font-weight: normal;
+         font-style: normal;
        }`
-    : "";
+    : `@font-face{
+         font-family: 'DevanagariSans';
+         src: local('Noto Sans Devanagari'), 
+              local('Mangal'), 
+              local('Devanagari Sangam MN'),
+              local('Sanskrit Text'),
+              local('Kokila');
+         font-weight: normal;
+         font-style: normal;
+       }`;
 
   const htmlContent = `
     <!DOCTYPE html>
-    <html lang="ne">
+    <html lang="ne" dir="ltr">
       <head>
         <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Receipt ${receipt.receiptNumber}</title>
         <style>
           /* Embedded Devanagari font (if available) */
@@ -305,13 +344,33 @@ export const generateReceiptPDF = async (
           }
 
           body {
-            /* prefer embedded Devanagari font for Nepali text */
-            font-family: 'NotoDeva', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.3;
+            /* Enhanced font stack for Nepali text with multiple fallbacks */
+            font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif;
+            line-height: 1.4;
             color: #374151;
             background-color: white;
             padding: 15px;
             font-size: 12px;
+            -webkit-font-feature-settings: "kern" 1;
+            font-feature-settings: "kern" 1;
+            text-rendering: optimizeLegibility;
+          }
+          
+          /* Specific styles for Nepali/Devanagari text */
+          .nepali-text, 
+          .header-center h1,
+          .header-center .subtitle,
+          .pan, .reg {
+            font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', Arial, sans-serif !important;
+            -webkit-font-feature-settings: "kern" 1, "liga" 1;
+            font-feature-settings: "kern" 1, "liga" 1;
+            text-rendering: optimizeLegibility;
+          }
+          
+          /* Ensure proper rendering for mixed content */
+          * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
           }
 
           .receipt-container {
@@ -599,8 +658,8 @@ export const generateReceiptPDF = async (
           <div class="header">
             <div class="header-top">
               <div class="header-left">
-                <div class="pan">जि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
-                <div class="pan">पान नं ६००५९५६९०</div>
+                <div class="pan nepali-text">जि.प्र.का.ल.पु.द.नं. ४५४५/०६८</div>
+                <div class="pan nepali-text">पान नं ६००५९५६९०</div>
                 ${
                   logoLeft
                     ? `<img src="${logoLeft}" class="logo" alt="logo-left" />`
@@ -609,17 +668,17 @@ export const generateReceiptPDF = async (
               </div>
 
               <div class="header-center">
-                <div style="margin-bottom: 6px; font-size: 20px; color: #ea580c;">ॐ</div>
-                <div style="margin-bottom: 6px; font-size: 14px; font-weight: 700; color: #ea580c;">श्रीराधासर्वेश्वरो विजयते</div>
-                <h1>श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
-                <div class="subtitle">व्यवस्थापन तथा सञ्चालन समिति</div>
-                <div class="subtitle" style="font-size:11px;color:#374151;margin-top:4px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
-                <div class="subtitle" style="font-size:11px;color:#374151;">फोन नं. ०१-५९१५६६७</div>
+                <div class="nepali-text" style="margin-bottom: 6px; font-size: 20px; color: #ea580c;">ॐ</div>
+                <div class="nepali-text" style="margin-bottom: 6px; font-size: 14px; font-weight: 700; color: #ea580c;">श्रीराधासर्वेश्वरो विजयते</div>
+                <h1 class="nepali-text">श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर</h1>
+                <div class="subtitle nepali-text">व्यवस्थापन तथा सञ्चालन समिति</div>
+                <div class="subtitle nepali-text" style="font-size:11px;color:#374151;margin-top:4px">ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर</div>
+                <div class="subtitle nepali-text" style="font-size:11px;color:#374151;">फोन नं. ०१-५९१५६६७</div>
                 <div class="subtitle" style="font-size:11px;color:#2563eb;">E-mail: jashankhamul@gmail.com</div>
               </div>
 
               <div class="header-right">
-                <div class="reg">स.क.प.आवद्धता नं. ३५०९१</div>
+                <div class="reg nepali-text">स.क.प.आवद्धता नं. ३५०९१</div>
                 ${
                   logoRight
                     ? `<img src="${logoRight}" class="logo" alt="logo-right" />`
