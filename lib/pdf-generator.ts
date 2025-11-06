@@ -4,7 +4,6 @@ import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
 import BrowserPool from "./browser-pool";
 import { getDonationTypeLabel } from "./donation-labels";
-import { getFontAsBase64 } from "./font-loader";
 import { verifyFontDeployment } from "./font-verification";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
@@ -34,8 +33,6 @@ const getBrowserConfig = () => {
           "--single-process",
           "--disable-extensions",
           "--disable-plugins",
-          "--disable-images",
-          "--disable-javascript",
           "--disable-web-security",
           "--memory-pressure-off",
           "--disable-background-timer-throttling",
@@ -43,10 +40,10 @@ const getBrowserConfig = () => {
           "--disable-renderer-backgrounding",
           "--disable-features=TranslateUI",
           "--disable-ipc-flooding-protection",
-          "--font-render-hinting=none",
-          "--disable-font-subpixel-positioning",
           "--enable-font-antialiasing",
           "--force-color-profile=srgb",
+          "--lang=en-US,ne-NP", // Support English and Nepali locales
+          "--disable-font-subpixel-positioning",
         ],
         executablePath,
         headless: true,
@@ -68,14 +65,12 @@ const getBrowserConfig = () => {
           "--single-process",
           "--disable-extensions",
           "--disable-plugins",
-          "--disable-images",
-          "--disable-javascript",
           "--disable-web-security",
           "--memory-pressure-off",
-          "--font-render-hinting=none",
-          "--disable-font-subpixel-positioning",
           "--enable-font-antialiasing",
           "--force-color-profile=srgb",
+          "--lang=en-US,ne-NP", // Support English and Nepali locales
+          "--disable-font-subpixel-positioning",
         ],
       },
     };
@@ -311,45 +306,29 @@ export async function generateReceiptPDF(
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
   // Simple, direct font loading
-  console.log("� Loading Nepali font for PDF generation...");
-  const notoDevaBase64 = getFontAsBase64();
+  console.log("🔤 Using system Devanagari fonts for PDF generation...");
+  // Use system fonts only - no font embedding to avoid encoding issues
+  console.log("✅ Using system fonts to avoid character encoding issues");
 
-  if (notoDevaBase64) {
-    console.log(
-      `✅ Font loaded successfully (${notoDevaBase64.length} characters)`
-    );
-  } else {
-    console.log("❌ Font loading failed - will use system fonts");
-  }
-
-  // Simple, aggressive font CSS that forces loading
-  const embeddedFontCss = notoDevaBase64
-    ? `/* FORCE NEPALI FONT LOADING */
-       @charset "UTF-8";
-       
-       @font-face {
-         font-family: 'NepaliFont';
-         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
-         font-weight: normal;
-         font-style: normal;
-         font-display: block;
-       }
-       
-       /* Force ALL text to use the Nepali font */
-       *, body, h1, h2, h3, h4, h5, h6, p, div, span {
-         font-family: 'NepaliFont', 'Noto Sans Devanagari', 'Mangal', Arial, sans-serif !important;
-       }
-       
-       /* Extra specific selectors for Nepali content */
-       .nepali-text, .header-center, .header-center * {
-         font-family: 'NepaliFont' !important;
-       }`
-    : `/* FALLBACK FONTS ONLY */
-       @charset "UTF-8";
-       
-       *, body, h1, h2, h3, h4, h5, h6, p, div, span {
-         font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif !important;
-       }`;
+  // System font CSS with proper UTF-8 charset declaration
+  const systemFontCss = `
+    @charset "UTF-8";
+    
+    /* Use system Devanagari fonts - no embedding */
+    *, body, h1, h2, h3, h4, h5, h6, p, div, span {
+      font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', Arial, sans-serif !important;
+      -webkit-font-feature-settings: "kern" 1, "liga" 1;
+      font-feature-settings: "kern" 1, "liga" 1;
+      text-rendering: optimizeLegibility;
+    }
+    
+    /* Specific styles for Nepali/Devanagari text */
+    .nepali-text, .header-center, .header-center * {
+      font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN' !important;
+      unicode-bidi: normal;
+      direction: ltr;
+    }
+  `;
 
   // Create receipt object for template rendering
   const receipt = {
@@ -378,8 +357,8 @@ export async function generateReceiptPDF(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Receipt ${receipt.receiptNumber}</title>
         <style>
-          /* Embedded Devanagari font (if available) */
-          ${embeddedFontCss}
+          /* System Devanagari fonts for proper Unicode handling */
+          ${systemFontCss}
 
           * {
             margin: 0;
@@ -683,7 +662,7 @@ export async function generateReceiptPDF(
           
           /* compact footer and no thank-you message for printable receipts */
           
-          ${embeddedFontCss}
+          /* Using system fonts for best Unicode support */
           
           @media print {
             body {
@@ -849,16 +828,19 @@ export async function generateReceiptPDF(
     try {
       page = await browserPool.getPage();
 
-      // Set content and wait for fonts to load
-      await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
-
-      // Wait for fonts to load
-      await page.evaluateOnNewDocument(() => {
-        return document.fonts.ready;
+      // Set content with proper Unicode handling
+      await page.setContent(htmlContent, {
+        waitUntil: "domcontentloaded",
+        timeout: 15000,
       });
 
-      // Add small delay to ensure font rendering
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Ensure Unicode characters are properly rendered
+      await page.evaluate(() => {
+        // Force re-render to ensure proper character encoding
+        document.body.style.fontFamily =
+          "'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
+        return new Promise((resolve) => setTimeout(resolve, 100));
+      });
 
       const pdfBuffer = await page.pdf({
         format: "A4",
@@ -897,11 +879,19 @@ export async function generateReceiptPDF(
 
     const page = await browser.newPage();
 
-    // Set content and wait for fonts to load
-    await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
+    // Set content with proper Unicode handling
+    await page.setContent(htmlContent, {
+      waitUntil: "domcontentloaded",
+      timeout: 15000,
+    });
 
-    // Wait for fonts to load in fallback browser too
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Ensure Unicode characters are properly rendered
+    await page.evaluate(() => {
+      // Force re-render to ensure proper character encoding
+      document.body.style.fontFamily =
+        "'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
+      return new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
     const pdfBuffer = await page.pdf({
       format: "A4",
