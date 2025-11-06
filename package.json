@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/copy-fonts.mjs",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "npm ls || true",
-    "vercel-build": "npm install --legacy-peer-deps && next build",
-    "force-build": "npm install --force && next build"
+    "vercel-build": "npm install --legacy-peer-deps && next build && node scripts/copy-fonts.mjs",
+    "force-build": "npm install --force && next build && node scripts/copy-fonts.mjs",
+    "test-fonts": "node scripts/copy-fonts.mjs",
+    "verify-fonts": "node scripts/test-font-verification-simple.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",

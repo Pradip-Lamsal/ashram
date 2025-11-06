@@ -4,6 +4,7 @@ import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
 import BrowserPool from "./browser-pool";
 import { getDonationTypeLabel } from "./donation-labels";
+import { verifyFontDeployment } from "./font-verification";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
 // Function to get browser launch configuration based on environment
@@ -97,10 +98,46 @@ interface ReceiptData {
   createdBy?: string;
 }
 
-export const generateReceiptPDF = async (
-  receipt: ReceiptData,
-  options?: { includeLogos?: boolean }
-): Promise<Buffer> => {
+export async function generateReceiptPDF(
+  receiptData: {
+    receiptNumber: string;
+    donorName: string;
+    amount: number;
+    donationType: string;
+    includeLogos: boolean;
+    address?: string;
+    email?: string;
+    phone?: string;
+    receivedBy?: string;
+    donationDate?: string;
+    amountInWords?: string;
+    notes?: string;
+    donationItemsList?: any[];
+    donationItemsText?: string;
+    donorId?: string;
+    donationDay?: string;
+    nepaliDate?: string;
+  },
+  forDownload: boolean = false
+): Promise<Buffer> {
+  console.log("generateReceiptPDF called");
+
+  // Verify font deployment
+  const fontVerification = verifyFontDeployment();
+  console.log("Font verification:", fontVerification);
+
+  // Get best available font path
+  const fontPath =
+    fontVerification.bestPath ||
+    "/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf";
+  console.log("Using font path:", fontPath);
+
+  // Verify font deployment status
+  const fontAvailable = verifyFontDeployment();
+  console.log(
+    `🎨 Font verification result: ${fontAvailable ? "PASS" : "FAIL"}`
+  );
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
     try {
@@ -111,27 +148,34 @@ export const generateReceiptPDF = async (
   };
 
   const formatDonationDateForPDF = () => {
-    if (receipt.donationType === "Seva Donation") {
+    if (receiptData.donationType === "Seva Donation") {
       // If we have Nepali date strings, use them directly (more accurate)
-      if (receipt.startDateNepali && receipt.endDateNepali) {
-        return `${receipt.startDateNepali} देखि ${receipt.endDateNepali} सम्म`;
+      if (
+        (receiptData as any).startDateNepali &&
+        (receiptData as any).endDateNepali
+      ) {
+        return `${(receiptData as any).startDateNepali} देखि ${
+          (receiptData as any).endDateNepali
+        } सम्म`;
       }
 
       // Fallback to converting English dates to Nepali
-      if (receipt.startDate && receipt.endDate) {
+      if ((receiptData as any).startDate && (receiptData as any).endDate) {
         const startNepali = englishToNepaliDateFormatted(
-          new Date(receipt.startDate)
+          new Date((receiptData as any).startDate)
         );
         const endNepali = englishToNepaliDateFormatted(
-          new Date(receipt.endDate)
+          new Date((receiptData as any).endDate)
         );
         return `${startNepali} देखि ${endNepali} सम्म`;
       }
     }
 
     // For regular donations, show the donation date
-    if (receipt.dateOfDonation) {
-      return englishToNepaliDateFormatted(new Date(receipt.dateOfDonation));
+    if ((receiptData as any).dateOfDonation) {
+      return englishToNepaliDateFormatted(
+        new Date((receiptData as any).dateOfDonation)
+      );
     }
 
     return "N/A";
@@ -255,32 +299,69 @@ export const generateReceiptPDF = async (
     }
   };
 
-  const includeLogos = options?.includeLogos ?? true;
+  const includeLogos = receiptData?.includeLogos ?? true;
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // embed Devanagari font with better error handling and multiple formats
+  // embed Devanagari font with comprehensive error handling
   const embedFontBase64 = (filenames: string[] | string) => {
     const names = Array.isArray(filenames) ? filenames : [filenames];
+
+    console.log("🔍 Starting font embedding process...");
+    console.log("📂 Current working directory:", process.cwd());
+    console.log("🎯 Looking for fonts:", names);
+
     for (const name of names) {
       try {
         const fontPath = path.resolve(process.cwd(), "public", "fonts", name);
-        console.log("Trying to load font from:", fontPath);
+        console.log(`📍 Checking font path: ${fontPath}`);
+
         if (fs.existsSync(fontPath)) {
           const fontData = fs.readFileSync(fontPath);
-          console.log(
-            `Successfully loaded font: ${name}, size: ${fontData.length} bytes`
-          );
-          return fontData.toString("base64");
+          const fontBase64 = fontData.toString("base64");
+
+          console.log(`✅ Successfully loaded font: ${name}`);
+          console.log(`📊 Font size: ${fontData.length} bytes`);
+          console.log(`📏 Base64 length: ${fontBase64.length} characters`);
+
+          // Validate that we have actual font data
+          if (fontBase64.length > 1000) {
+            // Font should be at least 1KB
+            return fontBase64;
+          } else {
+            console.warn(
+              `⚠️ Font ${name} seems too small: ${fontBase64.length} chars`
+            );
+          }
         } else {
-          console.log("Font file not found:", fontPath);
+          console.log(`❌ Font file not found: ${fontPath}`);
+
+          // Try alternative paths in production environments
+          const alternativePaths = [
+            path.resolve(process.cwd(), "fonts", name),
+            path.resolve("/tmp", "fonts", name),
+            path.resolve("./public/fonts", name),
+            path.resolve(__dirname, "..", "..", "public", "fonts", name),
+          ];
+
+          for (const altPath of alternativePaths) {
+            console.log(`🔄 Trying alternative path: ${altPath}`);
+            if (fs.existsSync(altPath)) {
+              const fontData = fs.readFileSync(altPath);
+              const fontBase64 = fontData.toString("base64");
+              console.log(`✅ Found font at alternative path: ${altPath}`);
+              if (fontBase64.length > 1000) {
+                return fontBase64;
+              }
+            }
+          }
         }
       } catch (error) {
-        console.warn(`Failed to load font ${name}:`, error);
-        // continue to next
+        console.error(`💥 Error loading font ${name}:`, error);
       }
     }
-    console.warn("Could not find any of the font files:", names);
+
+    console.error("🚫 Could not find any of the font files:", names);
     return "";
   };
 
@@ -292,38 +373,69 @@ export const generateReceiptPDF = async (
     "NotoSansDevanagari-Regular.woff2",
   ]);
 
-  // Enhanced font CSS with better fallbacks and multiple font formats
+  console.log(
+    `🎨 Font embedding result: ${notoDevaBase64 ? "SUCCESS" : "FAILED"}`
+  );
+  if (notoDevaBase64) {
+    console.log(`📏 Embedded font size: ${notoDevaBase64.length} characters`);
+  }
+
+  // Enhanced font CSS with comprehensive fallbacks
   const embeddedFontCss = notoDevaBase64
-    ? `@font-face{
+    ? `/* Embedded Noto Sans Devanagari Font */
+       @font-face{
          font-family: 'NotoSansDevanagari';
          src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
          font-weight: normal;
          font-style: normal;
-         font-display: swap;
-         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
-       
-       /* Fallback font for system fonts */
+       @font-face{
+         font-family: 'DevanagariSans';
+         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),
+              local('Noto Sans Devanagari'), 
+              local('Mangal'), 
+              local('Devanagari Sangam MN'),
+              local('Sanskrit Text'),
+              local('Kokila'),
+              local('Aparajita'),
+              local('Siddhanta');
+         font-weight: normal;
+         font-style: normal;
+       }`
+    : `/* Fallback System Fonts Only */
        @font-face{
          font-family: 'DevanagariSans';
          src: local('Noto Sans Devanagari'), 
               local('Mangal'), 
               local('Devanagari Sangam MN'),
               local('Sanskrit Text'),
-              local('Kokila');
+              local('Kokila'),
+              local('Aparajita'),
+              local('Siddhanta');
          font-weight: normal;
          font-style: normal;
-       }`
-    : `@font-face{
-         font-family: 'DevanagariSans';
-         src: local('Noto Sans Devanagari'), 
-              local('Mangal'), 
-              local('Devanagari Sangam MN'),
-              local('Sanskrit Text'),
-              local('Kokila');
-         font-weight: normal;
-         font-style: normal;
-       }`;
+       }
+       
+       /* Force UTF-8 character support */
+       @charset "UTF-8";`;
+
+  // Create receipt object for template rendering
+  const receipt = {
+    receiptNumber: receiptData.receiptNumber,
+    donorName: receiptData.donorName,
+    amount: receiptData.amount,
+    donationType: receiptData.donationType,
+    donorId: receiptData.donorId || "",
+    createdAt: receiptData.donationDate || new Date().toISOString(),
+    createdBy: receiptData.receivedBy || "System",
+    paymentMode: "Cash", // Default for now
+    notes: receiptData.notes || "",
+    dateOfDonation: receiptData.donationDate,
+    startDate: (receiptData as any).startDate,
+    endDate: (receiptData as any).endDate,
+    startDateNepali: (receiptData as any).startDateNepali,
+    endDateNepali: (receiptData as any).endDateNepali,
+  };
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -864,4 +976,4 @@ export const generateReceiptPDF = async (
     console.log("PDF generated successfully with fallback browser");
     return Buffer.from(pdfBuffer);
   }
-};
+}
