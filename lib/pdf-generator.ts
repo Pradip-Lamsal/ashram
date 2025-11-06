@@ -112,11 +112,24 @@ export async function generateReceiptPDF(
     donationDate?: string;
     amountInWords?: string;
     notes?: string;
-    donationItemsList?: any[];
+    donationItemsList?: Array<{
+      item: string;
+      amount: number;
+    }>;
     donationItemsText?: string;
     donorId?: string;
     donationDay?: string;
     nepaliDate?: string;
+    // Additional properties for Seva Donation
+    startDate?: string;
+    endDate?: string;
+    startDateNepali?: string;
+    endDateNepali?: string;
+    dateOfDonation?: string;
+    // API route properties
+    createdAt?: string;
+    paymentMode?: string;
+    createdBy?: string;
   },
   forDownload: boolean = false
 ): Promise<Buffer> {
@@ -150,32 +163,25 @@ export async function generateReceiptPDF(
   const formatDonationDateForPDF = () => {
     if (receiptData.donationType === "Seva Donation") {
       // If we have Nepali date strings, use them directly (more accurate)
-      if (
-        (receiptData as any).startDateNepali &&
-        (receiptData as any).endDateNepali
-      ) {
-        return `${(receiptData as any).startDateNepali} देखि ${
-          (receiptData as any).endDateNepali
-        } सम्म`;
+      if (receiptData.startDateNepali && receiptData.endDateNepali) {
+        return `${receiptData.startDateNepali} देखि ${receiptData.endDateNepali} सम्म`;
       }
 
       // Fallback to converting English dates to Nepali
-      if ((receiptData as any).startDate && (receiptData as any).endDate) {
+      if (receiptData.startDate && receiptData.endDate) {
         const startNepali = englishToNepaliDateFormatted(
-          new Date((receiptData as any).startDate)
+          new Date(receiptData.startDate)
         );
         const endNepali = englishToNepaliDateFormatted(
-          new Date((receiptData as any).endDate)
+          new Date(receiptData.endDate)
         );
         return `${startNepali} देखि ${endNepali} सम्म`;
       }
     }
 
     // For regular donations, show the donation date
-    if ((receiptData as any).dateOfDonation) {
-      return englishToNepaliDateFormatted(
-        new Date((receiptData as any).dateOfDonation)
-      );
+    if (receiptData.dateOfDonation) {
+      return englishToNepaliDateFormatted(new Date(receiptData.dateOfDonation));
     }
 
     return "N/A";
@@ -380,30 +386,43 @@ export async function generateReceiptPDF(
     console.log(`📏 Embedded font size: ${notoDevaBase64.length} characters`);
   }
 
-  // Enhanced font CSS with comprehensive fallbacks
+  // Enhanced font CSS with comprehensive fallbacks and force loading
   const embeddedFontCss = notoDevaBase64
-    ? `/* Embedded Noto Sans Devanagari Font */
-       @font-face{
+    ? `/* Force UTF-8 encoding */
+       @charset "UTF-8";
+       
+       /* Embedded Noto Sans Devanagari Font - Primary */
+       @font-face {
          font-family: 'NotoSansDevanagari';
          src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
          font-weight: normal;
          font-style: normal;
+         font-display: block;
+         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
-       @font-face{
+       
+       /* Embedded Font - Devanagari Fallback */
+       @font-face {
          font-family: 'DevanagariSans';
-         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),
-              local('Noto Sans Devanagari'), 
-              local('Mangal'), 
-              local('Devanagari Sangam MN'),
-              local('Sanskrit Text'),
-              local('Kokila'),
-              local('Aparajita'),
-              local('Siddhanta');
+         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
          font-weight: normal;
          font-style: normal;
+         font-display: block;
+         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+       }
+       
+       /* Force all Devanagari text to use embedded font */
+       .nepali-text, .devanagari, [lang="ne"], [lang="hi"] {
+         font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
+         font-feature-settings: "kern" 1, "liga" 1;
+         text-rendering: optimizeLegibility;
+         -webkit-font-smoothing: antialiased;
+         -moz-osx-font-smoothing: grayscale;
        }`
-    : `/* Fallback System Fonts Only */
-       @font-face{
+    : `/* Fallback System Fonts with Enhanced Support */
+       @charset "UTF-8";
+       
+       @font-face {
          font-family: 'DevanagariSans';
          src: local('Noto Sans Devanagari'), 
               local('Mangal'), 
@@ -414,10 +433,17 @@ export async function generateReceiptPDF(
               local('Siddhanta');
          font-weight: normal;
          font-style: normal;
+         font-display: block;
+         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
        
-       /* Force UTF-8 character support */
-       @charset "UTF-8";`;
+       .nepali-text, .devanagari, [lang="ne"], [lang="hi"] {
+         font-family: 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
+         font-feature-settings: "kern" 1, "liga" 1;
+         text-rendering: optimizeLegibility;
+         -webkit-font-smoothing: antialiased;
+         -moz-osx-font-smoothing: grayscale;
+       }`;
 
   // Create receipt object for template rendering
   const receipt = {
@@ -431,10 +457,10 @@ export async function generateReceiptPDF(
     paymentMode: "Cash", // Default for now
     notes: receiptData.notes || "",
     dateOfDonation: receiptData.donationDate,
-    startDate: (receiptData as any).startDate,
-    endDate: (receiptData as any).endDate,
-    startDateNepali: (receiptData as any).startDateNepali,
-    endDateNepali: (receiptData as any).endDateNepali,
+    startDate: receiptData.startDate,
+    endDate: receiptData.endDate,
+    startDateNepali: receiptData.startDateNepali,
+    endDateNepali: receiptData.endDateNepali,
   };
 
   const htmlContent = `

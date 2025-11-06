@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
             endDate: receipt.endDate,
             notes: receipt.notes,
             createdBy: receipt.createdBy,
+            includeLogos: false,
           },
-          { includeLogos: false }
+          true // forDownload
         ); // Disable logos for smaller email attachments
         console.log(
           "PDF generated successfully, size:",

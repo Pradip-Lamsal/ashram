@@ -69,8 +69,9 @@ export async function POST(request: NextRequest) {
           endDate: receipt.endDate,
           notes: receipt.notes,
           createdBy: receipt.createdBy,
+          includeLogos,
         },
-        { includeLogos }
+        true // forDownload
       );
     } catch (pdfError) {
       console.error("PDF generation failed:", pdfError);
