@@ -386,46 +386,41 @@ export async function generateReceiptPDF(
     console.log(`📏 Embedded font size: ${notoDevaBase64.length} characters`);
   }
 
-  // Enhanced font CSS with comprehensive fallbacks and force loading
-  const embeddedFontCss = notoDevaBase64
-    ? `/* Force UTF-8 encoding */
+  // Enhanced font CSS with aggressive production loading
+  const embeddedFontCss = `/* Force UTF-8 encoding */
        @charset "UTF-8";
        
-       /* Embedded Noto Sans Devanagari Font - Primary */
+       /* Multiple font loading strategies for maximum compatibility */
        @font-face {
          font-family: 'NotoSansDevanagari';
-         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
+         src: ${
+           notoDevaBase64
+             ? `url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),`
+             : ""
+         }
+              url("/api/fonts/noto-devanagari") format('truetype'),
+              url("/noto-devanagari.ttf") format('truetype'),
+              url("/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf") format('truetype'),
+              local('Noto Sans Devanagari');
          font-weight: normal;
          font-style: normal;
          font-display: block;
          unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
        
-       /* Embedded Font - Devanagari Fallback */
+       /* Backup font face */
        @font-face {
          font-family: 'DevanagariSans';
-         src: url("data:font/truetype;base64,${notoDevaBase64}") format('truetype');
-         font-weight: normal;
-         font-style: normal;
-         font-display: block;
-         unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
-       }
-       
-       /* Force all Devanagari text to use embedded font */
-       .nepali-text, .devanagari, [lang="ne"], [lang="hi"] {
-         font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
-         font-feature-settings: "kern" 1, "liga" 1;
-         text-rendering: optimizeLegibility;
-         -webkit-font-smoothing: antialiased;
-         -moz-osx-font-smoothing: grayscale;
-       }`
-    : `/* Fallback System Fonts with Enhanced Support */
-       @charset "UTF-8";
-       
-       @font-face {
-         font-family: 'DevanagariSans';
-         src: local('Noto Sans Devanagari'), 
-              local('Mangal'), 
+         src: ${
+           notoDevaBase64
+             ? `url("data:font/truetype;base64,${notoDevaBase64}") format('truetype'),`
+             : ""
+         }
+              url("/api/fonts/noto-devanagari") format('truetype'),
+              url("/noto-devanagari.ttf") format('truetype'),
+              url("/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf") format('truetype'),
+              local('Noto Sans Devanagari'),
+              local('Mangal'),
               local('Devanagari Sangam MN'),
               local('Sanskrit Text'),
               local('Kokila'),
@@ -437,8 +432,10 @@ export async function generateReceiptPDF(
          unicode-range: U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
        }
        
-       .nepali-text, .devanagari, [lang="ne"], [lang="hi"] {
-         font-family: 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
+       /* Force all Devanagari text to use proper fonts */
+       .nepali-text, .devanagari, [lang="ne"], [lang="hi"], 
+       h1, .subtitle, .header-center * {
+         font-family: 'NotoSansDevanagari', 'DevanagariSans', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Aparajita', 'Siddhanta', sans-serif !important;
          font-feature-settings: "kern" 1, "liga" 1;
          text-rendering: optimizeLegibility;
          -webkit-font-smoothing: antialiased;
