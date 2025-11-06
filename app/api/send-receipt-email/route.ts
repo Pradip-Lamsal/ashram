@@ -42,24 +42,21 @@ export async function POST(request: NextRequest) {
     if (includeAttachment) {
       try {
         console.log("Generating PDF for receipt:", receipt.receiptNumber);
-        pdfBuffer = await generateReceiptPDF(
-          {
-            receiptNumber: receipt.receiptNumber,
-            donorName: receipt.donorName,
-            donorId: receipt.donorId,
-            amount: receipt.amount || 0,
-            createdAt: receipt.createdAt || new Date().toISOString(),
-            donationType: receipt.donationType || "General Donation",
-            paymentMode: receipt.paymentMode || "Unknown",
-            dateOfDonation: receipt.dateOfDonation,
-            startDate: receipt.startDate,
-            endDate: receipt.endDate,
-            notes: receipt.notes,
-            createdBy: receipt.createdBy,
-            includeLogos: false,
-          },
-          true // forDownload
-        ); // Disable logos for smaller email attachments
+        pdfBuffer = await generateReceiptPDF({
+          receiptNumber: receipt.receiptNumber,
+          donorName: receipt.donorName,
+          donorId: receipt.donorId,
+          amount: receipt.amount || 0,
+          createdAt: receipt.createdAt || new Date().toISOString(),
+          donationType: receipt.donationType || "General Donation",
+          paymentMode: receipt.paymentMode || "Unknown",
+          dateOfDonation: receipt.dateOfDonation,
+          startDate: receipt.startDate,
+          endDate: receipt.endDate,
+          notes: receipt.notes,
+          createdBy: receipt.createdBy,
+          includeLogos: false,
+        }); // Disable logos for smaller email attachments
         console.log(
           "PDF generated successfully, size:",
           pdfBuffer.length,

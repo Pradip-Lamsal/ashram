@@ -55,24 +55,21 @@ export async function POST(request: NextRequest) {
     // Generate PDF with optional logos (default: include logos for downloads)
     let pdfBuffer;
     try {
-      pdfBuffer = await generateReceiptPDF(
-        {
-          receiptNumber: receipt.receiptNumber,
-          donorName: receipt.donorName,
-          donorId: receipt.donorId,
-          amount: receipt.amount || 0,
-          createdAt: receipt.createdAt || new Date().toISOString(),
-          donationType: receipt.donationType || "General Donation",
-          paymentMode: receipt.paymentMode || "Unknown",
-          dateOfDonation: receipt.dateOfDonation,
-          startDate: receipt.startDate,
-          endDate: receipt.endDate,
-          notes: receipt.notes,
-          createdBy: receipt.createdBy,
-          includeLogos,
-        },
-        true // forDownload
-      );
+      pdfBuffer = await generateReceiptPDF({
+        receiptNumber: receipt.receiptNumber,
+        donorName: receipt.donorName,
+        donorId: receipt.donorId,
+        amount: receipt.amount || 0,
+        createdAt: receipt.createdAt || new Date().toISOString(),
+        donationType: receipt.donationType || "General Donation",
+        paymentMode: receipt.paymentMode || "Unknown",
+        dateOfDonation: receipt.dateOfDonation,
+        startDate: receipt.startDate,
+        endDate: receipt.endDate,
+        notes: receipt.notes,
+        createdBy: receipt.createdBy,
+        includeLogos,
+      });
     } catch (pdfError) {
       console.error("PDF generation failed:", pdfError);
       return NextResponse.json(
