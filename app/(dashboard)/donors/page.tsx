@@ -4,6 +4,16 @@ import { useAuth } from "@/components/context/AuthProvider";
 import { useToast } from "@/components/context/ToastProvider";
 import DonorForm from "@/components/forms/DonorForm";
 import DonorProfileModal from "@/components/modals/DonorProfileModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,6 +63,7 @@ import {
   Phone,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
@@ -106,6 +117,11 @@ export default function DonorsPage() {
   // Form submission loading states
   const [isSubmittingDonor, setIsSubmittingDonor] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [donorToDelete, setDonorToDelete] = useState<Donor | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadDonors = async () => {
@@ -188,6 +204,41 @@ export default function DonorsPage() {
   const handleEditDonor = (donor: Donor) => {
     setDonorToEdit(donor);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteDonor = (donor: Donor) => {
+    setDonorToDelete(donor);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteDonor = async () => {
+    if (!donorToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await donorsService.delete(donorToDelete.id);
+
+      // Remove donor from local state
+      setDonors(donors.filter((d) => d.id !== donorToDelete.id));
+
+      setShowDeleteConfirm(false);
+      setDonorToDelete(null);
+
+      showToast(
+        `${donorToDelete.name} deleted successfully! 🗑️`,
+        "The donor has been removed from the database.",
+        "default"
+      );
+    } catch (error) {
+      console.error("Error deleting donor:", error);
+      showToast(
+        "Failed to delete donor",
+        "There was an error deleting the donor. Please try again.",
+        "destructive"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleUpdateDonor = async (donorData: {
@@ -715,6 +766,14 @@ export default function DonorsPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteDonor(donor)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -780,6 +839,42 @@ export default function DonorsPage() {
           onClose={() => setIsProfileModalOpen(false)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Donor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{donorToDelete?.name}</span>? This
+              action will soft delete the donor and they will no longer appear
+              in the donors list. This action can be reversed by a database
+              administrator if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteDonor}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Donor
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

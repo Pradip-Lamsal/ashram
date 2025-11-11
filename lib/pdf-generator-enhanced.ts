@@ -1,4 +1,3 @@
-import { generateReceiptPDF as generateReceiptPDFPuppeteer } from "./pdf-generator-puppeteer-backup";
 import { generateReceiptPDFWithPlaywright } from "./playwright-pdf-generator";
 
 // Enhanced PDF generation with Playwright fallback to Puppeteer
@@ -50,7 +49,7 @@ export async function generateReceiptPDF(receiptData: {
     try {
       // Fallback to Puppeteer
       console.log("🔄 Trying Puppeteer fallback...");
-      const result = await generateReceiptPDFPuppeteer(receiptData);
+      const result = await generateReceiptPDF(receiptData);
       console.log("✅ Puppeteer fallback successful!");
       return result;
     } catch (puppeteerError) {

@@ -664,7 +664,7 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
 
           <!-- Donation Details -->
           <div class="donation-details">
-            <h3>💝 Donation Information</h3>
+            <h3>Donation Information</h3>
             <div class="donation-grid">
               <div class="donation-item">
                 <div class="label">Donation Type</div>
