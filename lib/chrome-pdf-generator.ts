@@ -2,6 +2,95 @@ import fs from "fs";
 import path from "path";
 import { chromium } from "playwright";
 
+// Function to get local embedded font CSS
+function getLocalEmbeddedFontCSS(): string {
+  try {
+    console.log("🔍 Loading local Noto Sans Devanagari fonts...");
+
+    // Try multiple font paths
+    const fontPaths = [
+      path.join(process.cwd(), "public", "noto-devanagari.ttf"),
+      path.join(
+        process.cwd(),
+        "public",
+        "fonts",
+        "NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+      ),
+    ];
+
+    let fontBase64 = "";
+    let fontPath = "";
+
+    for (const testPath of fontPaths) {
+      if (fs.existsSync(testPath)) {
+        console.log(`✅ Found font at: ${testPath}`);
+        const fontBuffer = fs.readFileSync(testPath);
+        fontBase64 = fontBuffer.toString("base64");
+        fontPath = testPath;
+        console.log(
+          `📦 Font loaded: ${Math.round(fontBuffer.length / 1024)}KB`
+        );
+        break;
+      }
+    }
+
+    if (!fontBase64) {
+      console.warn("⚠️ No local fonts found, falling back to system fonts");
+      return `
+        * {
+          font-family: 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
+        }
+      `;
+    }
+
+    return `
+      @font-face {
+        font-family: 'LocalNotoDevanagari';
+        src: url(data:font/ttf;base64,${fontBase64}) format('truetype');
+        font-weight: 100 900;
+        font-stretch: 50% 200%;
+        font-style: normal;
+        font-display: block;
+      }
+      
+      @font-face {
+        font-family: 'LocalNotoDevanagariRegular';
+        src: url(data:font/ttf;base64,${fontBase64}) format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: block;
+      }
+      
+      @font-face {
+        font-family: 'LocalNotoDevanariBold';
+        src: url(data:font/ttf;base64,${fontBase64}) format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: block;
+      }
+      
+      * {
+        font-family: 'LocalNotoDevanagari', 'LocalNotoDevanagariRegular', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
+        font-display: block !important;
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        font-feature-settings: "kern" 1, "liga" 1, "calt" 1 !important;
+        font-synthesis: none !important;
+        font-variant-ligatures: common-ligatures !important;
+        font-kerning: auto !important;
+      }
+    `;
+  } catch (error) {
+    console.error("❌ Error loading local fonts:", error);
+    return `
+      * {
+        font-family: 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
+      }
+    `;
+  }
+}
+
 interface ReceiptData {
   receiptNumber: string;
   donorName: string;
@@ -57,22 +146,10 @@ export async function generatePDFWithChrome(
     // Inject system font CSS before content
     await page.addStyleTag({
       content: `
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100;200;300;400;500;600;700;800;900&display=block');
-        
-        * {
-          font-family: 'Noto Sans Devanagari', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', system-ui, -apple-system, sans-serif !important;
-          font-display: block !important;
-          text-rendering: optimizeLegibility !important;
-          -webkit-font-smoothing: antialiased !important;
-          -moz-osx-font-smoothing: grayscale !important;
-          font-feature-settings: "kern" 1, "liga" 1, "calt" 1 !important;
-        }
-        
-        body {
-          font-synthesis: none !important;
-          font-variant-ligatures: common-ligatures !important;
-          font-kerning: auto !important;
-        }
+        // Inject local embedded font CSS before content
+    await page.addStyleTag({
+      content: getLocalEmbeddedFontCSS()
+    });
       `,
     });
 
@@ -84,10 +161,14 @@ export async function generatePDFWithChrome(
       timeout: 30000,
     });
 
-    // Wait for Google Fonts to load completely
+    // Wait for local fonts to load completely
     await page.waitForFunction(
       () => {
-        return document.fonts.check('16px "Noto Sans Devanagari"', "अ");
+        return (
+          document.fonts.check('16px "LocalNotoDevanagari"', "अ") ||
+          document.fonts.check('16px "LocalNotoDevanagariRegular"', "न") ||
+          document.fonts.check('16px "Noto Sans Devanagari"', "प")
+        );
       },
       { timeout: 15000 }
     );
@@ -97,14 +178,14 @@ export async function generatePDFWithChrome(
       const elements = document.querySelectorAll("*");
       elements.forEach((el) => {
         const style = (el as HTMLElement).style;
-        style.fontFamily = '"Noto Sans Devanagari", system-ui, sans-serif';
+        style.fontFamily =
+          '"LocalNotoDevanagari", "LocalNotoDevanagariRegular", "Noto Sans Devanagari", system-ui, sans-serif';
         style.setProperty(
           "font-family",
-          '"Noto Sans Devanagari", system-ui, sans-serif',
+          '"LocalNotoDevanagari", "LocalNotoDevanagariRegular", "Noto Sans Devanagari", system-ui, sans-serif',
           "important"
         );
       });
-
       // Force repaint
       document.body.style.transform = "scale(1.0001)";
       setTimeout(() => {
@@ -163,11 +244,7 @@ function generateHTMLWithSystemFonts(data: ReceiptData): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receipt</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100;200;300;400;500;600;700;800;900&display=block" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100;200;300;400;500;600;700;800;900&display=block');
         
         * {
             margin: 0;
@@ -185,7 +262,7 @@ function generateHTMLWithSystemFonts(data: ReceiptData): string {
         }
         
         html, body {
-            font-family: 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
+            font-family: 'LocalNotoDevanagari', 'LocalNotoDevanagariRegular', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
             font-size: 14px;
             line-height: 1.6;
             color: #333;
