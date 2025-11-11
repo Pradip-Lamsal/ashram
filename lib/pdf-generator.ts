@@ -1,4 +1,4 @@
-import { generatePDFWithChrome } from "./chrome-pdf-generator";
+import { generatePDFWithJSPDF } from "./jspdf-generator";
 
 // Production-ready PDF generation with enhanced Puppeteer reliability
 export async function generateReceiptPDF(receiptData: {
@@ -36,8 +36,8 @@ export async function generateReceiptPDF(receiptData: {
   );
 
   try {
-    // Use Chrome with system fonts for better font handling
-    const result = await generatePDFWithChrome({
+    // Use jsPDF with direct Unicode support for better font handling
+    const result = await generatePDFWithJSPDF({
       receiptNumber: receiptData.receiptNumber,
       donorName: receiptData.donorName,
       donorId: receiptData.donorId,
@@ -52,14 +52,12 @@ export async function generateReceiptPDF(receiptData: {
     });
     console.log("✅ High-quality PDF generated successfully!");
     return result;
-  } catch (puppeteerError) {
-    console.error("❌ Puppeteer PDF generation failed:", puppeteerError);
+  } catch (jspdfError) {
+    console.error("❌ jsPDF generation failed:", jspdfError);
 
     // Provide detailed error for production debugging
     const errorMessage =
-      puppeteerError instanceof Error
-        ? puppeteerError.message
-        : String(puppeteerError);
+      jspdfError instanceof Error ? jspdfError.message : String(jspdfError);
 
     throw new Error(
       `Production PDF generation failed: ${errorMessage}. Please check server logs for Playwright configuration issues.`
