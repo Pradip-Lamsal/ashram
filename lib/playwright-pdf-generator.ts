@@ -9,14 +9,26 @@ const getBrowserConfig = () => {
   const isProduction = process.env.NODE_ENV === "production";
   const isVercel = process.env.VERCEL === "1";
 
+  const baseArgs = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--enable-font-antialiasing",
+    "--force-color-profile=srgb",
+    "--lang=en-US,ne-NP", // Support English and Nepali locales
+    "--disable-font-subpixel-positioning",
+    "--enable-experimental-web-platform-features", // Better web font support
+    "--disable-features=VizDisplayCompositor", // Better rendering consistency
+    "--run-all-compositor-stages-before-draw", // Ensure complete rendering
+  ];
+
   if (isVercel || isProduction) {
+    console.log("🏭 Configuring browser for production environment");
     return {
       headless: true,
       args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
+        ...baseArgs,
         "--no-first-run",
         "--disable-extensions",
         "--disable-plugins",
@@ -24,25 +36,15 @@ const getBrowserConfig = () => {
         "--disable-background-timer-throttling",
         "--disable-backgrounding-occluded-windows",
         "--disable-renderer-backgrounding",
-        "--enable-font-antialiasing",
-        "--force-color-profile=srgb",
-        "--lang=en-US,ne-NP", // Support English and Nepali locales
-        "--disable-font-subpixel-positioning",
+        "--memory-pressure-off", // Prevent font loading issues under memory pressure
+        "--max-old-space-size=512", // Memory optimization for serverless
       ],
     };
   } else {
+    console.log("🛠️ Configuring browser for development environment");
     return {
       headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--enable-font-antialiasing",
-        "--force-color-profile=srgb",
-        "--lang=en-US,ne-NP",
-        "--disable-font-subpixel-positioning",
-      ],
+      args: baseArgs,
     };
   }
 };
@@ -94,6 +96,16 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   paymentMode?: string;
   createdBy?: string;
 }): Promise<Buffer> {
+  // Environment detection for debugging
+  const isProduction = process.env.NODE_ENV === "production";
+  const isVercel = process.env.VERCEL === "1";
+
+  console.log(
+    `🌍 Environment: ${isProduction ? "Production" : "Development"} ${
+      isVercel ? "(Vercel)" : "(Local)"
+    }`
+  );
+  console.log(`📁 Working directory: ${process.cwd()}`);
   console.log(
     "🎭 Starting Playwright PDF generation for:",
     receiptData.receiptNumber
@@ -229,15 +241,39 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
     return words.trim();
   };
 
-  // Enhanced logo loading with error handling
+  // Production-ready logo loading with comprehensive error handling
   const getDataUrl = (filename: string) => {
     try {
       const imgPath = path.resolve(process.cwd(), "public", filename);
+      console.log(`📸 Loading image from: ${imgPath}`);
+
+      // Check if file exists
+      if (!fs.existsSync(imgPath)) {
+        console.warn(`⚠️ Image file not found: ${imgPath}`);
+        return "";
+      }
+
       const data = fs.readFileSync(imgPath);
       const ext = path.extname(imgPath).slice(1).toLowerCase();
-      return `data:image/${ext};base64,${data.toString("base64")}`;
+
+      // Validate image extension
+      const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+      if (!validExtensions.includes(ext)) {
+        console.warn(`⚠️ Unsupported image format: ${ext}`);
+        return "";
+      }
+
+      const base64Data = data.toString("base64");
+      const dataUrl = `data:image/${ext};base64,${base64Data}`;
+
+      console.log(
+        `✅ Image loaded successfully: ${filename} (${Math.round(
+          base64Data.length / 1024
+        )}KB)`
+      );
+      return dataUrl;
     } catch (err) {
-      console.warn("Could not load image", filename, err);
+      console.error(`❌ Failed to load image ${filename}:`, err);
       return "";
     }
   };
@@ -246,27 +282,40 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // Enhanced system font CSS with better Unicode support
-  const systemFontCss = `
+  // Production-ready web font embedding for consistent cross-environment rendering
+  const webFontCss = `
     @charset "UTF-8";
     
-    /* Playwright-optimized Devanagari font stack */
+    /* Google Fonts - Noto Sans Devanagari for production consistency */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+    
+    /* Fallback font loading for offline/CDN failures */
+    @font-face {
+      font-family: 'DevanagariUnicode';
+      src: local('Noto Sans Devanagari'), local('NotoSansDevanagari-Regular'),
+           local('Mangal'), local('Devanagari Sangam MN'), local('Sanskrit Text');
+      unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
+    }
+    
+    /* Production-optimized font stack */
     *, body, h1, h2, h3, h4, h5, h6, p, div, span {
-      font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif !important;
+      font-family: 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif !important;
       -webkit-font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      font-variant-ligatures: common-ligatures;
     }
     
-    /* Enhanced Nepali text handling */
+    /* Enhanced Nepali text handling with web font priority */
     .nepali-text, .header-center, .header-center * {
-      font-family: 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN' !important;
+      font-family: 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN' !important;
       unicode-bidi: normal;
       direction: ltr;
       font-variant-ligatures: common-ligatures;
       font-kerning: normal;
+      font-weight: 400;
     }
   `;
 
@@ -298,8 +347,8 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Receipt ${receipt.receiptNumber}</title>
         <style>
-          /* Enhanced system fonts for Playwright */
-          ${systemFontCss}
+          /* Production-ready web fonts for consistent rendering */
+          ${webFontCss}
 
           * {
             margin: 0;
@@ -742,24 +791,86 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       timeout: 30000,
     });
 
-    // Wait for fonts to be ready and force proper rendering
+    // Enhanced font loading with comprehensive verification and debugging
     await page.evaluate(() => {
       return new Promise<void>((resolve) => {
-        // Ensure fonts are loaded
+        console.log("🔤 Starting font loading process...");
+
+        // Log available fonts for debugging
+        const checkFontAvailability = () => {
+          const testFonts = [
+            "Noto Sans Devanagari",
+            "Mangal",
+            "Devanagari Sangam MN",
+            "Arial",
+            "sans-serif",
+          ];
+
+          testFonts.forEach((fontName) => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.font = `16px ${fontName}`;
+              const metrics = ctx.measureText("अ"); // Nepali character
+              console.log(`Font ${fontName}: width=${metrics.width}px`);
+            }
+          });
+        };
+
+        // Wait for web fonts to load completely
         if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(() => {
-            // Force font application to all elements
+          document.fonts.ready.then(async () => {
+            console.log(
+              "📚 Document fonts ready, loading specific Devanagari fonts..."
+            );
+
+            // Load specific Noto Sans Devanagari font weights
+            try {
+              const fontPromises = [
+                document.fonts.load("400 16px 'Noto Sans Devanagari'"),
+                document.fonts.load("500 16px 'Noto Sans Devanagari'"),
+                document.fonts.load("600 16px 'Noto Sans Devanagari'"),
+                document.fonts.load("700 16px 'Noto Sans Devanagari'"),
+              ];
+
+              const results = await Promise.allSettled(fontPromises);
+              const loaded = results.filter(
+                (r) => r.status === "fulfilled"
+              ).length;
+              console.log(
+                `✅ ${loaded}/${results.length} web font weights loaded successfully`
+              );
+
+              checkFontAvailability();
+            } catch (fontError) {
+              console.warn(
+                "⚠️ Web font loading failed, using fallback fonts:",
+                fontError
+              );
+              checkFontAvailability();
+            }
+
+            // Force font application to all elements with production-ready stack
             const elements = document.querySelectorAll("*");
             elements.forEach((el) => {
               if (el instanceof HTMLElement) {
                 el.style.fontFamily =
-                  "'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
+                  "'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
               }
             });
-            setTimeout(resolve, 200);
+
+            console.log("🎨 Font styles applied to all elements");
+
+            // Extra wait to ensure font rendering is complete
+            setTimeout(() => {
+              console.log("⏱️ Font loading complete");
+              resolve();
+            }, 1000);
           });
         } else {
-          setTimeout(resolve, 500);
+          console.warn("⚠️ FontFace API not available, using fallback timing");
+          checkFontAvailability();
+          setTimeout(resolve, 1500);
         }
       });
     });
