@@ -1,4 +1,4 @@
-import { generatePDFWithPuppeteer } from "./puppeteer-pdf-generator";
+import { generatePDFWithChrome } from "./chrome-pdf-generator";
 
 // Production-ready PDF generation with enhanced Puppeteer reliability
 export async function generateReceiptPDF(receiptData: {
@@ -36,8 +36,8 @@ export async function generateReceiptPDF(receiptData: {
   );
 
   try {
-    // Use Puppeteer for better font handling
-    const result = await generatePDFWithPuppeteer({
+    // Use Chrome with system fonts for better font handling
+    const result = await generatePDFWithChrome({
       receiptNumber: receiptData.receiptNumber,
       donorName: receiptData.donorName,
       donorId: receiptData.donorId,
