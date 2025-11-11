@@ -1,63 +1,53 @@
+import chromium from "@sparticuz/chromium";
 import fs from "fs";
 import path from "path";
-import { Browser, chromium, Page } from "playwright";
+import { Browser, Page } from "playwright";
+import playwright from "playwright-core";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
-// Playwright browser configuration for different environments
-const getBrowserConfig = () => {
+// Serverless-optimized browser launch for production and local environments
+const launchBrowser = async () => {
   const isProduction = process.env.NODE_ENV === "production";
   const isVercel = process.env.VERCEL === "1";
 
-  const baseArgs = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--enable-font-antialiasing",
-    "--force-color-profile=srgb",
-    "--lang=en-US,ne-NP", // Support English and Nepali locales
-    "--disable-font-subpixel-positioning",
-    "--enable-experimental-web-platform-features", // Better web font support
-    "--disable-features=VizDisplayCompositor", // Better rendering consistency
-    "--run-all-compositor-stages-before-draw", // Ensure complete rendering
-  ];
-
-  // Enhanced configuration for consistent local/production quality
-  const config = {
-    headless: true,
-    timeout: 45000, // Generous timeout for font loading
-    args: [
-      ...baseArgs,
-      "--font-render-hinting=none", // Better font rendering
-      "--enable-font-antialiasing",
-      "--enable-webgl",
-      "--enable-accelerated-2d-canvas",
-    ],
-  };
-
   if (isVercel || isProduction) {
-    console.log(
-      "🏭 Production environment - optimizing for serverless with quality fonts"
-    );
-    config.args.push(
-      "--no-first-run",
-      "--disable-extensions",
-      "--disable-plugins",
-      "--disable-background-timer-throttling",
-      "--disable-backgrounding-occluded-windows",
-      "--disable-renderer-backgrounding",
-      "--memory-pressure-off",
-      "--single-process", // Required for serverless
-      "--no-zygote" // Required for serverless
-    );
-  } else {
-    console.log(
-      "🛠️ Development environment - full font rendering capabilities"
-    );
-  }
+    console.log("🏭 Launching serverless-optimized Chromium for production");
 
-  return config;
+    // Use @sparticuz/chromium for serverless compatibility
+    return await playwright.chromium.launch({
+      args: [
+        ...chromium.args,
+        "--font-render-hinting=none",
+        "--enable-font-antialiasing",
+        "--force-color-profile=srgb",
+        "--lang=en-US,ne-NP",
+        "--disable-font-subpixel-positioning",
+      ],
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  } else {
+    console.log("🛠️ Launching local Playwright Chromium for development");
+
+    // Use local Playwright for development
+    return await playwright.chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--enable-font-antialiasing",
+        "--force-color-profile=srgb",
+        "--lang=en-US,ne-NP",
+        "--disable-font-subpixel-positioning",
+        "--font-render-hinting=none",
+        "--enable-webgl",
+        "--enable-accelerated-2d-canvas",
+      ],
+    });
+  }
 };
 
 interface ReceiptData {
@@ -293,21 +283,52 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // Enhanced multi-source font loading for production consistency
+  // Self-contained font loading with base64 embedding for production reliability
+  const getEmbeddedFontCss = () => {
+    try {
+      // Try to load and embed the local font file
+      const fontPath = path.resolve(
+        process.cwd(),
+        "public/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+      );
+
+      if (fs.existsSync(fontPath)) {
+        const fontData = fs.readFileSync(fontPath);
+        const fontBase64 = fontData.toString("base64");
+        console.log(
+          `✅ Font embedded successfully (${Math.round(
+            fontBase64.length / 1024
+          )}KB)`
+        );
+
+        return `
+          @font-face {
+            font-family: 'NotoSansDevanagariEmbedded';
+            src: url(data:font/truetype;base64,${fontBase64}) format('truetype');
+            font-weight: 100 900;
+            font-display: block;
+            unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
+          }
+        `;
+      } else {
+        console.warn("⚠️ Local font file not found, using web fonts");
+        return "";
+      }
+    } catch (error) {
+      console.warn("⚠️ Failed to embed font:", error);
+      return "";
+    }
+  };
+
+  const embeddedFontCss = getEmbeddedFontCss();
+
   const webFontCss = `
     @charset "UTF-8";
     
+    ${embeddedFontCss}
+    
     /* Primary: Google Fonts CDN for reliable access */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=block');
-    
-    /* Secondary: Local font file backup */
-    @font-face {
-      font-family: 'Noto Sans Devanagari';
-      src: url('/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf') format('truetype');
-      font-weight: 100 900;
-      font-display: block;
-      unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
-    }
     
     /* Tertiary: System font fallbacks */
     @font-face {
@@ -317,9 +338,9 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
     }
     
-    /* Production-optimized font stack */
+    /* Production-optimized font stack with embedded fonts priority */
     *, body, h1, h2, h3, h4, h5, h6, p, div, span {
-      font-family: 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif !important;
+      font-family: 'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif !important;
       -webkit-font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       text-rendering: optimizeLegibility;
@@ -328,9 +349,9 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       font-variant-ligatures: common-ligatures;
     }
     
-    /* Enhanced Nepali text handling with web font priority */
+    /* Enhanced Nepali text handling with embedded font priority */
     .nepali-text, .header-center, .header-center * {
-      font-family: 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN' !important;
+      font-family: 'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN' !important;
       unicode-bidi: normal;
       direction: ltr;
       font-variant-ligatures: common-ligatures;
@@ -797,9 +818,8 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   let page: Page | null = null;
 
   try {
-    console.log("🚀 Launching Chromium browser with Playwright...");
-    const config = getBrowserConfig();
-    browser = await chromium.launch(config);
+    console.log("🚀 Launching serverless-optimized browser...");
+    browser = await launchBrowser();
 
     console.log("📄 Creating new page...");
     page = await browser.newPage();
@@ -872,7 +892,7 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
 
               // Ensure fonts are actually applied by triggering a repaint
               document.body.style.fontFamily =
-                "'Noto Sans Devanagari', 'Mangal', Arial, sans-serif";
+                "'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'Mangal', Arial, sans-serif";
             } catch (fontError) {
               console.warn(
                 "⚠️ Primary font loading failed, ensuring fallback fonts:",
@@ -886,7 +906,7 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
             elements.forEach((el) => {
               if (el instanceof HTMLElement) {
                 el.style.fontFamily =
-                  "'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
+                  "'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
               }
             });
 
