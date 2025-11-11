@@ -52,10 +52,13 @@ export async function POST(request: NextRequest) {
       includeLogos,
     });
 
-    // Generate PDF with optional logos (default: include logos for downloads)
+    // Generate PDF with timeout and retry logic for production
     let pdfBuffer;
     try {
-      pdfBuffer = await generateReceiptPDF({
+      console.log("🎭 Starting PDF generation with timeout protection...");
+
+      // Add timeout wrapper for production reliability
+      const pdfPromise = generateReceiptPDF({
         receiptNumber: receipt.receiptNumber,
         donorName: receipt.donorName,
         donorId: receipt.donorId,
@@ -70,15 +73,38 @@ export async function POST(request: NextRequest) {
         createdBy: receipt.createdBy,
         includeLogos,
       });
+
+      // Production timeout: 25 seconds (Vercel function limit is 30s)
+      const timeoutMs = process.env.NODE_ENV === "production" ? 25000 : 60000;
+
+      pdfBuffer = await Promise.race([
+        pdfPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(new Error(`PDF generation timeout after ${timeoutMs}ms`)),
+            timeoutMs
+          )
+        ),
+      ]);
+
+      console.log("✅ PDF generation completed successfully");
     } catch (pdfError) {
-      console.error("PDF generation failed:", pdfError);
+      console.error("❌ PDF generation failed:", pdfError);
+
+      // Provide more specific error messages for debugging
+      const errorMessage =
+        pdfError instanceof Error ? pdfError.message : "Unknown error";
+      const isTimeout = errorMessage.includes("timeout");
+
       return NextResponse.json(
         {
-          error: `Failed to generate PDF: ${
-            pdfError instanceof Error ? pdfError.message : "Unknown error"
-          }`,
+          error: isTimeout
+            ? "PDF generation timed out. Please try again with a simpler receipt or contact support."
+            : `Failed to generate PDF: ${errorMessage}`,
+          type: isTimeout ? "timeout" : "generation_error",
         },
-        { status: 500 }
+        { status: isTimeout ? 408 : 500 }
       );
     }
 

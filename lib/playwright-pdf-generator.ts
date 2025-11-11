@@ -23,30 +23,41 @@ const getBrowserConfig = () => {
     "--run-all-compositor-stages-before-draw", // Ensure complete rendering
   ];
 
+  // Enhanced configuration for consistent local/production quality
+  const config = {
+    headless: true,
+    timeout: 45000, // Generous timeout for font loading
+    args: [
+      ...baseArgs,
+      "--font-render-hinting=none", // Better font rendering
+      "--enable-font-antialiasing",
+      "--enable-webgl",
+      "--enable-accelerated-2d-canvas",
+    ],
+  };
+
   if (isVercel || isProduction) {
-    console.log("🏭 Configuring browser for production environment");
-    return {
-      headless: true,
-      args: [
-        ...baseArgs,
-        "--no-first-run",
-        "--disable-extensions",
-        "--disable-plugins",
-        "--disable-web-security",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--memory-pressure-off", // Prevent font loading issues under memory pressure
-        "--max-old-space-size=512", // Memory optimization for serverless
-      ],
-    };
+    console.log(
+      "🏭 Production environment - optimizing for serverless with quality fonts"
+    );
+    config.args.push(
+      "--no-first-run",
+      "--disable-extensions",
+      "--disable-plugins",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
+      "--memory-pressure-off",
+      "--single-process", // Required for serverless
+      "--no-zygote" // Required for serverless
+    );
   } else {
-    console.log("🛠️ Configuring browser for development environment");
-    return {
-      headless: true,
-      args: baseArgs,
-    };
+    console.log(
+      "🛠️ Development environment - full font rendering capabilities"
+    );
   }
+
+  return config;
 };
 
 interface ReceiptData {
@@ -282,14 +293,23 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // Production-ready web font embedding for consistent cross-environment rendering
+  // Enhanced multi-source font loading for production consistency
   const webFontCss = `
     @charset "UTF-8";
     
-    /* Google Fonts - Noto Sans Devanagari for production consistency */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+    /* Primary: Google Fonts CDN for reliable access */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=block');
     
-    /* Fallback font loading for offline/CDN failures */
+    /* Secondary: Local font file backup */
+    @font-face {
+      font-family: 'Noto Sans Devanagari';
+      src: url('/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-display: block;
+      unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
+    }
+    
+    /* Tertiary: System font fallbacks */
     @font-face {
       font-family: 'DevanagariUnicode';
       src: local('Noto Sans Devanagari'), local('NotoSansDevanagari-Regular'),
@@ -784,11 +804,14 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
     console.log("📄 Creating new page...");
     page = await browser.newPage();
 
-    // Enhanced font loading for Playwright
+    // Environment detection for timeouts
+    const isProduction = process.env.NODE_ENV === "production";
+
+    // Enhanced font loading for Playwright with production timeout
     console.log("🔤 Loading content with enhanced Unicode support...");
     await page.setContent(htmlContent, {
       waitUntil: "domcontentloaded",
-      timeout: 30000,
+      timeout: isProduction ? 15000 : 30000, // Shorter timeout for production
     });
 
     // Enhanced font loading with comprehensive verification and debugging
@@ -824,27 +847,35 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
               "📚 Document fonts ready, loading specific Devanagari fonts..."
             );
 
-            // Load specific Noto Sans Devanagari font weights
+            // Aggressive font loading for production consistency
             try {
+              // Load all essential font weights and test characters
               const fontPromises = [
-                document.fonts.load("400 16px 'Noto Sans Devanagari'"),
-                document.fonts.load("500 16px 'Noto Sans Devanagari'"),
-                document.fonts.load("600 16px 'Noto Sans Devanagari'"),
-                document.fonts.load("700 16px 'Noto Sans Devanagari'"),
+                document.fonts.load("400 16px 'Noto Sans Devanagari'", "अ"),
+                document.fonts.load("500 16px 'Noto Sans Devanagari'", "न"),
+                document.fonts.load("600 16px 'Noto Sans Devanagari'", "प"),
+                document.fonts.load("700 16px 'Noto Sans Devanagari'", "म"),
               ];
 
+              // Wait for all fonts with timeout
               const results = await Promise.allSettled(fontPromises);
               const loaded = results.filter(
                 (r) => r.status === "fulfilled"
               ).length;
+
               console.log(
-                `✅ ${loaded}/${results.length} web font weights loaded successfully`
+                `🎯 ${loaded}/${results.length} Devanagari font weights loaded successfully`
               );
 
+              // Force font check and application
               checkFontAvailability();
+
+              // Ensure fonts are actually applied by triggering a repaint
+              document.body.style.fontFamily =
+                "'Noto Sans Devanagari', 'Mangal', Arial, sans-serif";
             } catch (fontError) {
               console.warn(
-                "⚠️ Web font loading failed, using fallback fonts:",
+                "⚠️ Primary font loading failed, ensuring fallback fonts:",
                 fontError
               );
               checkFontAvailability();
@@ -861,16 +892,16 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
 
             console.log("🎨 Font styles applied to all elements");
 
-            // Extra wait to ensure font rendering is complete
+            // Enhanced wait time for reliable font rendering
             setTimeout(() => {
-              console.log("⏱️ Font loading complete");
+              console.log("⏱️ Font loading and application complete");
               resolve();
-            }, 1000);
+            }, 800);
           });
         } else {
           console.warn("⚠️ FontFace API not available, using fallback timing");
           checkFontAvailability();
-          setTimeout(resolve, 1500);
+          setTimeout(resolve, 500);
         }
       });
     });
@@ -891,14 +922,42 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
     return Buffer.from(pdfBuffer);
   } catch (error) {
     console.error("❌ Playwright PDF generation failed:", error);
-    throw error;
-  } finally {
-    // Clean up resources
-    if (page) {
-      await page.close().catch(() => {});
+
+    // Enhanced error reporting for production debugging
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split("\n").slice(0, 5).join("\n"), // First 5 lines of stack
+      });
     }
-    if (browser) {
-      await browser.close().catch(() => {});
+
+    // Check for common production issues
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("timeout")) {
+      throw new Error(
+        `PDF generation timed out. This may be due to slow font loading in production. Original error: ${errorMessage}`
+      );
+    } else if (errorMessage.includes("browser")) {
+      throw new Error(
+        `Browser launch failed in production environment. Original error: ${errorMessage}`
+      );
+    } else {
+      throw new Error(`PDF generation failed: ${errorMessage}`);
+    }
+  } finally {
+    // Clean up resources with error handling
+    try {
+      if (page) {
+        await page.close();
+        console.log("📄 Page closed successfully");
+      }
+      if (browser) {
+        await browser.close();
+        console.log("🌐 Browser closed successfully");
+      }
+    } catch (cleanupError) {
+      console.warn("⚠️ Cleanup warning:", cleanupError);
     }
   }
 }

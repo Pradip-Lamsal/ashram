@@ -1,6 +1,6 @@
 import { generateReceiptPDFWithPlaywright } from "./playwright-pdf-generator";
 
-// Enhanced PDF generation with Playwright fallback to Puppeteer
+// Production-ready PDF generation with enhanced Playwright reliability
 export async function generateReceiptPDF(receiptData: {
   receiptNumber: string;
   donorName: string;
@@ -32,39 +32,25 @@ export async function generateReceiptPDF(receiptData: {
   createdBy?: string;
 }): Promise<Buffer> {
   console.log(
-    "🎭 Attempting PDF generation with Playwright for better font support..."
+    "🎭 Generating production-quality PDF with proper Nepali fonts..."
   );
 
   try {
-    // Try Playwright first - better for Devanagari fonts
+    // Use Playwright for consistent local/production PDF generation
     const result = await generateReceiptPDFWithPlaywright(receiptData);
-    console.log("✅ Playwright PDF generation successful!");
+    console.log("✅ High-quality PDF generated successfully!");
     return result;
   } catch (playwrightError) {
-    console.warn(
-      "⚠️ Playwright failed, falling back to Puppeteer:",
-      playwrightError
-    );
+    console.error("❌ Playwright PDF generation failed:", playwrightError);
 
-    try {
-      // Fallback to Puppeteer
-      console.log("🔄 Trying Puppeteer fallback...");
-      const result = await generateReceiptPDF(receiptData);
-      console.log("✅ Puppeteer fallback successful!");
-      return result;
-    } catch (puppeteerError) {
-      console.error("❌ Both Playwright and Puppeteer failed:", puppeteerError);
-      throw new Error(
-        `PDF generation failed with both engines. Playwright: ${
-          playwrightError instanceof Error
-            ? playwrightError.message
-            : String(playwrightError)
-        }. Puppeteer: ${
-          puppeteerError instanceof Error
-            ? puppeteerError.message
-            : String(puppeteerError)
-        }`
-      );
-    }
+    // Provide detailed error for production debugging
+    const errorMessage =
+      playwrightError instanceof Error
+        ? playwrightError.message
+        : String(playwrightError);
+
+    throw new Error(
+      `Production PDF generation failed: ${errorMessage}. Please check server logs for Playwright configuration issues.`
+    );
   }
 }
