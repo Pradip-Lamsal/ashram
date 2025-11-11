@@ -5,15 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/copy-fonts.mjs",
+    "postbuild": "node scripts/copy-assets.mjs",
     "start": "next start",
     "preview": "npm run build && npm run start",
     "preview:prod": "NODE_ENV=production npm run build && NODE_ENV=production npm run start",
     "test:prod": "NODE_ENV=production npm run build",
     "lint": "eslint",
     "postinstall": "npm ls || true",
-    "vercel-build": "npm install --legacy-peer-deps && next build && node scripts/copy-fonts.mjs",
-    "force-build": "npm install --force && next build && node scripts/copy-fonts.mjs",
+    "vercel-build": "npm install --legacy-peer-deps && next build && node scripts/copy-assets.mjs",
+    "force-build": "npm install --force && next build && node scripts/copy-assets.mjs",
     "test-fonts": "node scripts/copy-fonts.mjs",
     "verify-fonts": "node scripts/test-font-verification-simple.mjs"
   },

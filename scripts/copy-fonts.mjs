@@ -8,6 +8,13 @@ const __dirname = path.dirname(__filename);
 console.log("🚀 Font Copy Script Starting...");
 
 const sourceFonts = path.join(__dirname, "..", "public", "fonts");
+const sourceStaticFonts = path.join(
+  __dirname,
+  "..",
+  "public",
+  "fonts",
+  "static"
+);
 const targetDirs = [
   path.join(__dirname, "..", ".next", "static", "fonts"),
   path.join(__dirname, "..", "out", "fonts"), // For static exports
@@ -19,11 +26,11 @@ console.log(`📂 Source fonts directory: ${sourceFonts}`);
 if (fs.existsSync(sourceFonts)) {
   console.log("✅ Source fonts directory found");
 
+  // Get font files from main fonts directory
   const files = fs.readdirSync(sourceFonts);
   console.log(`📄 Found ${files.length} files: ${files.join(", ")}`);
 
-  // Filter for font files
-  const fontFiles = files.filter(
+  let fontFiles = files.filter(
     (file) =>
       file.endsWith(".ttf") ||
       file.endsWith(".woff") ||
@@ -31,9 +38,35 @@ if (fs.existsSync(sourceFonts)) {
       file.endsWith(".otf")
   );
 
-  console.log(
-    `🎨 Found ${fontFiles.length} font files: ${fontFiles.join(", ")}`
-  );
+  // Also get font files from static subdirectory
+  if (fs.existsSync(sourceStaticFonts)) {
+    const staticFiles = fs.readdirSync(sourceStaticFonts);
+    const staticFontFiles = staticFiles
+      .filter(
+        (file) =>
+          file.endsWith(".ttf") ||
+          file.endsWith(".woff") ||
+          file.endsWith(".woff2") ||
+          file.endsWith(".otf")
+      )
+      .map((file) => ({ file, isStatic: true }));
+
+    console.log(
+      `📄 Found ${staticFontFiles.length} static font files: ${staticFontFiles
+        .map((f) => f.file)
+        .join(", ")}`
+    );
+
+    // Add static fonts to the list
+    fontFiles = [
+      ...fontFiles.map((file) => ({ file, isStatic: false })),
+      ...staticFontFiles,
+    ];
+  } else {
+    fontFiles = fontFiles.map((file) => ({ file, isStatic: false }));
+  }
+
+  console.log(`🎨 Total font files: ${fontFiles.length}`);
 
   if (fontFiles.length === 0) {
     console.warn("⚠️ No font files found in source directory!");
@@ -47,14 +80,20 @@ if (fs.existsSync(sourceFonts)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
 
-    fontFiles.forEach((file) => {
-      const src = path.join(sourceFonts, file);
+    fontFiles.forEach(({ file, isStatic }) => {
+      const src = isStatic
+        ? path.join(sourceStaticFonts, file)
+        : path.join(sourceFonts, file);
       const dest = path.join(targetDir, file);
 
       try {
         fs.copyFileSync(src, dest);
         const stats = fs.statSync(dest);
-        console.log(`✅ Copied: ${file} to ${targetDir} (${stats.size} bytes)`);
+        console.log(
+          `✅ Copied: ${file} ${isStatic ? "(static)" : ""} to ${targetDir} (${
+            stats.size
+          } bytes)`
+        );
       } catch (error) {
         console.error(
           `❌ Failed to copy ${file} to ${targetDir}:`,
