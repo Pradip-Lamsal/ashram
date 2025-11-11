@@ -1,6 +1,6 @@
-import { generateReceiptPDFWithPlaywright } from "./playwright-pdf-generator";
+import { generatePDFWithPuppeteer } from "./puppeteer-pdf-generator";
 
-// Production-ready PDF generation with enhanced Playwright reliability
+// Production-ready PDF generation with enhanced Puppeteer reliability
 export async function generateReceiptPDF(receiptData: {
   receiptNumber: string;
   donorName: string;
@@ -36,18 +36,30 @@ export async function generateReceiptPDF(receiptData: {
   );
 
   try {
-    // Use Playwright for consistent local/production PDF generation
-    const result = await generateReceiptPDFWithPlaywright(receiptData);
+    // Use Puppeteer for better font handling
+    const result = await generatePDFWithPuppeteer({
+      receiptNumber: receiptData.receiptNumber,
+      donorName: receiptData.donorName,
+      donorId: receiptData.donorId,
+      amount: receiptData.amount,
+      createdAt: receiptData.createdAt || new Date().toISOString(),
+      donationType: receiptData.donationType,
+      paymentMode: receiptData.paymentMode || "Unknown",
+      dateOfDonation: receiptData.dateOfDonation,
+      startDate: receiptData.startDate,
+      endDate: receiptData.endDate,
+      includeLogos: receiptData.includeLogos,
+    });
     console.log("✅ High-quality PDF generated successfully!");
     return result;
-  } catch (playwrightError) {
-    console.error("❌ Playwright PDF generation failed:", playwrightError);
+  } catch (puppeteerError) {
+    console.error("❌ Puppeteer PDF generation failed:", puppeteerError);
 
     // Provide detailed error for production debugging
     const errorMessage =
-      playwrightError instanceof Error
-        ? playwrightError.message
-        : String(playwrightError);
+      puppeteerError instanceof Error
+        ? puppeteerError.message
+        : String(puppeteerError);
 
     throw new Error(
       `Production PDF generation failed: ${errorMessage}. Please check server logs for Playwright configuration issues.`
