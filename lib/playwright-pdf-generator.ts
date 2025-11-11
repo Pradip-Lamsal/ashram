@@ -6,15 +6,29 @@ import playwright from "playwright-core";
 import { getDonationTypeLabel } from "./donation-labels";
 import { englishToNepaliDateFormatted } from "./nepali-date-utils";
 
-// Serverless-optimized browser launch for production and local environments
+// Smart browser launch detection for local vs actual serverless environments
 const launchBrowser = async () => {
   const isProduction = process.env.NODE_ENV === "production";
   const isVercel = process.env.VERCEL === "1";
+  const isServerless =
+    isVercel || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY;
 
-  if (isVercel || isProduction) {
-    console.log("🏭 Launching serverless-optimized Chromium for production");
+  console.log("🔍 Environment detection:", {
+    NODE_ENV: process.env.NODE_ENV,
+    isProduction,
+    VERCEL: process.env.VERCEL,
+    isVercel,
+    AWS_LAMBDA: process.env.AWS_LAMBDA_FUNCTION_NAME,
+    NETLIFY: process.env.NETLIFY,
+    isServerless,
+  });
 
-    // Use @sparticuz/chromium for serverless compatibility
+  if (isServerless) {
+    console.log(
+      "🏭 Launching serverless-optimized Chromium for actual serverless environment"
+    );
+
+    // Use @sparticuz/chromium for actual serverless environments
     return await playwright.chromium.launch({
       args: [
         ...chromium.args,
@@ -28,9 +42,13 @@ const launchBrowser = async () => {
       headless: true,
     });
   } else {
-    console.log("🛠️ Launching local Playwright Chromium for development");
+    console.log(
+      `🛠️ Launching local Playwright Chromium (NODE_ENV: ${
+        isProduction ? "production" : "development"
+      })`
+    );
 
-    // Use local Playwright for development
+    // Use local Playwright for both development and local production testing
     return await playwright.chromium.launch({
       headless: true,
       args: [
@@ -242,7 +260,7 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
     return words.trim();
   };
 
-  // Production-ready logo loading with comprehensive error handling
+  // Enhanced logo loading with better error handling and debugging
   const getDataUrl = (filename: string) => {
     try {
       const imgPath = path.resolve(process.cwd(), "public", filename);
@@ -250,7 +268,15 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
 
       // Check if file exists
       if (!fs.existsSync(imgPath)) {
-        console.warn(`⚠️ Image file not found: ${imgPath}`);
+        console.error(`❌ Image file not found: ${imgPath}`);
+        // List available files for debugging
+        const publicDir = path.resolve(process.cwd(), "public");
+        try {
+          const files = fs.readdirSync(publicDir);
+          console.log(`📁 Available files in public/: ${files.join(", ")}`);
+        } catch {
+          console.error("Could not read public directory");
+        }
         return "";
       }
 
@@ -283,41 +309,68 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
   const logoLeft = includeLogos ? getDataUrl("logo11.jpeg") : "";
   const logoRight = includeLogos ? getDataUrl("logo22.jpeg") : "";
 
-  // Self-contained font loading with base64 embedding for production reliability
+  // Comprehensive font embedding with ALL possible formats
   const getEmbeddedFontCss = () => {
-    try {
-      // Try to load and embed the local font file
-      const fontPath = path.resolve(
+    const fontPaths = [
+      path.resolve(
         process.cwd(),
         "public/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
-      );
+      ),
+      path.resolve(process.cwd(), "public/noto-devanagari.ttf"),
+      path.resolve(process.cwd(), "public/fonts/noto-devanagari.ttf"),
+    ];
 
-      if (fs.existsSync(fontPath)) {
-        const fontData = fs.readFileSync(fontPath);
-        const fontBase64 = fontData.toString("base64");
-        console.log(
-          `✅ Font embedded successfully (${Math.round(
-            fontBase64.length / 1024
-          )}KB)`
-        );
+    console.log("🔍 Searching for font files...");
+    console.log(`Working directory: ${process.cwd()}`);
 
-        return `
-          @font-face {
-            font-family: 'NotoSansDevanagariEmbedded';
-            src: url(data:font/truetype;base64,${fontBase64}) format('truetype');
-            font-weight: 100 900;
-            font-display: block;
-            unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
-          }
-        `;
-      } else {
-        console.warn("⚠️ Local font file not found, using web fonts");
-        return "";
+    for (const fontPath of fontPaths) {
+      try {
+        console.log(`Checking font path: ${fontPath}`);
+
+        if (fs.existsSync(fontPath)) {
+          const fontData = fs.readFileSync(fontPath);
+          const fontBase64 = fontData.toString("base64");
+
+          console.log(
+            `✅ Font embedded successfully from ${fontPath} (${Math.round(
+              fontBase64.length / 1024
+            )}KB)`
+          );
+
+          // Create multiple @font-face declarations for better compatibility
+          return `
+            @font-face {
+              font-family: 'NotoSansDevanagariEmbedded';
+              src: url(data:font/truetype;base64,${fontBase64}) format('truetype');
+              font-weight: normal;
+              font-style: normal;
+              font-display: block;
+            }
+            @font-face {
+              font-family: 'NotoDevanagari';
+              src: url(data:font/truetype;base64,${fontBase64}) format('truetype');
+              font-weight: 100 900;
+              font-style: normal;
+              font-display: block;
+            }
+            @font-face {
+              font-family: 'DevanagariFont';
+              src: url(data:application/x-font-ttf;base64,${fontBase64}) format('truetype');
+              font-weight: normal;
+              font-style: normal;
+              font-display: block;
+            }
+          `;
+        } else {
+          console.log(`❌ Font not found at: ${fontPath}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to load font from ${fontPath}:`, error);
       }
-    } catch (error) {
-      console.warn("⚠️ Failed to embed font:", error);
-      return "";
     }
+
+    console.warn("⚠️ No font files found, relying on web fonts only");
+    return "";
   };
 
   const embeddedFontCss = getEmbeddedFontCss();
@@ -338,9 +391,13 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
     }
     
-    /* Production-optimized font stack with embedded fonts priority */
-    *, body, h1, h2, h3, h4, h5, h6, p, div, span {
-      font-family: 'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', 'Sanskrit Text', 'Kokila', 'Segoe UI', Arial, sans-serif !important;
+    /* Aggressive embedded font loading - multiple attempts */
+    * {
+      font-family: 'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif !important;
+    }
+    
+    body, h1, h2, h3, h4, h5, h6, p, div, span {
+      font-family: 'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont', 'Noto Sans Devanagari', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif !important;
       -webkit-font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
       text-rendering: optimizeLegibility;
@@ -349,14 +406,20 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       font-variant-ligatures: common-ligatures;
     }
     
-    /* Enhanced Nepali text handling with embedded font priority */
-    .nepali-text, .header-center, .header-center * {
-      font-family: 'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN' !important;
+    /* Force Nepali font on all Nepali content */
+    .nepali-text, .header-center, .header-center *, [class*="nepali"] {
+      font-family: 'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont' !important;
       unicode-bidi: normal;
       direction: ltr;
       font-variant-ligatures: common-ligatures;
       font-kerning: normal;
       font-weight: 400;
+      font-size: inherit;
+    }
+    
+    /* Specific targeting for common Devanagari Unicode ranges */
+    *:lang(ne), *[lang="ne"], *[dir="ltr"] {
+      font-family: 'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont' !important;
     }
   `;
 
@@ -839,9 +902,12 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
       return new Promise<void>((resolve) => {
         console.log("🔤 Starting font loading process...");
 
-        // Log available fonts for debugging
+        // Enhanced font availability testing including embedded fonts
         const checkFontAvailability = () => {
           const testFonts = [
+            "NotoSansDevanagariEmbedded",
+            "NotoDevanagari",
+            "DevanagariFont",
             "Noto Sans Devanagari",
             "Mangal",
             "Devanagari Sangam MN",
@@ -867,14 +933,26 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
               "📚 Document fonts ready, loading specific Devanagari fonts..."
             );
 
-            // Aggressive font loading for production consistency
+            // Enhanced font loading for embedded and web fonts
             try {
-              // Load all essential font weights and test characters
+              // Load ALL embedded fonts and variations first
               const fontPromises = [
-                document.fonts.load("400 16px 'Noto Sans Devanagari'", "अ"),
-                document.fonts.load("500 16px 'Noto Sans Devanagari'", "न"),
-                document.fonts.load("600 16px 'Noto Sans Devanagari'", "प"),
-                document.fonts.load("700 16px 'Noto Sans Devanagari'", "म"),
+                document.fonts.load(
+                  "400 16px 'NotoSansDevanagariEmbedded'",
+                  "अ"
+                ),
+                document.fonts.load("400 16px 'NotoDevanagari'", "न"),
+                document.fonts.load("400 16px 'DevanagariFont'", "प"),
+                document.fonts.load(
+                  "500 16px 'NotoSansDevanagariEmbedded'",
+                  "म"
+                ),
+                document.fonts.load("400 16px 'Noto Sans Devanagari'", "श्री"),
+                document.fonts.load(
+                  "normal 16px 'NotoSansDevanagariEmbedded'",
+                  "दान"
+                ),
+                document.fonts.load("normal 16px 'NotoDevanagari'", "राशि"),
               ];
 
               // Wait for all fonts with timeout
@@ -886,6 +964,41 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
               console.log(
                 `🎯 ${loaded}/${results.length} Devanagari font weights loaded successfully`
               );
+
+              // Debug Nepali text content before font application
+              console.log(
+                "🔍 Debugging Nepali text content before font application..."
+              );
+              const nepaliTextElements = document.querySelectorAll("*");
+              const nepaliTextFound: Array<{
+                element: string;
+                text: string;
+                computedFont: string;
+              }> = [];
+
+              nepaliTextElements.forEach((el) => {
+                const text = el.textContent || "";
+                if (text && /[\u0900-\u097F]/.test(text)) {
+                  nepaliTextFound.push({
+                    element: el.tagName,
+                    text: text.substring(0, 50), // First 50 chars
+                    computedFont: getComputedStyle(el).fontFamily,
+                  });
+                }
+              });
+
+              console.log("📝 Found Nepali text elements:", nepaliTextFound);
+
+              // Debug available fonts in the browser
+              console.log("🔍 Checking available fonts in document:");
+              const availableFonts = Array.from(document.fonts.values()).map(
+                (font) => ({
+                  family: font.family,
+                  status: font.status,
+                  loaded: font.loaded,
+                })
+              );
+              console.log("📚 Document fonts status:", availableFonts);
 
               // Force font check and application
               checkFontAvailability();
@@ -901,22 +1014,47 @@ export async function generateReceiptPDFWithPlaywright(receiptData: {
               checkFontAvailability();
             }
 
-            // Force font application to all elements with production-ready stack
+            // Aggressively force embedded fonts on ALL elements
             const elements = document.querySelectorAll("*");
+            const embeddedFontStack =
+              "'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont', 'Noto Sans Devanagari', 'Mangal', Arial, sans-serif";
+
             elements.forEach((el) => {
               if (el instanceof HTMLElement) {
-                el.style.fontFamily =
-                  "'NotoSansDevanagariEmbedded', 'Noto Sans Devanagari', 'DevanagariUnicode', 'Mangal', 'Devanagari Sangam MN', Arial, sans-serif";
+                el.style.setProperty(
+                  "font-family",
+                  embeddedFontStack,
+                  "important"
+                );
+
+                // Extra targeting for Nepali content
+                const text = el.textContent || "";
+                if (text.match(/[\u0900-\u097F]/)) {
+                  // Devanagari Unicode range
+                  el.style.setProperty(
+                    "font-family",
+                    "'NotoSansDevanagariEmbedded', 'NotoDevanagari', 'DevanagariFont'",
+                    "important"
+                  );
+                  el.style.setProperty("font-weight", "normal", "important");
+                }
               }
             });
 
+            // Force body font
+            document.body.style.setProperty(
+              "font-family",
+              embeddedFontStack,
+              "important"
+            );
+
             console.log("🎨 Font styles applied to all elements");
 
-            // Enhanced wait time for reliable font rendering
+            // Extended wait time for embedded font rendering in production
             setTimeout(() => {
               console.log("⏱️ Font loading and application complete");
               resolve();
-            }, 800);
+            }, 1500); // Increased from 800ms to ensure embedded fonts render
           });
         } else {
           console.warn("⚠️ FontFace API not available, using fallback timing");
