@@ -9,6 +9,8 @@ interface ReceiptData {
   donationType: string;
   paymentMode: string;
   dateOfDonation?: string;
+  startDate?: string;
+  endDate?: string;
   includeLogos?: boolean;
 }
 
@@ -38,25 +40,66 @@ export async function generatePDFWithPDFKit(
         resolve(pdfBuffer);
       });
 
-      // Register Noto Sans Devanagari fonts via URLs
+      // Register Noto Sans Devanagari fonts via local API routes
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NODE_ENV === "production"
+        ? "https://jagadhguruashram.saahitt.com"
+        : "http://localhost:3000";
+
       const fontUrls = {
-        "NotoDevanagari-Regular":
-          "https://jagadhguruashram.saahitt.com/fonts/NotoSansDevanagari-Regular.ttf",
-        "NotoDevanagari-Bold":
-          "https://jagadhguruashram.saahitt.com/fonts/NotoSansDevanagari-Bold.ttf",
-        "NotoDevanagari-Medium":
-          "https://jagadhguruashram.saahitt.com/fonts/NotoSansDevanagari-Medium.ttf",
+        "NotoDevanagari-Regular": `${baseUrl}/api/fonts/regular`,
+        "NotoDevanagari-Bold": `${baseUrl}/api/fonts/bold`,
+        "NotoDevanagari-Medium": `${baseUrl}/api/fonts/medium`,
+      };
+
+      // Font registration with fallback to local files
+      const fontMap = {
+        "NotoDevanagari-Regular": "NotoSansDevanagari-Regular.ttf",
+        "NotoDevanagari-Bold": "NotoSansDevanagari-Bold.ttf",
+        "NotoDevanagari-Medium": "NotoSansDevanagari-Medium.ttf",
       };
 
       for (const [name, url] of Object.entries(fontUrls)) {
         try {
+          // Try API route first
           const response = await fetch(url);
-          const arrayBuffer = await response.arrayBuffer();
-          const fontBuffer = Buffer.from(arrayBuffer);
-          doc.registerFont(name, fontBuffer);
-          console.log(`✅ Registered font: ${name}`);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            const fontBuffer = Buffer.from(arrayBuffer);
+            doc.registerFont(name, fontBuffer);
+            console.log(`✅ Registered font via API: ${name}`);
+          } else {
+            throw new Error(`API response not ok: ${response.status}`);
+          }
         } catch (fontError) {
-          console.warn(`⚠️ Failed to load font ${name}:`, fontError);
+          console.warn(`⚠️ Failed to load font ${name} via API:`, fontError);
+
+          // Fallback to local file system (for development)
+          try {
+            const fs = await import("fs");
+            const path = await import("path");
+            const localFontPath = path.resolve(
+              process.cwd(),
+              "public",
+              "fonts",
+              "static",
+              fontMap[name as keyof typeof fontMap]
+            );
+
+            if (fs.existsSync(localFontPath)) {
+              const fontBuffer = fs.readFileSync(localFontPath);
+              doc.registerFont(name, fontBuffer);
+              console.log(`✅ Registered font locally: ${name}`);
+            } else {
+              console.warn(`⚠️ Local font file not found: ${localFontPath}`);
+            }
+          } catch (localError) {
+            console.error(
+              `❌ Failed to load font ${name} locally:`,
+              localError
+            );
+          }
         }
       }
       doc.font("NotoDevanagari-Regular");
@@ -104,21 +147,27 @@ export async function generatePDFWithPDFKit(
 
       let y = 40;
 
-      // Logos (use absolute URLs)
+      // Logos (use API routes)
       if (receiptData.includeLogos) {
         try {
-          doc.image("https://jagadhguruashram.saahitt.com/logo11.jpeg", 40, y, {
-            width: 60,
-            height: 60,
-          });
-          doc.image(
-            "https://jagadhguruashram.saahitt.com/logo22.jpeg",
-            pageWidth - 100,
-            y,
-            { width: 60, height: 60 }
-          );
+          // Fetch logos from API routes
+          const logo1Response = await fetch(`${baseUrl}/api/logos/logo1`);
+          const logo2Response = await fetch(`${baseUrl}/api/logos/logo2`);
+
+          if (logo1Response.ok) {
+            const logo1Buffer = Buffer.from(await logo1Response.arrayBuffer());
+            doc.image(logo1Buffer, 40, y, { width: 60, height: 60 });
+          }
+
+          if (logo2Response.ok) {
+            const logo2Buffer = Buffer.from(await logo2Response.arrayBuffer());
+            doc.image(logo2Buffer, pageWidth - 100, y, {
+              width: 60,
+              height: 60,
+            });
+          }
         } catch (err) {
-          console.warn("⚠️ Logos could not be loaded", err);
+          console.warn("⚠️ Logos could not be loaded via API", err);
         }
       }
 
