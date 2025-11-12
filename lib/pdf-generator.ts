@@ -127,81 +127,123 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       // Center content area
       y = headerStartY + 30;
 
-      // Sacred OM symbol (centered)
-      doc.setFontSize(18);
-      doc.setTextColor(255, 102, 0); // Orange color
+      // Sacred OM symbol (centered) - Enhanced with subtle background
+      doc.setFillColor(255, 248, 230); // Very light orange background
+      doc.circle(pageWidth / 2, y + 5, 15, "F");
+      doc.setFontSize(20);
+      doc.setTextColor(220, 85, 0); // Deeper orange color
       const omText = "ॐ";
       const omWidth = doc.getTextWidth(omText);
-      doc.text(omText, (pageWidth - omWidth) / 2, y);
+      doc.text(omText, (pageWidth - omWidth) / 2, y + 8);
 
-      // Main header - श्रीराधासर्वेश्वरो विजयते (centered)
-      y += 20;
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      // Main header - श्रीराधासर्वेश्वरो विजयते (centered) - Enhanced typography
+      y += 25;
+      doc.setFontSize(11);
+      doc.setTextColor(180, 50, 0); // Rich orange-red
       const headerText = "श्रीराधासर्वेश्वरो विजयते";
       const headerWidth = doc.getTextWidth(headerText);
       doc.text(headerText, (pageWidth - headerWidth) / 2, y);
 
-      // Main organization name (centered)
-      y += 20;
-      doc.setFontSize(16);
+      // Main organization name (centered) - Enhanced with better spacing
+      y += 22;
+      doc.setFontSize(18);
+      doc.setTextColor(40, 40, 40); // Dark charcoal instead of pure black
       const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
       const mainTitleWidth = doc.getTextWidth(mainTitle);
       doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
 
-      // Subtitle (centered)
-      y += 18;
-      doc.setFontSize(12);
+      // Subtitle (centered) - Improved contrast
+      y += 20;
+      doc.setFontSize(13);
+      doc.setTextColor(80, 80, 80); // Medium gray
       const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
       const subtitleWidth = doc.getTextWidth(subtitle);
       doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
 
-      // Address (centered)
-      y += 18;
+      // Address (centered) - Better hierarchy
+      y += 20;
       doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100); // Lighter gray
       const address = "ललितपुर म.न.पा.-९, शङ्खमूल, ललितपुर";
       const addressWidth = doc.getTextWidth(address);
       doc.text(address, (pageWidth - addressWidth) / 2, y);
 
-      // Phone number (centered)
-      y += 15;
+      // Phone number (centered) - Consistent styling
+      y += 14;
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
       const phone = "फोन नं. ०१-५९१५६६७";
       const phoneWidth = doc.getTextWidth(phone);
       doc.text(phone, (pageWidth - phoneWidth) / 2, y);
 
-      // Email (centered, blue color)
-      y += 15;
-      doc.setTextColor(0, 0, 255); // Blue color
+      // Email (centered, blue color) - Enhanced blue
+      y += 14;
+      doc.setTextColor(20, 100, 180); // Professional blue
+      doc.setFontSize(9);
       const email = "E-mail: jashankhamul@gmail.com";
       const emailWidth = doc.getTextWidth(email);
       doc.text(email, (pageWidth - emailWidth) / 2, y);
 
-      // Receipt number box (centered, matching the image)
-      y += 25;
-      const receiptBoxWidth = 200;
-      const receiptBoxHeight = 30;
+      // Receipt number box (centered) - Enhanced with gradient-like effect and shadow
+      y += 28;
+      const receiptBoxWidth = 220;
+      const receiptBoxHeight = 35;
       const receiptBoxX = (pageWidth - receiptBoxWidth) / 2;
 
-      // Orange border rectangle
-      doc.setDrawColor(255, 102, 0);
-      doc.setLineWidth(1);
-      doc.rect(receiptBoxX, y, receiptBoxWidth, receiptBoxHeight);
+      // Shadow effect
+      doc.setFillColor(220, 220, 220);
+      doc.roundedRect(
+        receiptBoxX + 2,
+        y + 2,
+        receiptBoxWidth,
+        receiptBoxHeight,
+        3,
+        3,
+        "F"
+      );
 
-      // Receipt number text
-      doc.setFontSize(12);
-      doc.setTextColor(255, 102, 0);
+      // Main box with gradient-like effect
+      doc.setFillColor(255, 250, 240); // Light cream background
+      doc.setDrawColor(220, 85, 0); // Deep orange border
+      doc.setLineWidth(2);
+      doc.roundedRect(
+        receiptBoxX,
+        y,
+        receiptBoxWidth,
+        receiptBoxHeight,
+        4,
+        4,
+        "FD"
+      );
+
+      // Inner subtle border
+      doc.setDrawColor(255, 200, 150); // Light orange
+      doc.setLineWidth(0.5);
+      doc.roundedRect(
+        receiptBoxX + 1,
+        y + 1,
+        receiptBoxWidth - 2,
+        receiptBoxHeight - 2,
+        3,
+        3,
+        "D"
+      );
+
+      // Receipt number text - Enhanced typography
+      doc.setFontSize(14);
+      doc.setTextColor(180, 50, 0); // Rich orange-red
       const receiptText = `Receipt #${receiptData.receiptNumber}`;
       const receiptTextWidth = doc.getTextWidth(receiptText);
-      doc.text(receiptText, (pageWidth - receiptTextWidth) / 2, y + 18);
+      doc.text(receiptText, (pageWidth - receiptTextWidth) / 2, y + 20);
 
-      // Issue date
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
+      // Issue date - Better positioning and styling
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
       const issueDate = `Issued on ${new Date(
         receiptData.createdAt
       ).toLocaleDateString()}`;
       const issueDateWidth = doc.getTextWidth(issueDate);
-      doc.text(issueDate, (pageWidth - issueDateWidth) / 2, y + 27);
+      doc.text(issueDate, (pageWidth - issueDateWidth) / 2, y + 30);
 
       // Horizontal line separator
       y += 45;
@@ -215,32 +257,72 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       const leftColumnX = 50;
       const rightColumnX = 320;
 
-      // Left Column - Donor Information
-      doc.setFontSize(12);
-      doc.setTextColor(74, 144, 226);
-      doc.text("👤 Donor Information", leftColumnX, y);
+      // Left Column - Donor Information - Enhanced card design
+      const cardPadding = 8;
+      const cardHeight = receiptData.donorId ? 45 : 35;
 
-      y += 15;
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      // Donor info card background
+      doc.setFillColor(248, 250, 255); // Very light blue
+      doc.setDrawColor(180, 200, 230); // Light blue border
+      doc.setLineWidth(1);
+      doc.roundedRect(
+        leftColumnX - cardPadding,
+        y - 5,
+        250,
+        cardHeight,
+        3,
+        3,
+        "FD"
+      );
+
+      // Header with icon styling
+      doc.setFontSize(11);
+      doc.setTextColor(60, 120, 200); // Professional blue
+      doc.text("👤 Donor Information", leftColumnX, y + 5);
+
+      y += 18;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
       doc.text("Name:", leftColumnX, y);
-      doc.text(receiptData.donorName, leftColumnX + 50, y);
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(10);
+      doc.text(receiptData.donorName, leftColumnX + 45, y);
 
       if (receiptData.donorId) {
-        y += 12;
+        y += 13;
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
         doc.text("Donor ID:", leftColumnX, y);
-        doc.text(receiptData.donorId, leftColumnX + 50, y);
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(8);
+        doc.text(receiptData.donorId, leftColumnX + 45, y);
       }
 
-      // Right Column - Receipt Details (reset y position)
-      const rightColumnStartY = y - (receiptData.donorId ? 27 : 15);
-      doc.setFontSize(12);
-      doc.setTextColor(74, 144, 226);
-      doc.text("📄 Receipt Details", rightColumnX, rightColumnStartY);
+      // Right Column - Receipt Details - Enhanced card design
+      const rightColumnStartY = y - (receiptData.donorId ? 31 : 18);
 
-      let rightY = rightColumnStartY + 15;
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      // Receipt details card background
+      doc.setFillColor(252, 248, 255); // Very light purple
+      doc.setDrawColor(200, 180, 230); // Light purple border
+      doc.setLineWidth(1);
+      doc.roundedRect(
+        rightColumnX - cardPadding,
+        rightColumnStartY - 5,
+        250,
+        cardHeight,
+        3,
+        3,
+        "FD"
+      );
+
+      // Header with icon styling
+      doc.setFontSize(11);
+      doc.setTextColor(120, 60, 200); // Professional purple
+      doc.text("📄 Receipt Details", rightColumnX, rightColumnStartY + 5);
+
+      let rightY = rightColumnStartY + 18;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
 
       // Format donation date (handle Seva Donation period)
       let donationDateText = "N/A";
@@ -262,181 +344,372 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       }
 
       doc.text("Donation Date:", rightColumnX, rightY);
-      doc.text(donationDateText, rightColumnX + 70, rightY);
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(10);
+      doc.text(donationDateText, rightColumnX + 65, rightY);
 
-      rightY += 12;
+      rightY += 13;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
       doc.text("Issued By:", rightColumnX, rightY);
-      doc.text("System", rightColumnX + 70, rightY);
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(10);
+      doc.text("System", rightColumnX + 65, rightY);
 
       // Move y to after both columns
       y = Math.max(y + 12, rightY + 20);
 
-      // Donation Information Box (matching image style)
+      // Donation Information Box - Premium design with enhanced visual hierarchy
       const donationBoxY = y;
-      const donationBoxHeight = 60;
+      const donationBoxHeight = 85;
+      const boxMargin = 40;
 
-      // Main donation box with light background
-      doc.setFillColor(255, 248, 220); // Light beige
-      doc.setDrawColor(255, 102, 0);
+      // Subtle shadow effect
+      doc.setFillColor(240, 240, 240);
+      doc.roundedRect(
+        boxMargin + 2,
+        donationBoxY + 2,
+        pageWidth - boxMargin * 2,
+        donationBoxHeight,
+        6,
+        6,
+        "F"
+      );
+
+      // Main donation box with gradient-like layering
+      doc.setFillColor(255, 252, 245); // Warm cream
+      doc.setDrawColor(220, 85, 0);
+      doc.setLineWidth(2);
+      doc.roundedRect(
+        boxMargin,
+        donationBoxY,
+        pageWidth - boxMargin * 2,
+        donationBoxHeight,
+        8,
+        8,
+        "FD"
+      );
+
+      // Inner accent border
+      doc.setFillColor(255, 248, 235); // Lighter cream
+      doc.setDrawColor(255, 180, 100);
       doc.setLineWidth(1);
-      doc.rect(50, donationBoxY, pageWidth - 100, donationBoxHeight, "FD");
+      doc.roundedRect(
+        boxMargin + 3,
+        donationBoxY + 3,
+        pageWidth - boxMargin * 2 - 6,
+        donationBoxHeight - 6,
+        6,
+        6,
+        "FD"
+      );
 
-      // Donation Information header
-      doc.setFontSize(12);
-      doc.setTextColor(255, 102, 0);
-      const donationHeader = "Donation Information";
+      // Header section with enhanced typography
+      doc.setFontSize(14);
+      doc.setTextColor(180, 50, 0);
+      const donationHeader = "🎁 Donation Information";
       const donationHeaderWidth = doc.getTextWidth(donationHeader);
       doc.text(
         donationHeader,
         (pageWidth - donationHeaderWidth) / 2,
-        donationBoxY + 15
+        donationBoxY + 18
       );
 
-      // Three column grid inside donation box
-      const col1X = 70;
-      const col2X = 240;
-      const col3X = 410;
-      const gridY = donationBoxY + 25;
+      // Subtle underline for header
+      const underlineY = donationBoxY + 22;
+      doc.setDrawColor(255, 180, 100);
+      doc.setLineWidth(1);
+      doc.line(
+        (pageWidth - donationHeaderWidth) / 2,
+        underlineY,
+        (pageWidth + donationHeaderWidth) / 2,
+        underlineY
+      );
 
-      // Column 1 - Donation Type
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(col1X, gridY, 150, 25, "FD");
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text("DONATION TYPE", col1X + 5, gridY + 8);
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      // Three column grid with enhanced card design
+      const col1X = 60;
+      const col2X = 230;
+      const col3X = 400;
+      const gridY = donationBoxY + 40;
+      const gridCardWidth = 140;
+      const gridCardHeight = 38;
+
+      // Column 1 - Donation Type - Enhanced card
+      doc.setFillColor(250, 248, 255); // Very light purple
+      doc.setDrawColor(180, 160, 220);
+      doc.setLineWidth(1);
+      doc.roundedRect(col1X, gridY, gridCardWidth, gridCardHeight, 4, 4, "FD");
+
+      doc.setFontSize(7);
+      doc.setTextColor(120, 100, 160);
+      doc.text("DONATION TYPE", col1X + 6, gridY + 9);
+      doc.setFontSize(11);
+      doc.setTextColor(60, 40, 100);
       const nepaliDonationType =
         DONATION_TYPE_LABELS[receiptData.donationType] ||
         receiptData.donationType;
-      doc.text(nepaliDonationType, col1X + 5, gridY + 18);
+      doc.text(nepaliDonationType, col1X + 6, gridY + 22);
 
-      // Column 2 - Donation Period (if applicable)
-      doc.rect(col2X, gridY, 150, 25, "FD");
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text("DONATION PERIOD", col2X + 5, gridY + 8);
+      // Column 2 - Donation Period - Enhanced card
+      doc.setFillColor(248, 255, 250); // Very light green
+      doc.setDrawColor(160, 220, 180);
+      doc.setLineWidth(1);
+      doc.roundedRect(col2X, gridY, gridCardWidth, gridCardHeight, 4, 4, "FD");
+
+      doc.setFontSize(7);
+      doc.setTextColor(100, 160, 120);
+      doc.text("DONATION PERIOD", col2X + 6, gridY + 9);
       doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(40, 100, 60);
       if (receiptData.donationType === "Seva Donation") {
         // Prefer Nepali date strings if available
         if (receiptData.startDateNepali && receiptData.endDateNepali) {
           doc.text(
             `${receiptData.startDateNepali} देखि`,
-            col2X + 5,
-            gridY + 15
+            col2X + 6,
+            gridY + 17
           );
-          doc.text(`${receiptData.endDateNepali} सम्म`, col2X + 5, gridY + 22);
+          doc.text(`${receiptData.endDateNepali} सम्म`, col2X + 6, gridY + 26);
         } else if (receiptData.startDate && receiptData.endDate) {
           const startDate = new Date(
             receiptData.startDate
           ).toLocaleDateString();
           const endDate = new Date(receiptData.endDate).toLocaleDateString();
-          doc.text(`${startDate} देखि`, col2X + 5, gridY + 15);
-          doc.text(`${endDate} सम्म`, col2X + 5, gridY + 22);
+          doc.text(`${startDate} देखि`, col2X + 6, gridY + 17);
+          doc.text(`${endDate} सम्म`, col2X + 6, gridY + 26);
         } else {
-          doc.text("Period not specified", col2X + 5, gridY + 18);
+          doc.text("Period not specified", col2X + 6, gridY + 20);
         }
       } else {
-        doc.text("Single Donation", col2X + 5, gridY + 18);
+        doc.text("Single Donation", col2X + 6, gridY + 20);
       }
 
-      // Column 3 - Payment Mode
-      doc.rect(col3X, gridY, 120, 25, "FD");
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text("PAYMENT MODE", col3X + 5, gridY + 8);
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 255);
-      doc.text("💻 " + receiptData.paymentMode, col3X + 5, gridY + 18);
-
-      y = donationBoxY + donationBoxHeight + 15;
-
-      // Amount section (prominent display)
-      doc.setFillColor(255, 248, 220);
-      doc.setDrawColor(255, 102, 0);
-      doc.rect(50, y, pageWidth - 100, 35, "FD");
-
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const amountLabelWidth = doc.getTextWidth("Amount Donated");
-      doc.text("Amount Donated", (pageWidth - amountLabelWidth) / 2, y + 12);
-
-      doc.setFontSize(16);
-      doc.setTextColor(255, 102, 0);
-      const amountText = `₹${receiptData.amount.toLocaleString()}`;
-      const amountWidth = doc.getTextWidth(amountText);
-      doc.text(amountText, (pageWidth - amountWidth) / 2, y + 25);
-
-      y += 45;
-
-      // Amount in Words section (matching image style)
-      const wordsBoxY = y;
-      const wordsBoxHeight = 40;
-
-      // Light background with dashed border
-      doc.setFillColor(255, 250, 205);
-      doc.rect(50, wordsBoxY, pageWidth - 100, wordsBoxHeight, "F");
-
-      // Dashed border simulation
-      doc.setDrawColor(255, 102, 0);
+      // Column 3 - Payment Mode - Enhanced card
+      const col3Width = 120;
+      doc.setFillColor(255, 248, 250); // Very light pink
+      doc.setDrawColor(220, 160, 180);
       doc.setLineWidth(1);
-      doc.setLineDashPattern([3, 2], 0);
-      doc.rect(50, wordsBoxY, pageWidth - 100, wordsBoxHeight);
+      doc.roundedRect(col3X, gridY, col3Width, gridCardHeight, 4, 4, "FD");
+
+      doc.setFontSize(7);
+      doc.setTextColor(160, 100, 120);
+      doc.text("PAYMENT MODE", col3X + 6, gridY + 9);
+      doc.setFontSize(11);
+      doc.setTextColor(30, 100, 180);
+      doc.text("� " + receiptData.paymentMode, col3X + 6, gridY + 22);
+
+      y = donationBoxY + donationBoxHeight + 28;
+
+      // Amount section - Premium highlight design
+      const amountBoxHeight = 55;
+      const amountMargin = 35;
+
+      // Shadow effect for amount box
+      doc.setFillColor(235, 235, 235);
+      doc.roundedRect(
+        amountMargin + 3,
+        y + 3,
+        pageWidth - amountMargin * 2,
+        amountBoxHeight,
+        8,
+        8,
+        "F"
+      );
+
+      // Main amount box with enhanced styling
+      doc.setFillColor(255, 250, 240); // Warm cream
+      doc.setDrawColor(200, 120, 0); // Golden orange
+      doc.setLineWidth(2);
+      doc.roundedRect(
+        amountMargin,
+        y,
+        pageWidth - amountMargin * 2,
+        amountBoxHeight,
+        10,
+        10,
+        "FD"
+      );
+
+      // Inner glow effect
+      doc.setFillColor(255, 245, 225); // Lighter cream
+      doc.setDrawColor(255, 200, 100); // Light golden
+      doc.setLineWidth(1);
+      doc.roundedRect(
+        amountMargin + 4,
+        y + 4,
+        pageWidth - amountMargin * 2 - 8,
+        amountBoxHeight - 8,
+        8,
+        8,
+        "FD"
+      );
+
+      // Amount label
+      doc.setFontSize(10);
+      doc.setTextColor(120, 80, 0); // Dark golden
+      const amountLabelWidth = doc.getTextWidth("Amount Donated");
+      doc.text("Amount Donated", (pageWidth - amountLabelWidth) / 2, y + 20);
+
+      // Main amount - larger and more prominent
+      doc.setFontSize(20);
+      doc.setTextColor(180, 80, 0); // Rich orange
+      const amountText = `रु ${receiptData.amount.toLocaleString()}`;
+      const amountWidth = doc.getTextWidth(amountText);
+      doc.text(amountText, (pageWidth - amountWidth) / 2, y + 38);
+      y += 55;
+
+      // Amount in Words section - Enhanced Premium Style
+      const wordsBoxY = y;
+      const wordsBoxHeight = 55;
+      const wordsBoxMargin = 35;
+
+      // Gradient-like layered background
+      doc.setFillColor(245, 225, 180); // Light golden background
+      doc.roundedRect(
+        wordsBoxMargin,
+        wordsBoxY,
+        pageWidth - wordsBoxMargin * 2,
+        wordsBoxHeight,
+        12,
+        12,
+        "F"
+      );
+
+      // Inner shadow effect with darker border
+      doc.setFillColor(240, 215, 165);
+      doc.roundedRect(
+        wordsBoxMargin + 2,
+        wordsBoxY + 2,
+        pageWidth - wordsBoxMargin * 2 - 4,
+        wordsBoxHeight - 4,
+        10,
+        10,
+        "F"
+      );
+
+      // Premium border with rounded corners
+      doc.setDrawColor(200, 140, 60); // Rich golden border
+      doc.setLineWidth(1.5);
+      doc.roundedRect(
+        wordsBoxMargin,
+        wordsBoxY,
+        pageWidth - wordsBoxMargin * 2,
+        wordsBoxHeight,
+        12,
+        12,
+        "S"
+      );
+
+      // Subtle dashed accent border inside
+      doc.setDrawColor(220, 165, 85);
+      doc.setLineWidth(0.8);
+      doc.setLineDashPattern([4, 3], 0);
+      doc.roundedRect(
+        wordsBoxMargin + 8,
+        wordsBoxY + 6,
+        pageWidth - wordsBoxMargin * 2 - 16,
+        wordsBoxHeight - 12,
+        6,
+        6,
+        "S"
+      );
       doc.setLineDashPattern([], 0); // Reset line pattern
 
-      // Amount in Words header
-      doc.setFontSize(12);
-      doc.setTextColor(255, 102, 0);
+      // Amount in Words header - Enhanced
+      doc.setFontSize(11);
+      doc.setTextColor(160, 100, 20); // Rich golden brown
       const wordsHeader = "Amount in Words";
       const wordsHeaderWidth = doc.getTextWidth(wordsHeader);
-      doc.text(wordsHeader, (pageWidth - wordsHeaderWidth) / 2, wordsBoxY + 15);
+      doc.text(wordsHeader, (pageWidth - wordsHeaderWidth) / 2, wordsBoxY + 22);
 
-      // English and Nepali amount in words
+      // English amount in words - Enhanced styling
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(80, 60, 40); // Dark brown for better readability
       const englishWords = `Rupees ${receiptData.amount.toLocaleString()} Only`;
       const englishWordsWidth = doc.getTextWidth(englishWords);
       doc.text(
         englishWords,
         (pageWidth - englishWordsWidth) / 2,
-        wordsBoxY + 25
+        wordsBoxY + 36
       );
 
+      // Nepali amount in words - Enhanced with better contrast
       doc.setFontSize(11);
+      doc.setTextColor(100, 70, 30); // Warm brown for Nepali text
       const nepaliWords = `रुपैयाँ ${convertToNepaliWords(
         receiptData.amount
       )} मात्र`;
       const nepaliWordsWidth = doc.getTextWidth(nepaliWords);
-      doc.text(nepaliWords, (pageWidth - nepaliWordsWidth) / 2, wordsBoxY + 35);
+      doc.text(nepaliWords, (pageWidth - nepaliWordsWidth) / 2, wordsBoxY + 46);
 
-      y = wordsBoxY + wordsBoxHeight + 20;
+      y = wordsBoxY + wordsBoxHeight + 35;
 
-      // Final separator line
-      doc.setDrawColor(255, 102, 0);
-      doc.setLineWidth(1);
-      doc.line(50, y, pageWidth - 50, y);
+      // Enhanced final separator with gradient effect
+      doc.setDrawColor(255, 140, 60); // Lighter orange
+      doc.setLineWidth(2);
+      doc.line(60, y, pageWidth - 60, y);
 
-      y += 30;
+      // Shadow line below
+      doc.setDrawColor(220, 120, 40);
+      doc.setLineWidth(0.8);
+      doc.line(60, y + 1, pageWidth - 60, y + 1);
 
-      // Signature section (bottom right)
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Authorized Signature", pageWidth - 130, y);
+      // Decorative dots at ends
+      doc.setFillColor(255, 102, 0);
+      doc.circle(60, y, 2, "F");
+      doc.circle(pageWidth - 60, y, 2, "F");
 
-      // Signature line
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      doc.line(pageWidth - 130, y + 20, pageWidth - 50, y + 20);
+      y += 45;
 
-      // Date
-      doc.setFontSize(9);
-      doc.text(
-        `Date: ${new Date().toLocaleDateString()}`,
-        pageWidth - 130,
-        y + 30
+      // Enhanced Signature section with professional styling
+      const signatureBoxWidth = 140;
+      const signatureBoxHeight = 50;
+      const signatureX = pageWidth - signatureBoxWidth - 30;
+
+      // Subtle background for signature area
+      doc.setFillColor(248, 248, 250); // Very light gray
+      doc.roundedRect(
+        signatureX - 5,
+        y - 5,
+        signatureBoxWidth + 10,
+        signatureBoxHeight,
+        8,
+        8,
+        "F"
       );
+
+      // Border for signature area
+      doc.setDrawColor(200, 200, 210);
+      doc.setLineWidth(1);
+      doc.roundedRect(
+        signatureX - 5,
+        y - 5,
+        signatureBoxWidth + 10,
+        signatureBoxHeight,
+        8,
+        8,
+        "S"
+      );
+
+      // Signature label with enhanced styling
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 100); // Professional gray-blue
+      doc.text("Authorized Signature", signatureX, y + 10);
+
+      // Premium signature line with gradient effect
+      doc.setDrawColor(120, 120, 140);
+      doc.setLineWidth(1.2);
+      doc.line(signatureX, y + 25, signatureX + signatureBoxWidth - 15, y + 25);
+
+      // Accent line above signature
+      doc.setDrawColor(180, 180, 190);
+      doc.setLineWidth(0.5);
+      doc.line(signatureX, y + 24, signatureX + signatureBoxWidth - 15, y + 24);
+
+      // Enhanced date with better positioning
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 120);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, signatureX, y + 37);
 
       // Convert to buffer
       const pdfOutput = doc.output("arraybuffer");

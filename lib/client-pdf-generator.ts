@@ -251,7 +251,7 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
 
       // Donation Information Box (matching image style)
       const donationBoxY = y;
-      const donationBoxHeight = 60;
+      const donationBoxHeight = 70;
 
       // Main donation box with light background
       doc.setFillColor(255, 248, 220); // Light beige
@@ -316,92 +316,216 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       doc.setTextColor(0, 0, 255);
       doc.text("💻 " + receipt.paymentMode, col3X + 5, gridY + 18);
 
-      y = donationBoxY + donationBoxHeight + 15;
+      y = donationBoxY + donationBoxHeight + 25;
 
-      // Amount section (prominent display)
-      doc.setFillColor(255, 248, 220);
-      doc.setDrawColor(255, 102, 0);
-      doc.rect(50, y, pageWidth - 100, 35, "FD");
+      // Enhanced Amount section with premium styling
+      const amountBoxHeight = 50;
+      const amountMargin = 40;
 
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const amountLabelWidth = doc.getTextWidth("Amount Donated");
-      doc.text("Amount Donated", (pageWidth - amountLabelWidth) / 2, y + 12);
+      // Gradient background effect
+      doc.setFillColor(255, 245, 215); // Light golden
+      doc.roundedRect(
+        amountMargin,
+        y,
+        pageWidth - amountMargin * 2,
+        amountBoxHeight,
+        10,
+        10,
+        "F"
+      );
 
-      doc.setFontSize(16);
-      doc.setTextColor(255, 102, 0);
-      const amountText = `₹${receipt.amount.toLocaleString()}`;
-      const amountWidth = doc.getTextWidth(amountText);
-      doc.text(amountText, (pageWidth - amountWidth) / 2, y + 25);
+      // Inner shadow effect
+      doc.setFillColor(250, 235, 195);
+      doc.roundedRect(
+        amountMargin + 3,
+        y + 3,
+        pageWidth - amountMargin * 2 - 6,
+        amountBoxHeight - 6,
+        8,
+        8,
+        "F"
+      );
 
-      y += 45;
-
-      // Amount in Words section (matching image style)
-      const wordsBoxY = y;
-      const wordsBoxHeight = 40;
-
-      // Light background with dashed border
-      doc.setFillColor(255, 250, 205);
-      doc.rect(50, wordsBoxY, pageWidth - 100, wordsBoxHeight, "F");
-
-      // Dashed border simulation
-      doc.setDrawColor(255, 102, 0);
+      // Premium border
+      doc.setDrawColor(200, 130, 50);
       doc.setLineWidth(1);
-      doc.setLineDashPattern([3, 2], 0);
-      doc.rect(50, wordsBoxY, pageWidth - 100, wordsBoxHeight);
+      doc.roundedRect(
+        amountMargin + 4,
+        y + 4,
+        pageWidth - amountMargin * 2 - 8,
+        amountBoxHeight - 8,
+        8,
+        8,
+        "FD"
+      );
+
+      // Amount label
+      doc.setFontSize(10);
+      doc.setTextColor(120, 80, 0); // Dark golden
+      const amountLabelWidth = doc.getTextWidth("Amount Donated");
+      doc.text("Amount Donated", (pageWidth - amountLabelWidth) / 2, y + 16);
+
+      // Main amount - larger and more prominent
+      doc.setFontSize(20);
+      doc.setTextColor(180, 80, 0); // Rich orange
+      const amountText = `रु ${receipt.amount.toLocaleString()}`;
+      const amountWidth = doc.getTextWidth(amountText);
+      doc.text(amountText, (pageWidth - amountWidth) / 2, y + 32);
+
+      y += 55;
+
+      // Amount in Words section - Enhanced Premium Style
+      const wordsBoxY = y;
+      const wordsBoxHeight = 55;
+      const wordsBoxMargin = 35;
+
+      // Gradient-like layered background
+      doc.setFillColor(245, 225, 180); // Light golden background
+      doc.roundedRect(
+        wordsBoxMargin,
+        wordsBoxY,
+        pageWidth - wordsBoxMargin * 2,
+        wordsBoxHeight,
+        12,
+        12,
+        "F"
+      );
+
+      // Inner shadow effect with darker border
+      doc.setFillColor(240, 215, 165);
+      doc.roundedRect(
+        wordsBoxMargin + 2,
+        wordsBoxY + 2,
+        pageWidth - wordsBoxMargin * 2 - 4,
+        wordsBoxHeight - 4,
+        10,
+        10,
+        "F"
+      );
+
+      // Premium border with rounded corners
+      doc.setDrawColor(200, 140, 60); // Rich golden border
+      doc.setLineWidth(1.5);
+      doc.roundedRect(
+        wordsBoxMargin,
+        wordsBoxY,
+        pageWidth - wordsBoxMargin * 2,
+        wordsBoxHeight,
+        12,
+        12,
+        "S"
+      );
+
+      // Subtle dashed accent border inside
+      doc.setDrawColor(220, 165, 85);
+      doc.setLineWidth(0.8);
+      doc.setLineDashPattern([4, 3], 0);
+      doc.roundedRect(
+        wordsBoxMargin + 8,
+        wordsBoxY + 6,
+        pageWidth - wordsBoxMargin * 2 - 16,
+        wordsBoxHeight - 12,
+        6,
+        6,
+        "S"
+      );
       doc.setLineDashPattern([], 0); // Reset line pattern
 
-      // Amount in Words header
-      doc.setFontSize(12);
-      doc.setTextColor(255, 102, 0);
+      // Amount in Words header - Enhanced
+      doc.setFontSize(11);
+      doc.setTextColor(160, 100, 20); // Rich golden brown
       const wordsHeader = "Amount in Words";
       const wordsHeaderWidth = doc.getTextWidth(wordsHeader);
-      doc.text(wordsHeader, (pageWidth - wordsHeaderWidth) / 2, wordsBoxY + 15);
+      doc.text(wordsHeader, (pageWidth - wordsHeaderWidth) / 2, wordsBoxY + 18);
 
-      // English and Nepali amount in words
+      // English amount in words - Enhanced styling
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(80, 60, 40); // Dark brown for better readability
       const englishWords = `Rupees ${receipt.amount.toLocaleString()} Only`;
       const englishWordsWidth = doc.getTextWidth(englishWords);
       doc.text(
         englishWords,
         (pageWidth - englishWordsWidth) / 2,
-        wordsBoxY + 25
+        wordsBoxY + 30
       );
 
+      // Nepali amount in words - Enhanced with better contrast
       doc.setFontSize(11);
+      doc.setTextColor(100, 70, 30); // Warm brown for Nepali text
       const nepaliWords = `रुपैयाँ ${convertToNepaliWords(
         receipt.amount
       )} मात्र`;
       const nepaliWordsWidth = doc.getTextWidth(nepaliWords);
-      doc.text(nepaliWords, (pageWidth - nepaliWordsWidth) / 2, wordsBoxY + 35);
+      doc.text(nepaliWords, (pageWidth - nepaliWordsWidth) / 2, wordsBoxY + 40);
 
-      y = wordsBoxY + wordsBoxHeight + 20;
+      y = wordsBoxY + wordsBoxHeight + 35;
 
-      // Final separator line
-      doc.setDrawColor(255, 102, 0);
-      doc.setLineWidth(1);
-      doc.line(50, y, pageWidth - 50, y);
+      // Enhanced final separator with gradient effect
+      doc.setDrawColor(255, 140, 60); // Lighter orange
+      doc.setLineWidth(2);
+      doc.line(60, y, pageWidth - 60, y);
 
-      y += 30;
+      // Shadow line below
+      doc.setDrawColor(220, 120, 40);
+      doc.setLineWidth(0.8);
+      doc.line(60, y + 1, pageWidth - 60, y + 1);
 
-      // Signature section (bottom right)
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Authorized Signature", pageWidth - 130, y);
+      // Decorative dots at ends
+      doc.setFillColor(255, 102, 0);
+      doc.circle(60, y, 2, "F");
+      doc.circle(pageWidth - 60, y, 2, "F");
 
-      // Signature line
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      doc.line(pageWidth - 130, y + 20, pageWidth - 50, y + 20);
+      y += 35;
 
-      // Date
-      doc.setFontSize(9);
-      doc.text(
-        `Date: ${new Date().toLocaleDateString()}`,
-        pageWidth - 130,
-        y + 30
+      // Enhanced Signature section with professional styling
+      const signatureBoxWidth = 140;
+      const signatureBoxHeight = 50;
+      const signatureX = pageWidth - signatureBoxWidth - 30;
+
+      // Subtle background for signature area
+      doc.setFillColor(248, 248, 250); // Very light gray
+      doc.roundedRect(
+        signatureX - 5,
+        y - 5,
+        signatureBoxWidth + 10,
+        signatureBoxHeight,
+        8,
+        8,
+        "F"
       );
+
+      // Border for signature area
+      doc.setDrawColor(200, 200, 210);
+      doc.setLineWidth(1);
+      doc.roundedRect(
+        signatureX - 5,
+        y - 5,
+        signatureBoxWidth + 10,
+        signatureBoxHeight,
+        8,
+        8,
+        "S"
+      );
+
+      // Signature label with enhanced styling
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 100); // Professional gray-blue
+      doc.text("Authorized Signature", signatureX, y + 10);
+
+      // Premium signature line with gradient effect
+      doc.setDrawColor(120, 120, 140);
+      doc.setLineWidth(1.2);
+      doc.line(signatureX, y + 25, signatureX + signatureBoxWidth - 15, y + 25);
+
+      // Accent line above signature
+      doc.setDrawColor(180, 180, 190);
+      doc.setLineWidth(0.5);
+      doc.line(signatureX, y + 24, signatureX + signatureBoxWidth - 15, y + 24);
+
+      // Enhanced date with better positioning
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 120);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, signatureX, y + 37);
 
       // Save the PDF
       doc.save(`Receipt-${receipt.receiptNumber}.pdf`);
