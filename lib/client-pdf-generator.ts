@@ -85,20 +85,18 @@ function convertToNepaliWords(amount: number): string {
 }
 
 export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       // Create a new PDF document
       const doc = new jsPDF("p", "pt", "a4");
 
       // Set font for better Nepali support
-      // Note: Client-side font loading is complex, using helvetica as fallback
+      // Note: Client-side font loading is complex, using times for better Unicode support
       // The server-side PDF generation will handle Nepali fonts properly
-      doc.setFont("helvetica");
+      doc.setFont("times", "normal");
 
       // Enhanced character spacing for better Nepali text rendering
-      doc.setCharSpace(0.5);
-
-      // Page dimensions
+      doc.setCharSpace(1.0); // Increased spacing for better Nepali character display      // Page dimensions
       const pageWidth = doc.internal.pageSize.getWidth();
       let y = 30;
 
@@ -132,21 +130,69 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       const headerWidth = doc.getTextWidth(headerText);
       doc.text(headerText, (pageWidth - headerWidth) / 2, y);
 
-      // Main organization name (centered) - Enhanced Nepali rendering
+      // Organization name using image-based rendering (client-side)
       y += 22;
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0); // Pure black for better contrast
-      const mainTitle = "श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर";
-      const mainTitleWidth = doc.getTextWidth(mainTitle);
-      doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+      try {
+        const { renderNepaliHeaderAsImage, DEFAULT_NEPALI_HEADER_CONFIG } =
+          await import("./nepali-text-renderer");
+        const nepaliHeaderImage = await renderNepaliHeaderAsImage(
+          DEFAULT_NEPALI_HEADER_CONFIG
+        );
 
-      // Organization committee subtitle (centered) - Enhanced rendering
-      y += 20;
-      doc.setFontSize(14);
-      doc.setTextColor(20, 20, 20); // Very dark gray for clarity
-      const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
-      const subtitleWidth = doc.getTextWidth(subtitle);
-      doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+        if (nepaliHeaderImage) {
+          // Calculate image dimensions
+          const imageWidth = 300;
+          const imageHeight = 72;
+          const imageX = (pageWidth - imageWidth) / 2;
+
+          // Add image to PDF
+          doc.addImage(
+            nepaliHeaderImage,
+            "PNG",
+            imageX,
+            y,
+            imageWidth,
+            imageHeight
+          );
+          console.log("✅ Nepali header image embedded in client-side PDF");
+          y += imageHeight + 10;
+        } else {
+          // Fallback to text
+          console.log("⚠️ Using text fallback for client-side Nepali header");
+          doc.setFontSize(16);
+          doc.setTextColor(0, 0, 0);
+          const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+          const mainTitleWidth = doc.getTextWidth(mainTitle);
+          doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+
+          y += 20;
+          doc.setFontSize(14);
+          doc.setTextColor(20, 20, 20);
+          const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
+          const subtitleWidth = doc.getTextWidth(subtitle);
+          doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+          y += 10;
+        }
+      } catch (error) {
+        // Fallback to text
+        console.warn(
+          "⚠️ Client-side image rendering failed, using text fallback:",
+          error
+        );
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+        const mainTitleWidth = doc.getTextWidth(mainTitle);
+        doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+
+        y += 20;
+        doc.setFontSize(14);
+        doc.setTextColor(20, 20, 20);
+        const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
+        const subtitleWidth = doc.getTextWidth(subtitle);
+        doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+        y += 10;
+      }
 
       // Address (centered)
       y += 18;

@@ -38,7 +38,7 @@ function loadLogoAsBase64(logoPath: string): string | null {
 }
 
 async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       console.log(
         "🚀 Starting jsPDF generation with improved Nepali format..."
@@ -50,23 +50,35 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       try {
         const fontBase64 = getFontAsBase64();
         if (fontBase64) {
+          // Add the font file to jsPDF virtual file system
           doc.addFileToVFS("NotoSansDevanagari.ttf", fontBase64);
+
+          // Register the font with jsPDF
           doc.addFont("NotoSansDevanagari.ttf", "NotoSansDevanagari", "normal");
-          doc.setFont("NotoSansDevanagari");
+
+          // Set as active font
+          doc.setFont("NotoSansDevanagari", "normal");
 
           // Enhanced character spacing for better Nepali rendering
-          doc.setCharSpace(0.5); // Slight character spacing for clarity
+          doc.setCharSpace(0.8); // Increased spacing for clarity
+          doc.setR2L(false); // Ensure left-to-right text direction
 
           console.log(
             "✅ Nepali font loaded successfully with enhanced spacing"
           );
         } else {
-          console.log("⚠️ Nepali font not found, using default font");
-          doc.setFont("helvetica");
+          console.log(
+            "⚠️ Nepali font not found, using UTF-8 compatible fallback"
+          );
+          // Use Times for better Unicode support than Helvetica
+          doc.setFont("times", "normal");
+          doc.setCharSpace(1.0); // More spacing for fallback font
         }
       } catch (error) {
         console.warn("Failed to load Nepali font:", error);
-        doc.setFont("helvetica");
+        // Fallback to Times font which has better Unicode support
+        doc.setFont("times", "normal");
+        doc.setCharSpace(1.0);
       }
 
       // Page dimensions
@@ -150,21 +162,63 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       const headerWidth = doc.getTextWidth(headerText);
       doc.text(headerText, (pageWidth - headerWidth) / 2, y);
 
-      // Main organization name (centered) - Enhanced Nepali rendering
+      // Organization name using image-based rendering for perfect Nepali display
       y += 25;
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0); // Pure black for better contrast
-      const mainTitle = "श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर";
-      const mainTitleWidth = doc.getTextWidth(mainTitle);
-      doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+      try {
+        const { getNepaliHeaderImage } = await import("./nepali-text-renderer");
+        const nepaliHeaderImage = await getNepaliHeaderImage();
 
-      // Organization committee subtitle (centered) - Enhanced rendering
-      y += 22;
-      doc.setFontSize(14);
-      doc.setTextColor(20, 20, 20); // Very dark gray for clarity
-      const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
-      const subtitleWidth = doc.getTextWidth(subtitle);
-      doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+        if (nepaliHeaderImage) {
+          // Calculate image dimensions (maintain aspect ratio)
+          const imageWidth = 300; // Scaled down for PDF
+          const imageHeight = 72; // Proportional height
+          const imageX = (pageWidth - imageWidth) / 2;
+
+          // Add image to PDF
+          doc.addImage(
+            nepaliHeaderImage,
+            "PNG",
+            imageX,
+            y,
+            imageWidth,
+            imageHeight
+          );
+          console.log("✅ Nepali header image embedded in PDF");
+          y += imageHeight + 10; // Add spacing after image
+        } else {
+          // Fallback to text if image generation fails
+          console.log("⚠️ Using text fallback for Nepali header");
+          doc.setFontSize(16);
+          doc.setTextColor(0, 0, 0);
+          const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+          const mainTitleWidth = doc.getTextWidth(mainTitle);
+          doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+
+          y += 22;
+          doc.setFontSize(14);
+          doc.setTextColor(20, 20, 20);
+          const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
+          const subtitleWidth = doc.getTextWidth(subtitle);
+          doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+          y += 10;
+        }
+      } catch (error) {
+        // Fallback to text if image rendering fails
+        console.warn("⚠️ Image rendering failed, using text fallback:", error);
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+        const mainTitleWidth = doc.getTextWidth(mainTitle);
+        doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+
+        y += 22;
+        doc.setFontSize(14);
+        doc.setTextColor(20, 20, 20);
+        const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
+        const subtitleWidth = doc.getTextWidth(subtitle);
+        doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
+        y += 10;
+      }
 
       // Address (centered) - Better hierarchy
       y += 20;
