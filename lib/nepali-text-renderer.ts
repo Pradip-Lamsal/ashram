@@ -92,7 +92,20 @@ async function renderServerSide(
 ): Promise<string | null> {
   try {
     // Dynamic import to avoid issues if canvas is not available
-    const { createCanvas } = await import("canvas");
+    const { createCanvas, registerFont } = await import("canvas");
+    const path = await import("path");
+
+    // Register the Nepali font for Canvas to use
+    try {
+      const fontPath = path.join(
+        process.cwd(),
+        "out/fonts/NotoSansDevanagari-Regular.ttf"
+      );
+      registerFont(fontPath, { family: "Noto Sans Devanagari" });
+      console.log("✅ Nepali font registered for Canvas:", fontPath);
+    } catch (fontError) {
+      console.warn("⚠️ Could not register Nepali font:", fontError);
+    }
 
     // Create canvas
     const canvas = createCanvas(config.width, config.height);
