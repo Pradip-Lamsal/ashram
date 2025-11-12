@@ -330,6 +330,8 @@ export default function ReceiptModal({
           dateOfDonation: receipt.dateOfDonation,
           startDate: receipt.startDate,
           endDate: receipt.endDate,
+          startDateNepali: receipt.startDateNepali,
+          endDateNepali: receipt.endDateNepali,
           notes: receipt.notes,
           createdBy: receipt.createdBy,
         },
@@ -431,6 +433,8 @@ export default function ReceiptModal({
               ? receipt.endDate
               : receipt.endDate.toISOString()
             : undefined,
+          startDateNepali: receipt.startDateNepali,
+          endDateNepali: receipt.endDateNepali,
           notes: receipt.notes,
           createdBy: receipt.createdBy,
         });

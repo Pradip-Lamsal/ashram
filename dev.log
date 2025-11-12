@@ -1,0 +1,197 @@
+
+> ashram@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.0
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.128:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ✓ Compiled /middleware in 226ms (114 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 2.6s (810 modules)
+ HEAD / 200 in 3105ms
+ ○ Compiling /api/download-receipt-pdf ...
+ ✓ Compiled /api/download-receipt-pdf in 2.7s (903 modules)
+PDF download API called
+Generating PDF for download: TEST123
+Receipt data: {
+  receiptNumber: 'TEST123',
+  donorName: 'Test Donor',
+  amount: 1000,
+  donationType: 'General Donation',
+  includeLogos: true
+}
+🎭 Starting PDF generation with timeout protection...
+🎭 Generating PDF...
+🚀 Starting PDFKit generation...
+❌ PDF generation failed: Error: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at eval (lib/pdf-generator.ts:22:19)
+    at new Promise (<anonymous>)
+    at generatePDFWithPDFKit (lib/pdf-generator.ts:18:10)
+    at generateReceiptPDF (lib/pdf-generator.ts:151:26)
+    at POST (app/api/download-receipt-pdf/route.ts:61:44)
+  20 |       console.log("🚀 Starting PDFKit generation...");
+  21 |       
+> 22 |       const doc = new PDFDocument({
+     |                   ^
+  23 |         size: "A4",
+  24 |         margin: 20,
+  25 |       }); {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+}
+❌ PDF generation failed: Error: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at eval (lib/pdf-generator.ts:22:19)
+    at new Promise (<anonymous>)
+    at generatePDFWithPDFKit (lib/pdf-generator.ts:18:10)
+    at generateReceiptPDF (lib/pdf-generator.ts:151:26)
+    at POST (app/api/download-receipt-pdf/route.ts:61:44)
+  20 |       console.log("🚀 Starting PDFKit generation...");
+  21 |       
+> 22 |       const doc = new PDFDocument({
+     |                   ^
+  23 |         size: "A4",
+  24 |         margin: 20,
+  25 |       }); {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+}
+❌ PDF generation failed: Error: PDF generation failed: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at generateReceiptPDF (lib/pdf-generator.ts:169:11)
+    at async POST (app/api/download-receipt-pdf/route.ts:80:19)
+  167 |     console.error("❌ PDF generation failed:", error);
+  168 |     const errorMessage = error instanceof Error ? error.message : String(error);
+> 169 |     throw new Error(`PDF generation failed: ${errorMessage}`);
+      |           ^
+  170 |   }
+  171 | }
+  172 |
+ POST /api/download-receipt-pdf 500 in 3156ms
+ ✓ Compiled in 279ms (548 modules)
+ ✓ Compiled in 373ms (548 modules)
+PDF download API called
+Generating PDF for download: TEST123
+Receipt data: {
+  receiptNumber: 'TEST123',
+  donorName: 'Test Donor',
+  amount: 1000,
+  donationType: 'General Donation',
+  includeLogos: true
+}
+🎭 Starting PDF generation with timeout protection...
+🎭 Generating PDF...
+🚀 Starting PDFKit generation...
+❌ PDF generation failed: Error: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at eval (lib/pdf-generator.ts:23:19)
+    at new Promise (<anonymous>)
+    at generatePDFWithPDFKit (lib/pdf-generator.ts:18:10)
+    at generateReceiptPDF (lib/pdf-generator.ts:176:26)
+    at POST (app/api/download-receipt-pdf/route.ts:61:44)
+  21 |       
+  22 |       // Create document without specifying fonts to avoid Helvetica.afm issues
+> 23 |       const doc = new PDFDocument({
+     |                   ^
+  24 |         size: "A4",
+  25 |         margin: 20,
+  26 |         bufferPages: true {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+}
+❌ PDF generation failed: Error: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at eval (lib/pdf-generator.ts:23:19)
+    at new Promise (<anonymous>)
+    at generatePDFWithPDFKit (lib/pdf-generator.ts:18:10)
+    at generateReceiptPDF (lib/pdf-generator.ts:176:26)
+    at POST (app/api/download-receipt-pdf/route.ts:61:44)
+  21 |       
+  22 |       // Create document without specifying fonts to avoid Helvetica.afm issues
+> 23 |       const doc = new PDFDocument({
+     |                   ^
+  24 |         size: "A4",
+  25 |         margin: 20,
+  26 |         bufferPages: true {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+}
+❌ PDF generation failed: Error: PDF generation failed: ENOENT: no such file or directory, open '/Users/pradip/Documents/react_projects/ashram copy/.next/server/vendor-chunks/data/Helvetica.afm'
+    at generateReceiptPDF (lib/pdf-generator.ts:194:11)
+    at async POST (app/api/download-receipt-pdf/route.ts:80:19)
+  192 |     console.error("❌ PDF generation failed:", error);
+  193 |     const errorMessage = error instanceof Error ? error.message : String(error);
+> 194 |     throw new Error(`PDF generation failed: ${errorMessage}`);
+      |           ^
+  195 |   }
+  196 | }
+  197 |
+ POST /api/download-receipt-pdf 500 in 404ms
+ ✓ Compiled in 341ms (106 modules)
+ ✓ Compiled in 40ms
+ ○ Compiling /api/download-receipt-pdf ...
+ ✓ Compiled /api/download-receipt-pdf in 3s (304 modules)
+PDF download API called
+Generating PDF for download: ASH000001
+Receipt data: {
+  receiptNumber: 'ASH000001',
+  donorName: 'Test Donor नेपाली',
+  amount: 5000,
+  donationType: 'General Donation',
+  includeLogos: true
+}
+🎭 Starting PDF generation with timeout protection...
+🎭 Generating PDF...
+🚀 Starting jsPDF generation to match original format...
+✅ PDF generated successfully with original format
+✅ PDF generated successfully!
+✅ PDF generation completed successfully
+PDF generated successfully for download, size: 14416 bytes
+ POST /api/download-receipt-pdf 200 in 3469ms
+PDF download API called
+Generating PDF for download: ASH000000123
+Receipt data: {
+  receiptNumber: 'ASH000000123',
+  donorName: 'श्याम बहादुर तामाङ',
+  amount: 25000,
+  donationType: 'Seva Donation',
+  includeLogos: true
+}
+🎭 Starting PDF generation with timeout protection...
+🎭 Generating PDF...
+🚀 Starting jsPDF generation to match original format...
+✅ PDF generated successfully with original format
+✅ PDF generated successfully!
+✅ PDF generation completed successfully
+PDF generated successfully for download, size: 14581 bytes
+ POST /api/download-receipt-pdf 200 in 56ms
+ ✓ Compiled in 565ms
+ ○ Compiling /api/download-receipt-pdf ...
+ ✓ Compiled /api/download-receipt-pdf in 1094ms (306 modules)
+PDF download API called
+Generating PDF for download: ASH000000065
+Receipt data: {
+  receiptNumber: 'ASH000000065',
+  donorName: 'उमिला छापागाइँ',
+  amount: 1440,
+  donationType: 'Seva Donation',
+  includeLogos: true
+}
+🎭 Starting PDF generation with timeout protection...
+🎭 Generating PDF...
+🚀 Starting jsPDF generation to match original format...
+✅ PDF generated successfully with original format
+✅ PDF generated successfully!
+✅ PDF generation completed successfully
+PDF generated successfully for download, size: 51301 bytes
+ POST /api/download-receipt-pdf 200 in 1339ms
