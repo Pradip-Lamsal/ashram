@@ -95,6 +95,9 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       // The server-side PDF generation will handle Nepali fonts properly
       doc.setFont("helvetica");
 
+      // Enhanced character spacing for better Nepali text rendering
+      doc.setCharSpace(0.5);
+
       // Page dimensions
       const pageWidth = doc.internal.pageSize.getWidth();
       let y = 30;
@@ -129,16 +132,18 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       const headerWidth = doc.getTextWidth(headerText);
       doc.text(headerText, (pageWidth - headerWidth) / 2, y);
 
-      // Main organization name (centered)
-      y += 20;
+      // Main organization name (centered) - Enhanced Nepali rendering
+      y += 22;
       doc.setFontSize(16);
-      const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+      doc.setTextColor(0, 0, 0); // Pure black for better contrast
+      const mainTitle = "श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर";
       const mainTitleWidth = doc.getTextWidth(mainTitle);
       doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
 
-      // Subtitle (centered)
-      y += 18;
-      doc.setFontSize(12);
+      // Organization committee subtitle (centered) - Enhanced rendering
+      y += 20;
+      doc.setFontSize(14);
+      doc.setTextColor(20, 20, 20); // Very dark gray for clarity
       const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
       const subtitleWidth = doc.getTextWidth(subtitle);
       doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);

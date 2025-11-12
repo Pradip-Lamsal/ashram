@@ -53,7 +53,13 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
           doc.addFileToVFS("NotoSansDevanagari.ttf", fontBase64);
           doc.addFont("NotoSansDevanagari.ttf", "NotoSansDevanagari", "normal");
           doc.setFont("NotoSansDevanagari");
-          console.log("✅ Nepali font loaded successfully");
+
+          // Enhanced character spacing for better Nepali rendering
+          doc.setCharSpace(0.5); // Slight character spacing for clarity
+
+          console.log(
+            "✅ Nepali font loaded successfully with enhanced spacing"
+          );
         } else {
           console.log("⚠️ Nepali font not found, using default font");
           doc.setFont("helvetica");
@@ -144,18 +150,18 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       const headerWidth = doc.getTextWidth(headerText);
       doc.text(headerText, (pageWidth - headerWidth) / 2, y);
 
-      // Main organization name (centered) - Enhanced with better spacing
-      y += 22;
-      doc.setFontSize(18);
-      doc.setTextColor(40, 40, 40); // Dark charcoal instead of pure black
-      const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+      // Main organization name (centered) - Enhanced Nepali rendering
+      y += 25;
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0); // Pure black for better contrast
+      const mainTitle = "श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर";
       const mainTitleWidth = doc.getTextWidth(mainTitle);
       doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
 
-      // Subtitle (centered) - Improved contrast
-      y += 20;
-      doc.setFontSize(13);
-      doc.setTextColor(80, 80, 80); // Medium gray
+      // Organization committee subtitle (centered) - Enhanced rendering
+      y += 22;
+      doc.setFontSize(14);
+      doc.setTextColor(20, 20, 20); // Very dark gray for clarity
       const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
       const subtitleWidth = doc.getTextWidth(subtitle);
       doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
