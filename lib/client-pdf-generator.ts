@@ -112,26 +112,10 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       // Right side registration number
       doc.text("स.क.प.आवद्धता नं. ३५०९१", pageWidth - 150, headerStartY);
 
-      // Center content area
+      // Enhanced header rendering with complete Nepali content (OM + Sanskrit + Org name)
       y = headerStartY + 30;
+      let imageRendered = false;
 
-      // Sacred OM symbol (centered)
-      doc.setFontSize(18);
-      doc.setTextColor(255, 102, 0); // Orange color
-      const omText = "ॐ";
-      const omWidth = doc.getTextWidth(omText);
-      doc.text(omText, (pageWidth - omWidth) / 2, y);
-
-      // Main header - श्रीराधासर्वेश्वरो विजयते (centered)
-      y += 20;
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      const headerText = "श्रीराधासर्वेश्वरो विजयते";
-      const headerWidth = doc.getTextWidth(headerText);
-      doc.text(headerText, (pageWidth - headerWidth) / 2, y);
-
-      // Organization name using image-based rendering (client-side)
-      y += 22;
       try {
         const { renderNepaliHeaderAsImage, DEFAULT_NEPALI_HEADER_CONFIG } =
           await import("./nepali-text-renderer");
@@ -140,12 +124,12 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
         );
 
         if (nepaliHeaderImage) {
-          // Calculate image dimensions
-          const imageWidth = 300;
-          const imageHeight = 72;
+          // Calculate image dimensions for complete header
+          const imageWidth = 350;
+          const imageHeight = 100;
           const imageX = (pageWidth - imageWidth) / 2;
 
-          // Add image to PDF
+          // Add complete header image to PDF (OM + Sanskrit + Org name)
           doc.addImage(
             nepaliHeaderImage,
             "PNG",
@@ -154,36 +138,44 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
             imageWidth,
             imageHeight
           );
-          console.log("✅ Nepali header image embedded in client-side PDF");
-          y += imageHeight + 10;
-        } else {
-          // Fallback to text
-          console.log("⚠️ Using text fallback for client-side Nepali header");
-          doc.setFontSize(16);
-          doc.setTextColor(0, 0, 0);
-          const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
-          const mainTitleWidth = doc.getTextWidth(mainTitle);
-          doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
-
-          y += 20;
-          doc.setFontSize(14);
-          doc.setTextColor(20, 20, 20);
-          const subtitle = "व्यवस्थापन तथा सञ्चालन समिति";
-          const subtitleWidth = doc.getTextWidth(subtitle);
-          doc.text(subtitle, (pageWidth - subtitleWidth) / 2, y);
-          y += 10;
+          console.log(
+            "✅ Complete Nepali header image embedded in client-side PDF"
+          );
+          y += imageHeight + 15;
+          imageRendered = true;
         }
       } catch (error) {
-        // Fallback to text
         console.warn(
           "⚠️ Client-side image rendering failed, using text fallback:",
           error
         );
-        doc.setFontSize(16);
+      }
+
+      // Fallback to text rendering if image failed
+      if (!imageRendered) {
+        console.log("⚠️ Using text fallback for client-side header");
+
+        // Sacred OM symbol (centered)
+        doc.setFontSize(18);
+        doc.setTextColor(255, 102, 0); // Orange color
+        const omText = "ॐ";
+        const omWidth = doc.getTextWidth(omText);
+        doc.text(omText, (pageWidth - omWidth) / 2, y);
+
+        // Main header - श्रीराधासर्वेश्वरो विजयते (centered)
+        y += 20;
+        doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        const mainTitle = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
-        const mainTitleWidth = doc.getTextWidth(mainTitle);
-        doc.text(mainTitle, (pageWidth - mainTitleWidth) / 2, y);
+        const headerText = "श्रीराधासर्वेश्वरो विजयते";
+        const headerWidth = doc.getTextWidth(headerText);
+        doc.text(headerText, (pageWidth - headerWidth) / 2, y);
+
+        // Organization name fallback text
+        y += 22;
+        doc.setFontSize(16);
+        const orgText = "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर";
+        const orgWidth = doc.getTextWidth(orgText);
+        doc.text(orgText, (pageWidth - orgWidth) / 2, y);
 
         y += 20;
         doc.setFontSize(14);

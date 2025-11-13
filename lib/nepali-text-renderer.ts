@@ -2,15 +2,21 @@
 const imageCache = new Map<string, string>();
 
 interface NepaliTextConfig {
+  omSymbol?: string;
+  sanskritText?: string;
   mainTitle: string;
   subtitle: string;
   width: number;
   height: number;
   fontSize: {
+    om?: number;
+    sanskrit?: number;
     main: number;
     sub: number;
   };
   colors: {
+    om?: string;
+    sanskrit?: string;
     main: string;
     sub: string;
   };
@@ -67,23 +73,39 @@ function renderClientSide(
       // Clear canvas
       ctx.clearRect(0, 0, config.width, config.height);
 
-      // Set font for main title with more fallbacks
-      ctx.font = `${config.fontSize.main}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
-      ctx.fillStyle = config.colors.main;
       ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      let currentY = 25;
 
-      // Draw main title
-      const mainY = config.height * 0.35;
-      ctx.fillText(config.mainTitle, config.width / 2, mainY);
+      // Render OM symbol if provided
+      if (config.omSymbol) {
+        ctx.font = `${
+          config.fontSize.om || 20
+        }px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+        ctx.fillStyle = config.colors.om || "#FF6600";
+        ctx.fillText(config.omSymbol, config.width / 2, currentY);
+        currentY += 25;
+      }
+
+      // Render Sanskrit text if provided
+      if (config.sanskritText) {
+        ctx.font = `${
+          config.fontSize.sanskrit || 14
+        }px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+        ctx.fillStyle = config.colors.sanskrit || "#B43200";
+        ctx.fillText(config.sanskritText, config.width / 2, currentY);
+        currentY += 25;
+      }
+
+      // Set font for main title with more fallbacks
+      ctx.font = `bold ${config.fontSize.main}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+      ctx.fillStyle = config.colors.main;
+      ctx.fillText(config.mainTitle, config.width / 2, currentY);
+      currentY += 20;
 
       // Set font for subtitle with more fallbacks
       ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
       ctx.fillStyle = config.colors.sub;
-
-      // Draw subtitle
-      const subY = config.height * 0.65;
-      ctx.fillText(config.subtitle, config.width / 2, subY);
+      ctx.fillText(config.subtitle, config.width / 2, currentY);
 
       // Convert to base64
       const base64Image = canvas.toDataURL("image/png");
@@ -91,7 +113,7 @@ function renderClientSide(
       // Cache result
       imageCache.set(cacheKey, base64Image);
 
-      console.log("✅ Nepali header image rendered (client-side)");
+      console.log("✅ Complete Nepali header image rendered (client-side)");
       resolve(base64Image);
     }
   });
@@ -147,23 +169,39 @@ async function renderServerSide(
     // Clear canvas with transparent background
     ctx.clearRect(0, 0, config.width, config.height);
 
-    // Set font for main title (use fallback font family)
-    ctx.font = `${config.fontSize.main}px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
-    ctx.fillStyle = config.colors.main;
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    let currentY = 25;
 
-    // Draw main title
-    const mainY = config.height * 0.35;
-    ctx.fillText(config.mainTitle, config.width / 2, mainY);
+    // Render OM symbol if provided
+    if (config.omSymbol) {
+      ctx.font = `${
+        config.fontSize.om || 20
+      }px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+      ctx.fillStyle = config.colors.om || "#FF6600";
+      ctx.fillText(config.omSymbol, config.width / 2, currentY);
+      currentY += 25;
+    }
+
+    // Render Sanskrit text if provided
+    if (config.sanskritText) {
+      ctx.font = `${
+        config.fontSize.sanskrit || 14
+      }px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+      ctx.fillStyle = config.colors.sanskrit || "#B43200";
+      ctx.fillText(config.sanskritText, config.width / 2, currentY);
+      currentY += 25;
+    }
+
+    // Set font for main title (use fallback font family)
+    ctx.font = `bold ${config.fontSize.main}px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+    ctx.fillStyle = config.colors.main;
+    ctx.fillText(config.mainTitle, config.width / 2, currentY);
+    currentY += 20;
 
     // Set font for subtitle
     ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
     ctx.fillStyle = config.colors.sub;
-
-    // Draw subtitle
-    const subY = config.height * 0.65;
-    ctx.fillText(config.subtitle, config.width / 2, subY);
+    ctx.fillText(config.subtitle, config.width / 2, currentY);
 
     // Convert canvas to base64 PNG
     const base64Image = canvas.toDataURL("image/png");
@@ -171,7 +209,7 @@ async function renderServerSide(
     // Cache the result
     imageCache.set(cacheKey, base64Image);
 
-    console.log("✅ Nepali header image rendered (server-side)");
+    console.log("✅ Complete Nepali header image rendered (server-side)");
     return base64Image;
   } catch (error) {
     console.error(
@@ -182,19 +220,25 @@ async function renderServerSide(
   }
 }
 
-// Default configuration for the organization header
+// Default configuration for the complete organization header
 export const DEFAULT_NEPALI_HEADER_CONFIG: NepaliTextConfig = {
+  omSymbol: "ॐ",
+  sanskritText: "श्रीराधासर्वेश्वरो विजयते",
   mainTitle: "श्री जगद्‌गुरु आश्रम एवं जगत्‌नारायण मन्दिर",
   subtitle: "व्यवस्थापन तथा सञ्चालन समिति",
   width: 500,
-  height: 120,
+  height: 140, // Increased height to accommodate OM and Sanskrit text
   fontSize: {
-    main: 18,
-    sub: 15,
+    om: 20,
+    sanskrit: 14,
+    main: 16,
+    sub: 14,
   },
   colors: {
-    main: "#000000",
-    sub: "#141414",
+    om: "#FF6600", // Orange for OM symbol
+    sanskrit: "#B43200", // Dark orange for Sanskrit text
+    main: "#000000", // Black for main title
+    sub: "#333333", // Dark gray for subtitle
   },
 };
 
