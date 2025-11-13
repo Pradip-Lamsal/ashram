@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nepali Font Test</title>
+    <style>
+        @font-face {
+            font-family: 'Noto Sans Devanagari';
+            src: url('/fonts/static/NotoSansDevanagari-Regular.ttf') format('truetype');
+        }
+        .nepali-text {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 24px;
+            padding: 20px;
+        }
+        .test-canvas {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nepali Font Test</h1>
+    
+    <div class="nepali-text">
+        श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर<br>
+        व्यवस्थापन तथा सञ्चालन समिति
+    </div>
+    
+    <canvas id="testCanvas" class="test-canvas" width="500" height="120"></canvas>
+    
+    <div>
+        <button onclick="testCanvasRendering()">Test Canvas Rendering</button>
+        <button onclick="testApiCall()">Test API Call</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testCanvasRendering() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Wait for fonts to load
+            await document.fonts.ready;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set background
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Set font
+            ctx.font = '18px "Noto Sans Devanagari", sans-serif';
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw text
+            ctx.fillText('श्री जगद्गुरु आश्रम एवं जगत्नारायण मन्दिर', canvas.width / 2, canvas.height * 0.35);
+            
+            ctx.font = '15px "Noto Sans Devanagari", sans-serif';
+            ctx.fillText('व्यवस्थापन तथा सञ्चालन समिति', canvas.width / 2, canvas.height * 0.65);
+            
+            document.getElementById('results').innerHTML = '<p>✅ Canvas rendering completed</p>';
+        }
+        
+        async function testApiCall() {
+            try {
+                const response = await fetch('/api/test-nepali-image');
+                const result = await response.json();
+                
+                let html = '<h3>API Test Results:</h3>';
+                html += `<p>Success: ${result.success}</p>`;
+                
+                if (result.success) {
+                    html += `<p>Image Length: ${result.imageLength}</p>`;
+                    html += `<p>Preview: ${result.imagePreview}</p>`;
+                    html += `<img src="${result.fullImage}" alt="Generated Nepali text" style="border: 1px solid #ccc; max-width: 100%;">`;
+                } else {
+                    html += `<p>Error: ${result.error}</p>`;
+                }
+                
+                document.getElementById('results').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p>❌ API Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(testCanvasRendering, 1000);
+        });
+    </script>
+</body>
+</html>

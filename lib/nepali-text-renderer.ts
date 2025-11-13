@@ -47,41 +47,53 @@ function renderClientSide(
   cacheKey: string
 ): Promise<string> {
   return new Promise((resolve) => {
-    // Create canvas element
-    const canvas = document.createElement("canvas");
-    canvas.width = config.width;
-    canvas.height = config.height;
-    const ctx = canvas.getContext("2d")!;
+    // Wait for fonts to load first
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        renderCanvasContent();
+      });
+    } else {
+      // Fallback for older browsers
+      setTimeout(renderCanvasContent, 100);
+    }
 
-    // Clear canvas
-    ctx.clearRect(0, 0, config.width, config.height);
+    function renderCanvasContent() {
+      // Create canvas element
+      const canvas = document.createElement("canvas");
+      canvas.width = config.width;
+      canvas.height = config.height;
+      const ctx = canvas.getContext("2d")!;
 
-    // Set font for main title
-    ctx.font = `${config.fontSize.main}px "Noto Sans Devanagari", sans-serif`;
-    ctx.fillStyle = config.colors.main;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+      // Clear canvas
+      ctx.clearRect(0, 0, config.width, config.height);
 
-    // Draw main title
-    const mainY = config.height * 0.35;
-    ctx.fillText(config.mainTitle, config.width / 2, mainY);
+      // Set font for main title with more fallbacks
+      ctx.font = `${config.fontSize.main}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+      ctx.fillStyle = config.colors.main;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-    // Set font for subtitle
-    ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", sans-serif`;
-    ctx.fillStyle = config.colors.sub;
+      // Draw main title
+      const mainY = config.height * 0.35;
+      ctx.fillText(config.mainTitle, config.width / 2, mainY);
 
-    // Draw subtitle
-    const subY = config.height * 0.65;
-    ctx.fillText(config.subtitle, config.width / 2, subY);
+      // Set font for subtitle with more fallbacks
+      ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+      ctx.fillStyle = config.colors.sub;
 
-    // Convert to base64
-    const base64Image = canvas.toDataURL("image/png");
+      // Draw subtitle
+      const subY = config.height * 0.65;
+      ctx.fillText(config.subtitle, config.width / 2, subY);
 
-    // Cache result
-    imageCache.set(cacheKey, base64Image);
+      // Convert to base64
+      const base64Image = canvas.toDataURL("image/png");
 
-    console.log("✅ Nepali header image rendered (client-side)");
-    resolve(base64Image);
+      // Cache result
+      imageCache.set(cacheKey, base64Image);
+
+      console.log("✅ Nepali header image rendered (client-side)");
+      resolve(base64Image);
+    }
   });
 }
 
@@ -96,15 +108,36 @@ async function renderServerSide(
     const path = await import("path");
 
     // Register the Nepali font for Canvas to use
-    try {
-      const fontPath = path.join(
+    const possibleFontPaths = [
+      path.join(process.cwd(), "out/fonts/NotoSansDevanagari-Regular.ttf"),
+      path.join(
         process.cwd(),
-        "out/fonts/NotoSansDevanagari-Regular.ttf"
-      );
-      registerFont(fontPath, { family: "Noto Sans Devanagari" });
-      console.log("✅ Nepali font registered for Canvas:", fontPath);
-    } catch (fontError) {
-      console.warn("⚠️ Could not register Nepali font:", fontError);
+        "public/fonts/static/NotoSansDevanagari-Regular.ttf"
+      ),
+      path.join(process.cwd(), "public/noto-devanagari.ttf"),
+      path.join(process.cwd(), "build/fonts/NotoSansDevanagari-Regular.ttf"),
+    ];
+
+    let fontRegistered = false;
+    for (const fontPath of possibleFontPaths) {
+      try {
+        // Only import fs on server side
+        if (typeof window === "undefined") {
+          const fs = await import("fs");
+          if (fs.existsSync(fontPath)) {
+            registerFont(fontPath, { family: "Noto Sans Devanagari" });
+            console.log("✅ Nepali font registered for Canvas:", fontPath);
+            fontRegistered = true;
+            break;
+          }
+        }
+      } catch (fontError) {
+        console.warn("⚠️ Could not register font at:", fontPath, fontError);
+      }
+    }
+
+    if (!fontRegistered) {
+      console.error("❌ No Nepali font could be registered for Canvas");
     }
 
     // Create canvas
