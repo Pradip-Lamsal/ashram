@@ -320,7 +320,7 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       const cardPadding = 8;
       const cardHeight = receiptData.donorId ? 45 : 35;
 
-      // Donor info card background
+      // Donor info card background with better padding
       doc.setFillColor(248, 250, 255); // Very light blue
       doc.setDrawColor(180, 200, 230); // Light blue border
       doc.setLineWidth(1);
@@ -334,33 +334,33 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
         "FD"
       );
 
-      // Header with icon styling
+      // Header with icon styling and better spacing
       doc.setFontSize(11);
       doc.setTextColor(60, 120, 200); // Professional blue
-      doc.text("👤 Donor Information", leftColumnX, y + 5);
+      doc.text("👤 Donor Information", leftColumnX, y + 8);
 
-      y += 18;
+      y += 20; // Increased header spacing
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
       doc.text("Name:", leftColumnX, y);
       doc.setTextColor(40, 40, 40);
       doc.setFontSize(10);
-      doc.text(receiptData.donorName, leftColumnX + 45, y);
+      doc.text(receiptData.donorName, leftColumnX + 50, y); // Increased label spacing
 
       if (receiptData.donorId) {
-        y += 13;
+        y += 15; // Increased row spacing
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
         doc.text("Donor ID:", leftColumnX, y);
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(8);
-        doc.text(receiptData.donorId, leftColumnX + 45, y);
+        doc.text(receiptData.donorId, leftColumnX + 50, y); // Increased label spacing
       }
 
       // Right Column - Receipt Details - Enhanced card design
       const rightColumnStartY = y - (receiptData.donorId ? 31 : 18);
 
-      // Receipt details card background
+      // Receipt details card background with better padding
       doc.setFillColor(252, 248, 255); // Very light purple
       doc.setDrawColor(200, 180, 230); // Light purple border
       doc.setLineWidth(1);
@@ -368,18 +368,18 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
         rightColumnX - cardPadding,
         rightColumnStartY - 5,
         250,
-        cardHeight,
+        cardHeight + 10, // Increased height for better spacing
         3,
         3,
         "FD"
       );
 
-      // Header with icon styling
+      // Header with icon styling and better spacing
       doc.setFontSize(11);
       doc.setTextColor(120, 60, 200); // Professional purple
-      doc.text("📄 Receipt Details", rightColumnX, rightColumnStartY + 5);
+      doc.text("📄 Receipt Details", rightColumnX, rightColumnStartY + 8);
 
-      let rightY = rightColumnStartY + 18;
+      let rightY = rightColumnStartY + 20; // Increased spacing after header
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
 
@@ -409,15 +409,26 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       doc.text("Donation Date:", rightColumnX, rightY);
       doc.setTextColor(40, 40, 40);
       doc.setFontSize(10);
-      doc.text(donationDateText, rightColumnX + 65, rightY);
+      // Improved spacing and line breaks for long dates
+      const maxDateWidth = 160; // Maximum width for date text
+      const dateLines = doc.splitTextToSize(donationDateText, maxDateWidth);
+      if (dateLines.length > 1) {
+        // Multi-line date (for Seva Donation ranges)
+        doc.text(dateLines[0], rightColumnX + 75, rightY);
+        doc.text(dateLines[1] || "", rightColumnX + 75, rightY + 10);
+        rightY += 10; // Extra space for multi-line
+      } else {
+        // Single line date
+        doc.text(donationDateText, rightColumnX + 75, rightY);
+      }
 
-      rightY += 13;
+      rightY += 15; // Increased spacing
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
       doc.text("Issued By:", rightColumnX, rightY);
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(10);
-      doc.text("System", rightColumnX + 65, rightY);
+      doc.text("System", rightColumnX + 75, rightY);
 
       // Move y to after both columns
       y = Math.max(y + 12, rightY + 20);

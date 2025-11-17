@@ -249,25 +249,25 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       doc.setTextColor(74, 144, 226);
       doc.text("👤 Donor Information", leftColumnX, y);
 
-      y += 15;
+      y += 18; // Increased header spacing
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
       doc.text("Name:", leftColumnX, y);
-      doc.text(receipt.donorName, leftColumnX + 50, y);
+      doc.text(receipt.donorName, leftColumnX + 55, y); // Increased label spacing
 
       if (receipt.donorId) {
-        y += 12;
+        y += 15; // Increased row spacing
         doc.text("Donor ID:", leftColumnX, y);
-        doc.text(receipt.donorId, leftColumnX + 50, y);
+        doc.text(receipt.donorId, leftColumnX + 55, y); // Increased label spacing
       }
 
-      // Right Column - Receipt Details (reset y position)
-      const rightColumnStartY = y - (receipt.donorId ? 27 : 15);
+      // Right Column - Receipt Details (reset y position with improved spacing)
+      const rightColumnStartY = y - (receipt.donorId ? 30 : 18); // Adjusted for new spacing
       doc.setFontSize(12);
       doc.setTextColor(74, 144, 226);
       doc.text("📄 Receipt Details", rightColumnX, rightColumnStartY);
 
-      let rightY = rightColumnStartY + 15;
+      let rightY = rightColumnStartY + 18; // Increased header spacing
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
 
@@ -291,11 +291,22 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       }
 
       doc.text("Donation Date:", rightColumnX, rightY);
-      doc.text(donationDateText, rightColumnX + 70, rightY);
+      // Improved spacing and line breaks for long dates
+      const maxDateWidth = 160; // Maximum width for date text
+      const dateLines = doc.splitTextToSize(donationDateText, maxDateWidth);
+      if (dateLines.length > 1) {
+        // Multi-line date (for Seva Donation ranges)
+        doc.text(dateLines[0], rightColumnX + 80, rightY);
+        doc.text(dateLines[1] || "", rightColumnX + 80, rightY + 10);
+        rightY += 10; // Extra space for multi-line
+      } else {
+        // Single line date
+        doc.text(donationDateText, rightColumnX + 80, rightY);
+      }
 
-      rightY += 12;
+      rightY += 15; // Increased spacing
       doc.text("Issued By:", rightColumnX, rightY);
-      doc.text("System", rightColumnX + 70, rightY);
+      doc.text("System", rightColumnX + 80, rightY);
 
       // Move y to after both columns
       y = Math.max(y + 12, rightY + 20);
