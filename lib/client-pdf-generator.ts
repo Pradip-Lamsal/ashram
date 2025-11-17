@@ -90,9 +90,10 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       // Create a new PDF document
       const doc = new jsPDF("p", "pt", "a4");
 
-      // Set font for better Nepali support
-      // Note: Client-side font loading is complex, using times for better Unicode support
-      // The server-side PDF generation will handle Nepali fonts properly
+      // Set font for better Nepali support using Google Fonts loaded in layout
+      // Use Times font which has better Unicode support for Devanagari script
+      // The Google Fonts (Poppins, Noto Sans Devanagari) are loaded in layout
+      // but jsPDF has limited client-side font support
       doc.setFont("times", "normal");
 
       // Enhanced character spacing for better Nepali text rendering
@@ -270,15 +271,22 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
 
-      // Format donation date (handle Seva Donation period)
+      // Format donation date (handle Seva Donation period) - matches ReceiptModal logic
       let donationDateText = "N/A";
-      if (
-        receipt.donationType === "Seva Donation" &&
-        receipt.startDateNepali &&
-        receipt.endDateNepali
-      ) {
-        donationDateText = `${receipt.startDateNepali} देखि ${receipt.endDateNepali} सम्म`;
-      } else if (receipt.dateOfDonation) {
+      if (receipt.donationType === "Seva Donation") {
+        // If we have Nepali date strings, use them directly (more accurate)
+        if (receipt.startDateNepali && receipt.endDateNepali) {
+          donationDateText = `${receipt.startDateNepali} - ${receipt.endDateNepali}`;
+        }
+        // Fallback to converting English dates to Nepali
+        else if (receipt.startDate && receipt.endDate) {
+          const startDate = formatDate(new Date(receipt.startDate));
+          const endDate = formatDate(new Date(receipt.endDate));
+          donationDateText = `${startDate} - ${endDate}`;
+        }
+      }
+      // For regular donations, show the donation date
+      else if (receipt.dateOfDonation) {
         donationDateText = formatDate(new Date(receipt.dateOfDonation));
       }
 
@@ -313,16 +321,15 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
         donationBoxY + 15
       );
 
-      // Three column grid inside donation box
-      const col1X = 70;
-      const col2X = 240;
-      const col3X = 410;
+      // Two column grid inside donation box (removed donation period)
+      const col1X = 100;
+      const col2X = 350;
       const gridY = donationBoxY + 25;
 
       // Column 1 - Donation Type
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(200, 200, 200);
-      doc.rect(col1X, gridY, 150, 25, "FD");
+      doc.rect(col1X, gridY, 180, 25, "FD");
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text("DONATION TYPE", col1X + 5, gridY + 8);
@@ -332,32 +339,14 @@ export const generateClientSidePDF = (receipt: ReceiptData): Promise<void> => {
         DONATION_TYPE_LABELS[receipt.donationType] || receipt.donationType;
       doc.text(nepaliDonationType, col1X + 5, gridY + 18);
 
-      // Column 2 - Donation Period (if applicable)
-      doc.rect(col2X, gridY, 150, 25, "FD");
+      // Column 2 - Payment Mode
+      doc.rect(col2X, gridY, 180, 25, "FD");
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text("DONATION PERIOD", col2X + 5, gridY + 8);
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      if (
-        receipt.donationType === "Seva Donation" &&
-        receipt.startDateNepali &&
-        receipt.endDateNepali
-      ) {
-        doc.text(`${receipt.startDateNepali} देखि`, col2X + 5, gridY + 15);
-        doc.text(`${receipt.endDateNepali} सम्म`, col2X + 5, gridY + 22);
-      } else {
-        doc.text("Single Donation", col2X + 5, gridY + 18);
-      }
-
-      // Column 3 - Payment Mode
-      doc.rect(col3X, gridY, 120, 25, "FD");
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text("PAYMENT MODE", col3X + 5, gridY + 8);
+      doc.text("PAYMENT MODE", col2X + 5, gridY + 8);
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 255);
-      doc.text("💻 " + receipt.paymentMode, col3X + 5, gridY + 18);
+      doc.text("💻 " + receipt.paymentMode, col2X + 5, gridY + 18);
 
       y = donationBoxY + donationBoxHeight + 25;
 

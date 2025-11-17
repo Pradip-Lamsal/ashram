@@ -68,11 +68,26 @@ export const sendReceiptEmail = async (
       to: donorEmail,
       subject: `🙏  श्री जगद्गुरु आश्रममा  सहयाेग गर्नु भएकाेमा धन्यवाद- Donation Receipt ${receipt.id} | Ashram Management`,
       html: `
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100..900&family=Poppins:wght@100..900&display=swap" rel="stylesheet">
+          <style>
+            @import url('/fonts/local-fonts.css');
+            .nepali-text { font-family: 'NotoSansDevanagari', 'MuktaLocal', 'Noto Sans Devanagari', 'Mukta', 'Segoe UI', Tahoma, Geneva, Verdana, serif; }
+            .english-text { font-family: 'PoppinsLocal', 'MontserratLocal', 'Poppins', 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+          </style>
+        </head>
+        <body>
+        <div style="font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #ea580c, #dc2626); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🙏 तपाईंको योगदानका लागि धन्यवाद।</h1>
-            <p style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px;">तपाईंको उदारताले हाम्रो आध्यात्मिक समुदायलाई सहयोग गर्दछ</p>
+            <h1 class="nepali-text" style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">🙏 तपाईंको योगदानका लागि धन्यवाद।</h1>
+            <p class="nepali-text" style="color: #fed7aa; margin: 10px 0 0 0; font-size: 16px; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">तपाईंको उदारताले हाम्रो आध्यात्मिक समुदायलाई सहयोग गर्दछ</p>
           </div>
           
           <!-- Main Content -->
@@ -83,7 +98,7 @@ export const sendReceiptEmail = async (
               }</strong>,
             </p>
             
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+            <p class="nepali-text" style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 30px; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">
               हामी हाम्रो आश्रमका लागि तपाईंको उदार योगदानप्रति गहिरो आभार व्यक्त गर्दछौं। तपाईंको सहयोगले हामीलाई हाम्रो आध्यात्मिक र सामुदायिक कार्य निरन्तरता दिन, भक्तजनहरूलाई सहयोग गर्न र हाम्रो पवित्र स्थानलाई संरक्षण गर्न मद्दत गर्दछ।
             </p>
             
@@ -130,7 +145,7 @@ export const sendReceiptEmail = async (
             
             <!-- Tax Information -->
             <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin: 25px 0;">
-              <p style="color: #065f46; font-size: 14px; margin: 0; text-align: center;">
+              <p class="nepali-text" style="color: #065f46; font-size: 14px; margin: 0; text-align: center; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">
                 <strong>💡 Tax Information:</strong>यो रसिद कर कटौतीका प्रयोजनका लागि तपाईंको योगदानको पुष्टि स्वरूप हो। कृपया यसलाई आफ्नो अभिलेखका लागि सुरक्षित राख्नुहोस्।
               </p>
               ${
@@ -156,8 +171,8 @@ export const sendReceiptEmail = async (
             
             <!-- Thank You Message -->
             <div style="text-align: center; margin: 30px 0;">
-              <p style="color: #ea580c; font-size: 20px; font-weight: 600; margin-bottom: 10px;">🙏 May your generosity bring you blessings 🙏</p>
-              <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">
+              <p class="nepali-text" style="color: #ea580c; font-size: 20px; font-weight: 600; margin-bottom: 10px; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">🙏 May your generosity bring you blessings 🙏</p>
+              <p class="nepali-text" style="color: #6b7280; font-size: 14px; line-height: 1.5; font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;">
                 तपाईंको योगदानले हामीलाई हाम्रो पवित्र स्थान संरक्षण गर्न र आध्यात्मिक कार्यक्रमहरूलाई सहयोग गर्न मद्दत गर्दछ।,<br>
                 र हाम्रो समुदायलाई प्रेम र समर्पणका साथ सेवा गर्न मद्दत गर्दछ।<br>
                 श्री जगद्गुरु आश्रममा  सहयाेग गर्नु भएकाेमा धन्यवाद ।।।
@@ -176,6 +191,8 @@ export const sendReceiptEmail = async (
             </p>
           </div>
         </div>
+        </body>
+        </html>
       `,
       attachments: pdfBuffer
         ? [

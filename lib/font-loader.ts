@@ -5,7 +5,20 @@ import path from "path";
 export function getFontAsBase64(): string | null {
   try {
     const fontPaths = [
-      // Try regular fonts first (better jsPDF compatibility)
+      // Try new local fonts first
+      path.resolve(
+        process.cwd(),
+        "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf"
+      ),
+      path.resolve(
+        process.cwd(),
+        "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Medium.ttf"
+      ),
+      path.resolve(
+        process.cwd(),
+        "public/Noto_Sans_Devanagari/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+      ),
+      // Try regular fonts (better jsPDF compatibility)
       path.resolve(process.cwd(), "out/fonts/NotoSansDevanagari-Regular.ttf"),
       path.resolve(process.cwd(), "out/fonts/NotoSansDevanagari-Medium.ttf"),
       path.resolve(

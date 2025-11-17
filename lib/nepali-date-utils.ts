@@ -192,7 +192,7 @@ export function formatDonationPeriod(donation: {
       new Date(donation.start_date)
     );
     const endNepali = englishToNepaliDateFormatted(new Date(donation.end_date));
-    return `अवधि: ${startNepali} देखि ${endNepali} सम्म`;
+    return `अवधि: ${startNepali} - ${endNepali}`;
   }
   return null;
 }
@@ -212,7 +212,7 @@ export function formatDonationDate(donation: {
   if (donation.donation_type === "Seva Donation") {
     // First priority: Use stored Nepali date strings if available (more accurate)
     if (donation.start_date_nepali && donation.end_date_nepali) {
-      return `${donation.start_date_nepali} देखि ${donation.end_date_nepali} सम्म`;
+      return `${donation.start_date_nepali} - ${donation.end_date_nepali}`;
     }
 
     // Fallback: Convert English dates to Nepali
@@ -223,7 +223,7 @@ export function formatDonationDate(donation: {
       const endNepali = englishToNepaliDateFormatted(
         new Date(donation.end_date)
       );
-      return `${startNepali} देखि ${endNepali} सम्म`;
+      return `${startNepali} - ${endNepali}`;
     }
   }
 

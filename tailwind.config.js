@@ -17,6 +17,17 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        "noto-local": ["NotoSansDevanagari", "Noto Sans Devanagari", "serif"],
+        "poppins-local": ["PoppinsLocal", "Poppins", "sans-serif"],
+        "montserrat-local": ["MontserratLocal", "Montserrat", "sans-serif"],
+        "mukta-local": ["MuktaLocal", "Mukta", "serif"],
+        "matangi-local": ["MatangiLocal", "Matangi", "serif"],
+        // Keep existing for compatibility
+        poppins: ["Poppins", "sans-serif"],
+        montserrat: ["Montserrat", "sans-serif"],
+        "noto-devanagari": ["Noto Sans Devanagari", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

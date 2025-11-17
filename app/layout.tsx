@@ -29,6 +29,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preload" href="/fonts/local-fonts.css" as="style" />
+        <link rel="stylesheet" href="/fonts/local-fonts.css" />
+        <link
+          rel="preload"
+          href="/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/Poppins/Poppins-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/Montserrat/static/Montserrat-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

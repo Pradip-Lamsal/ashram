@@ -80,7 +80,7 @@ function renderClientSide(
       if (config.omSymbol) {
         ctx.font = `${
           config.fontSize.om || 20
-        }px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+        }px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "Poppins", "Montserrat", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
         ctx.fillStyle = config.colors.om || "#FF6600";
         ctx.fillText(config.omSymbol, config.width / 2, currentY);
         currentY += 25;
@@ -90,20 +90,20 @@ function renderClientSide(
       if (config.sanskritText) {
         ctx.font = `${
           config.fontSize.sanskrit || 14
-        }px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+        }px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "Poppins", "Montserrat", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
         ctx.fillStyle = config.colors.sanskrit || "#B43200";
         ctx.fillText(config.sanskritText, config.width / 2, currentY);
         currentY += 25;
       }
 
-      // Set font for main title with more fallbacks
-      ctx.font = `bold ${config.fontSize.main}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+      // Set font for main title with local fonts priority
+      ctx.font = `bold ${config.fontSize.main}px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "Poppins", "Montserrat", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
       ctx.fillStyle = config.colors.main;
       ctx.fillText(config.mainTitle, config.width / 2, currentY);
       currentY += 20;
 
-      // Set font for subtitle with more fallbacks
-      ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
+      // Set font for subtitle with local fonts priority
+      ctx.font = `${config.fontSize.sub}px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "Poppins", "Montserrat", "Mangal", "Lohit Devanagari", "Gargi", "Kalimati", sans-serif`;
       ctx.fillStyle = config.colors.sub;
       ctx.fillText(config.subtitle, config.width / 2, currentY);
 
@@ -129,8 +129,17 @@ async function renderServerSide(
     const { createCanvas, registerFont } = await import("canvas");
     const path = await import("path");
 
-    // Register the Nepali font for Canvas to use
+    // Register the Nepali font for Canvas to use - prioritize local fonts
     const possibleFontPaths = [
+      path.join(
+        process.cwd(),
+        "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf"
+      ),
+      path.join(
+        process.cwd(),
+        "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Medium.ttf"
+      ),
+      path.join(process.cwd(), "public/Mukta/Mukta-Regular.ttf"),
       path.join(process.cwd(), "out/fonts/NotoSansDevanagari-Regular.ttf"),
       path.join(
         process.cwd(),
@@ -139,7 +148,6 @@ async function renderServerSide(
       path.join(process.cwd(), "public/noto-devanagari.ttf"),
       path.join(process.cwd(), "build/fonts/NotoSansDevanagari-Regular.ttf"),
     ];
-
     let fontRegistered = false;
     for (const fontPath of possibleFontPaths) {
       try {
@@ -176,7 +184,7 @@ async function renderServerSide(
     if (config.omSymbol) {
       ctx.font = `${
         config.fontSize.om || 20
-      }px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+      }px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "DejaVu Sans", sans-serif`;
       ctx.fillStyle = config.colors.om || "#FF6600";
       ctx.fillText(config.omSymbol, config.width / 2, currentY);
       currentY += 25;
@@ -186,20 +194,20 @@ async function renderServerSide(
     if (config.sanskritText) {
       ctx.font = `${
         config.fontSize.sanskrit || 14
-      }px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+      }px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "DejaVu Sans", sans-serif`;
       ctx.fillStyle = config.colors.sanskrit || "#B43200";
       ctx.fillText(config.sanskritText, config.width / 2, currentY);
       currentY += 25;
     }
 
-    // Set font for main title (use fallback font family)
-    ctx.font = `bold ${config.fontSize.main}px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+    // Set font for main title with local fonts priority
+    ctx.font = `bold ${config.fontSize.main}px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "DejaVu Sans", sans-serif`;
     ctx.fillStyle = config.colors.main;
     ctx.fillText(config.mainTitle, config.width / 2, currentY);
     currentY += 20;
 
-    // Set font for subtitle
-    ctx.font = `${config.fontSize.sub}px "Noto Sans Devanagari", "DejaVu Sans", sans-serif`;
+    // Set font for subtitle with local fonts priority
+    ctx.font = `${config.fontSize.sub}px "NotoSansDevanagari", "MuktaLocal", "Noto Sans Devanagari", "PoppinsLocal", "MontserratLocal", "DejaVu Sans", sans-serif`;
     ctx.fillStyle = config.colors.sub;
     ctx.fillText(config.subtitle, config.width / 2, currentY);
 

@@ -140,13 +140,20 @@ export default function ReceiptModal({
       @media print {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-          font-family: Arial, sans-serif; 
+          font-family: 'PoppinsLocal', 'NotoSansDevanagari', 'Poppins', 'Noto Sans Devanagari', Arial, sans-serif !important; 
           font-size: 10pt !important; 
           line-height: 1.2 !important; 
           color: black !important; 
           background: white !important;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+        }
+        .nepali-text { 
+          font-family: 'NotoSansDevanagari', 'MuktaLocal', 'Noto Sans Devanagari', 'Mukta', Arial, serif !important;
+          font-weight: 400 !important;
+        }
+        .english-text { 
+          font-family: 'PoppinsLocal', 'MontserratLocal', 'Poppins', 'Montserrat', Arial, sans-serif !important;
         }
         .no-print { display: none !important; }
         .print-page { 
@@ -473,16 +480,16 @@ export default function ReceiptModal({
   // Helper function to format donation date for receipt display
   const formatReceiptDonationDate = () => {
     if (receipt.donationType === "Seva Donation") {
-      // If we have Nepali date strings, use them directly (more accurate)
+      // If we have Nepali date strings, use them directly (more accurate) with hyphen
       if (receipt.startDateNepali && receipt.endDateNepali) {
-        return `${receipt.startDateNepali} देखि ${receipt.endDateNepali} सम्म`;
+        return `${receipt.startDateNepali} - ${receipt.endDateNepali}`;
       }
 
-      // Fallback to converting English dates to Nepali
+      // Fallback to converting English dates to Nepali with hyphen
       if (receipt.startDate && receipt.endDate) {
         const startNepali = safeFormatDate(receipt.startDate);
         const endNepali = safeFormatDate(receipt.endDate);
-        return `${startNepali} देखि ${endNepali} सम्म`;
+        return `${startNepali} - ${endNepali}`;
       }
     }
 
@@ -764,21 +771,6 @@ export default function ReceiptModal({
                         </p>
                       </div>
                     </div>
-
-                    {/* show donation period when present */}
-                    {receipt.startDate && receipt.endDate && (
-                      <div className="text-center">
-                        <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">
-                          <label className="block mb-1 text-xs font-medium text-gray-600">
-                            Donation Period
-                          </label>
-                          <p className="text-sm font-medium text-emerald-600">
-                            {safeFormatDate(receipt.startDate)} देखि{" "}
-                            {safeFormatDate(receipt.endDate)} सम्म
-                          </p>
-                        </div>
-                      </div>
-                    )}
 
                     <div className="text-center">
                       <div className="p-2 bg-white border border-orange-100 rounded-lg shadow-sm">

@@ -46,8 +46,9 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
 
       const doc = new jsPDF("p", "pt", "a4");
 
-      // Load Nepali font for better Unicode support
+      // Load Google Fonts for better Unicode support
       try {
+        // Try to load local font first, then fallback to enhanced Times font
         const fontBase64 = getFontAsBase64();
         if (fontBase64) {
           // Add the font file to jsPDF virtual file system
@@ -68,15 +69,16 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
           );
         } else {
           console.log(
-            "⚠️ Nepali font not found, using UTF-8 compatible fallback"
+            "⚠️ Local Nepali font not found, using enhanced Times font for better Unicode support"
           );
           // Use Times for better Unicode support than Helvetica
+          // Times has better Unicode character coverage for Devanagari
           doc.setFont("times", "normal");
           doc.setCharSpace(1.0); // More spacing for fallback font
         }
       } catch (error) {
-        console.warn("Failed to load Nepali font:", error);
-        // Fallback to Times font which has better Unicode support
+        console.warn("Failed to load fonts:", error);
+        // Enhanced fallback to Times font which has better Unicode support
         doc.setFont("times", "normal");
         doc.setCharSpace(1.0);
       }
@@ -381,20 +383,24 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
 
-      // Format donation date (handle Seva Donation period)
+      // Format donation date (handle Seva Donation period) - matches ReceiptModal logic
       let donationDateText = "N/A";
       if (receiptData.donationType === "Seva Donation") {
-        // Prefer Nepali date strings if available
+        // If we have Nepali date strings, use them directly (more accurate)
         if (receiptData.startDateNepali && receiptData.endDateNepali) {
-          donationDateText = `${receiptData.startDateNepali} देखि ${receiptData.endDateNepali} सम्म`;
-        } else if (receiptData.startDate && receiptData.endDate) {
+          donationDateText = `${receiptData.startDateNepali} - ${receiptData.endDateNepali}`;
+        }
+        // Fallback to converting English dates to Nepali
+        else if (receiptData.startDate && receiptData.endDate) {
           const startDate = new Date(
             receiptData.startDate
           ).toLocaleDateString();
           const endDate = new Date(receiptData.endDate).toLocaleDateString();
-          donationDateText = `${startDate} देखि ${endDate} सम्म`;
+          donationDateText = `${startDate} - ${endDate}`;
         }
-      } else if (receiptData.dateOfDonation) {
+      }
+      // For regular donations, show the donation date
+      else if (receiptData.dateOfDonation) {
         donationDateText = new Date(
           receiptData.dateOfDonation
         ).toLocaleDateString();
@@ -483,12 +489,11 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
         underlineY
       );
 
-      // Three column grid with enhanced card design
-      const col1X = 60;
-      const col2X = 230;
-      const col3X = 400;
+      // Two column grid with enhanced card design (removed donation period)
+      const col1X = 100;
+      const col2X = 350;
       const gridY = donationBoxY + 40;
-      const gridCardWidth = 140;
+      const gridCardWidth = 180;
       const gridCardHeight = 38;
 
       // Column 1 - Donation Type - Enhanced card
@@ -507,53 +512,18 @@ async function generatePDFWithJSPDF(receiptData: ReceiptData): Promise<Buffer> {
         receiptData.donationType;
       doc.text(nepaliDonationType, col1X + 6, gridY + 22);
 
-      // Column 2 - Donation Period - Enhanced card
-      doc.setFillColor(248, 255, 250); // Very light green
-      doc.setDrawColor(160, 220, 180);
+      // Column 2 - Payment Mode - Enhanced card
+      doc.setFillColor(255, 248, 250); // Very light pink
+      doc.setDrawColor(220, 160, 180);
       doc.setLineWidth(1);
       doc.roundedRect(col2X, gridY, gridCardWidth, gridCardHeight, 4, 4, "FD");
 
       doc.setFontSize(7);
-      doc.setTextColor(100, 160, 120);
-      doc.text("DONATION PERIOD", col2X + 6, gridY + 9);
-      doc.setFontSize(9);
-      doc.setTextColor(40, 100, 60);
-      if (receiptData.donationType === "Seva Donation") {
-        // Prefer Nepali date strings if available
-        if (receiptData.startDateNepali && receiptData.endDateNepali) {
-          doc.text(
-            `${receiptData.startDateNepali} देखि`,
-            col2X + 6,
-            gridY + 17
-          );
-          doc.text(`${receiptData.endDateNepali} सम्म`, col2X + 6, gridY + 26);
-        } else if (receiptData.startDate && receiptData.endDate) {
-          const startDate = new Date(
-            receiptData.startDate
-          ).toLocaleDateString();
-          const endDate = new Date(receiptData.endDate).toLocaleDateString();
-          doc.text(`${startDate} देखि`, col2X + 6, gridY + 17);
-          doc.text(`${endDate} सम्म`, col2X + 6, gridY + 26);
-        } else {
-          doc.text("Period not specified", col2X + 6, gridY + 20);
-        }
-      } else {
-        doc.text("Single Donation", col2X + 6, gridY + 20);
-      }
-
-      // Column 3 - Payment Mode - Enhanced card
-      const col3Width = 120;
-      doc.setFillColor(255, 248, 250); // Very light pink
-      doc.setDrawColor(220, 160, 180);
-      doc.setLineWidth(1);
-      doc.roundedRect(col3X, gridY, col3Width, gridCardHeight, 4, 4, "FD");
-
-      doc.setFontSize(7);
       doc.setTextColor(160, 100, 120);
-      doc.text("PAYMENT MODE", col3X + 6, gridY + 9);
+      doc.text("PAYMENT MODE", col2X + 6, gridY + 9);
       doc.setFontSize(11);
       doc.setTextColor(30, 100, 180);
-      doc.text("� " + receiptData.paymentMode, col3X + 6, gridY + 22);
+      doc.text("💻 " + receiptData.paymentMode, col2X + 6, gridY + 22);
 
       y = donationBoxY + donationBoxHeight + 28;
 

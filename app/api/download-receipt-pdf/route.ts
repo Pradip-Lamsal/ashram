@@ -69,6 +69,8 @@ export async function POST(request: Request) {
         dateOfDonation: receipt.dateOfDonation,
         startDate: receipt.startDate,
         endDate: receipt.endDate,
+        startDateNepali: receipt.startDateNepali,
+        endDateNepali: receipt.endDateNepali,
         notes: receipt.notes,
         createdBy: receipt.createdBy,
         includeLogos,
