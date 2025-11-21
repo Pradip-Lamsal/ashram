@@ -1,5 +1,6 @@
 "use client";
 
+import ReceiptPdf from "@/components/pdf/ReceiptPdf";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,14 +13,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { generateClientSidePDF } from "@/lib/client-pdf-generator";
 import { formatDonationDate } from "@/lib/nepali-date-utils";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { DonationType, PaymentMode } from "@/types";
+import { Font, pdf } from "@react-pdf/renderer";
 import * as lucideReact from "lucide-react";
 import Image from "next/image";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
+
+// Register font for client-side rendering
+Font.register({
+  family: "Noto Sans Devanagari",
+  src: "/fonts/NotoSansDevanagari-Regular.ttf",
+});
 
 // add small helper to display fallback humanized english label
 function humanizeDonationType(type?: string) {
@@ -325,83 +332,37 @@ export default function ReceiptModal({
     try {
       console.log("Starting PDF download for receipt:", receipt.receiptNumber);
 
-      const requestBody = {
-        receipt: {
-          receiptNumber: receipt.receiptNumber,
-          donorName: receipt.donorName,
-          donorId: receipt.donorId,
-          amount: receipt.amount,
-          createdAt: receipt.createdAt,
-          donationType: receipt.donationType,
-          paymentMode: receipt.paymentMode,
-          dateOfDonation: receipt.dateOfDonation,
-          startDate: receipt.startDate,
-          endDate: receipt.endDate,
-          startDateNepali: receipt.startDateNepali,
-          endDateNepali: receipt.endDateNepali,
-          notes: receipt.notes,
-          createdBy: receipt.createdBy,
-        },
-        includeLogos: true, // Include logos for downloaded PDFs
-      };
+      // Generate PDF using @react-pdf/renderer
+      const blob = await pdf(
+        <ReceiptPdf
+          receiptNumber={receipt.receiptNumber}
+          donorName={receipt.donorName}
+          donorId={receipt.donorId}
+          amount={receipt.amount}
+          createdAt={receipt.createdAt}
+          donationType={receipt.donationType}
+          paymentMode={receipt.paymentMode}
+          dateOfDonation={receipt.dateOfDonation}
+          startDate={receipt.startDate}
+          endDate={receipt.endDate}
+          startDateNepali={receipt.startDateNepali}
+          endDateNepali={receipt.endDateNepali}
+          notes={receipt.notes}
+          createdBy={receipt.createdBy}
+        />
+      ).toBlob();
 
-      console.log("Sending request to PDF API with data:", requestBody);
+      console.log("PDF blob created, size:", blob.size, "bytes");
 
-      const response = await fetch("/api/download-receipt-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log("PDF API response status:", response.status);
-      console.log(
-        "PDF API response headers:",
-        Object.fromEntries(response.headers)
-      );
-
-      if (!response.ok) {
-        // Try to get error message from response
-        let errorMessage = "Failed to generate PDF";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // If response is not JSON, use default error message
-          errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Check if the response has the correct content type
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/pdf")) {
-        console.warn("Unexpected content type:", contentType);
-        // Try to read as text to see the actual response
-        const responseText = await response.text();
-        console.error("Response text:", responseText);
-        throw new Error("Response is not a PDF file");
-      }
-
-      // Download the PDF file
-      console.log("Creating blob from response...");
-      const blob = await response.blob();
-      console.log("Blob created, size:", blob.size, "bytes");
-
-      if (blob.size === 0) {
-        throw new Error("PDF file is empty");
-      }
-
+      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = `Receipt-${receipt.receiptNumber}.pdf`;
-      link.style.display = "none"; // Hide the link
+      link.style.display = "none";
 
-      // Append to body, click, and remove
+      // Trigger download
       document.body.appendChild(link);
-      console.log("Triggering download...");
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
@@ -409,53 +370,10 @@ export default function ReceiptModal({
       console.log("PDF download completed successfully");
       showToastNotification("PDF downloaded successfully");
     } catch (error) {
-      console.error("Error downloading PDF via server:", error);
-
-      // Try client-side PDF generation as fallback
-      console.log("Attempting client-side PDF generation as fallback...");
-      try {
-        await generateClientSidePDF({
-          receiptNumber: receipt.receiptNumber,
-          donorName: receipt.donorName,
-          donorId: receipt.donorId,
-          amount: receipt.amount,
-          createdAt:
-            typeof receipt.createdAt === "string"
-              ? receipt.createdAt
-              : receipt.createdAt.toISOString(),
-          donationType: receipt.donationType,
-          paymentMode: receipt.paymentMode,
-          dateOfDonation: receipt.dateOfDonation
-            ? typeof receipt.dateOfDonation === "string"
-              ? receipt.dateOfDonation
-              : receipt.dateOfDonation.toISOString()
-            : undefined,
-          startDate: receipt.startDate
-            ? typeof receipt.startDate === "string"
-              ? receipt.startDate
-              : receipt.startDate.toISOString()
-            : undefined,
-          endDate: receipt.endDate
-            ? typeof receipt.endDate === "string"
-              ? receipt.endDate
-              : receipt.endDate.toISOString()
-            : undefined,
-          startDateNepali: receipt.startDateNepali,
-          endDateNepali: receipt.endDateNepali,
-          notes: receipt.notes,
-          createdBy: receipt.createdBy,
-        });
-
-        console.log("Client-side PDF generation successful");
-        showToastNotification(
-          "PDF downloaded successfully (client-side generation)"
-        );
-      } catch (clientError) {
-        console.error("Client-side PDF generation also failed:", clientError);
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error occurred";
-        showToastNotification(`Failed to download PDF: ${errorMessage}`);
-      }
+      console.error("Error generating PDF:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      showToastNotification(`Failed to download PDF: ${errorMessage}`);
     } finally {
       setIsDownloading(false);
     }

@@ -85,6 +85,17 @@ const nextConfig: NextConfig = {
 
   // Bundle analyzer in development
   webpack: (config, { dev, isServer }) => {
+    // Ensure font files are properly copied to build directory
+    if (!dev) {
+      config.module.rules.push({
+        test: /\.(ttf|otf|woff|woff2|eot)$/,
+        type: "asset/resource",
+        generator: {
+          filename: "static/fonts/[name][ext]",
+        },
+      });
+    }
+
     // Optimize bundle splitting
     if (!dev && !isServer) {
       config.optimization.splitChunks = {

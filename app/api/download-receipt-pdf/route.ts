@@ -1,4 +1,4 @@
-import { generateReceiptPDF } from "@/lib/pdf-generator";
+import { generateReceiptPDF } from "@/lib/generate-receipt-pdf";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { receipt, includeLogos = true } = body;
+    const { receipt } = body;
 
     // Validate required fields
     if (!receipt) {
@@ -44,21 +44,10 @@ export async function POST(request: Request) {
     }
 
     console.log("Generating PDF for download:", receipt.receiptNumber);
-    console.log("Receipt data:", {
-      receiptNumber: receipt.receiptNumber,
-      donorName: receipt.donorName,
-      amount: receipt.amount,
-      donationType: receipt.donationType,
-      includeLogos,
-    });
 
-    // Generate PDF with timeout and retry logic for production
-    let pdfBuffer;
+    // Generate PDF using @react-pdf/renderer
     try {
-      console.log("🎭 Starting PDF generation with timeout protection...");
-
-      // Add timeout wrapper for production reliability
-      const pdfPromise = generateReceiptPDF({
+      const pdfBuffer = await generateReceiptPDF({
         receiptNumber: receipt.receiptNumber,
         donorName: receipt.donorName,
         donorId: receipt.donorId,
@@ -73,67 +62,45 @@ export async function POST(request: Request) {
         endDateNepali: receipt.endDateNepali,
         notes: receipt.notes,
         createdBy: receipt.createdBy,
-        includeLogos,
       });
 
-      // Production timeout: 25 seconds (Vercel function limit is 30s)
-      const timeoutMs = process.env.NODE_ENV === "production" ? 25000 : 60000;
+      console.log(
+        "✅ PDF generated successfully, size:",
+        pdfBuffer.length,
+        "bytes"
+      );
 
-      pdfBuffer = await Promise.race([
-        pdfPromise,
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () =>
-              reject(new Error(`PDF generation timeout after ${timeoutMs}ms`)),
-            timeoutMs
-          )
-        ),
-      ]);
+      if (!pdfBuffer || pdfBuffer.length === 0) {
+        console.error("Generated PDF buffer is empty");
+        return NextResponse.json(
+          { error: "Generated PDF is empty" },
+          { status: 500 }
+        );
+      }
 
-      console.log("✅ PDF generation completed successfully");
+      // Return PDF as response for download
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="Receipt-${receipt.receiptNumber}.pdf"`,
+          "Content-Length": pdfBuffer.length.toString(),
+          "Cache-Control": "no-cache",
+        },
+      });
     } catch (pdfError) {
       console.error("❌ PDF generation failed:", pdfError);
-
-      // Provide more specific error messages for debugging
       const errorMessage =
         pdfError instanceof Error ? pdfError.message : "Unknown error";
-      const isTimeout = errorMessage.includes("timeout");
 
       return NextResponse.json(
         {
-          error: isTimeout
-            ? "PDF generation timed out. Please try again with a simpler receipt or contact support."
-            : `Failed to generate PDF: ${errorMessage}`,
-          type: isTimeout ? "timeout" : "generation_error",
+          error: `Failed to generate PDF: ${errorMessage}`,
+          type: "generation_error",
         },
-        { status: isTimeout ? 408 : 500 }
-      );
-    }
-
-    if (!pdfBuffer || pdfBuffer.length === 0) {
-      console.error("Generated PDF buffer is empty");
-      return NextResponse.json(
-        { error: "Generated PDF is empty" },
         { status: 500 }
       );
     }
-
-    console.log(
-      "PDF generated successfully for download, size:",
-      pdfBuffer.length,
-      "bytes"
-    );
-
-    // Return PDF as response for download
-    return new NextResponse(new Uint8Array(pdfBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Receipt-${receipt.receiptNumber}.pdf"`,
-        "Content-Length": pdfBuffer.length.toString(),
-        "Cache-Control": "no-cache",
-      },
-    });
   } catch (error) {
     console.error("Error in PDF download API:", error);
     return NextResponse.json(

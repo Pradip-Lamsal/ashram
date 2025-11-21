@@ -7,7 +7,12 @@
   },
   "functions": {
     "app/api/download-receipt-pdf/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "app/api/send-receipt-email/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "outputDirectory": ".next",

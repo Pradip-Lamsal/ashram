@@ -4,44 +4,33 @@ import path from "path";
 
 export function getFontAsBase64(): string | null {
   try {
+    // Use Regular font for best jsPDF compatibility (Variable fonts can cause issues)
     const fontPaths = [
-      // Try new local fonts first
+      // Production build paths - check first
       path.resolve(
         process.cwd(),
         "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf"
       ),
       path.resolve(
         process.cwd(),
-        "public/Noto_Sans_Devanagari/static/NotoSansDevanagari-Medium.ttf"
+        "out/fonts/static/NotoSansDevanagari-Regular.ttf"
       ),
       path.resolve(
         process.cwd(),
-        "public/Noto_Sans_Devanagari/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+        ".next/static/fonts/NotoSansDevanagari-Regular.ttf"
       ),
-      // Try regular fonts (better jsPDF compatibility)
-      path.resolve(process.cwd(), "out/fonts/NotoSansDevanagari-Regular.ttf"),
-      path.resolve(process.cwd(), "out/fonts/NotoSansDevanagari-Medium.ttf"),
+
+      // Development paths
       path.resolve(
         process.cwd(),
-        "public/fonts/NotoSansDevanagari-Regular.ttf"
-      ),
-      // Fallback to variable font
-      path.resolve(
-        process.cwd(),
-        "public/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+        "public/fonts/static/NotoSansDevanagari-Regular.ttf"
       ),
       path.resolve(process.cwd(), "public/noto-devanagari.ttf"),
+
+      // Fallback paths
       path.resolve(
         process.cwd(),
-        ".next/static/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
-      ),
-      path.resolve(
-        process.cwd(),
-        "out/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
-      ),
-      path.resolve(
-        process.cwd(),
-        "build/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf"
+        "build/fonts/static/NotoSansDevanagari-Regular.ttf"
       ),
     ];
 

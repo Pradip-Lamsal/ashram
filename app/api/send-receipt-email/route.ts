@@ -1,5 +1,5 @@
 import { sendReceiptEmail } from "@/lib/email";
-import { generateReceiptPDF } from "@/lib/pdf-generator";
+import { generateReceiptPDF } from "@/lib/generate-receipt-pdf";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     if (includeAttachment) {
       try {
         console.log("Generating PDF for receipt:", receipt.receiptNumber);
+        
         pdfBuffer = await generateReceiptPDF({
           receiptNumber: receipt.receiptNumber,
           donorName: receipt.donorName,
@@ -57,8 +58,8 @@ export async function POST(request: NextRequest) {
           endDateNepali: receipt.endDateNepali,
           notes: receipt.notes,
           createdBy: receipt.createdBy,
-          includeLogos: false,
-        }); // Disable logos for smaller email attachments
+        });
+        
         console.log(
           "PDF generated successfully, size:",
           pdfBuffer.length,
@@ -66,6 +67,9 @@ export async function POST(request: NextRequest) {
         );
       } catch (error) {
         console.error("Error generating PDF:", error);
+        if (error instanceof Error) {
+          console.error("Stack:", error.stack);
+        }
         console.log("Continuing without PDF attachment...");
         // Continue without PDF attachment instead of failing
         pdfBuffer = undefined;
