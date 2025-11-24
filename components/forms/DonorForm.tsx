@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NepaliDatePicker } from "@/components/ui/nepali-date-picker";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DonationType, Donor, MembershipType } from "@/types";
@@ -25,6 +25,7 @@ const donationTypes: DonationType[] = [
   "Building Fund",
   "Festival Sponsorship",
   "Puja Sponsorship",
+  "Gau Seva",
 ];
 
 // Nepali labels for UI only — keep backend values unchanged (same as ReceiptForm)
@@ -36,6 +37,7 @@ const DONATION_TYPE_LABELS: Record<string, string> = {
   "Building Fund": "भण्डारा",
   "Festival Sponsorship": "विशेष पूजा",
   "Puja Sponsorship": "आजीवन सदस्यता",
+  "Gau Seva": "गौ सेवा",
 };
 
 const membershipTypes: MembershipType[] = ["Regular", "Life", "Special"];
@@ -49,6 +51,8 @@ interface DonorFormData {
   donationType: DonationType;
   membership: MembershipType;
   notes: string;
+  frequency: "Daily" | "Monthly" | "Yearly" | "";
+  frequencyAmount: string;
 }
 
 interface DonorFormError {
@@ -60,6 +64,8 @@ interface DonorFormError {
   donationType?: string;
   membership?: string;
   notes?: string;
+  frequency?: string;
+  frequencyAmount?: string;
 }
 
 interface DonorFormProps {
@@ -86,6 +92,8 @@ export default function DonorForm({
     donationType: initialData?.donationType || "General Donation",
     membership: initialData?.membership || "Regular",
     notes: initialData?.notes || "",
+    frequency: initialData?.frequency || "",
+    frequencyAmount: initialData?.frequencyAmount?.toString() || "",
   });
 
   const [errors, setErrors] = useState<Partial<DonorFormError>>({});
@@ -150,7 +158,13 @@ export default function DonorForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      onSubmit({
+        ...formData,
+        frequency: formData.frequency || undefined,
+        frequencyAmount: formData.frequencyAmount
+          ? Number(formData.frequencyAmount)
+          : undefined,
+      } as any);
     }
   };
 
@@ -363,6 +377,49 @@ export default function DonorForm({
                   <p className="text-sm text-red-500">{errors.membership}</p>
                 )}
               </div>
+            </div>
+          </div>
+          
+          {/* Frequency (Optional) */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Frequency Commitment (ऐच्छिक)
+            </h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="frequency">Frequency (आवृत्ति)</Label>
+                <Select
+                  value={formData.frequency}
+                  onValueChange={(value: "Daily" | "Monthly" | "Yearly") =>
+                    handleInputChange("frequency", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frequency (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Daily">Daily (दैनिक)</SelectItem>
+                    <SelectItem value="Monthly">Monthly (मासिक)</SelectItem>
+                    <SelectItem value="Yearly">Yearly (वार्षिक)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.frequency && (
+                <div className="space-y-2">
+                  <Label htmlFor="frequencyAmount">Amount (रकम)</Label>
+                  <Input
+                    id="frequencyAmount"
+                    type="text"
+                    value={formData.frequencyAmount}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      handleInputChange("frequencyAmount", value);
+                    }}
+                    placeholder="Enter amount"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

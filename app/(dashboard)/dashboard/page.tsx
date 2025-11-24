@@ -1,21 +1,20 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { DashboardLoading } from "@/components/ui/loading";
 import { dashboardService } from "@/lib/supabase-services";
 import { formatCurrency } from "@/lib/utils";
 import {
-  Calendar,
-  CreditCard,
-  IndianRupee,
-  Receipt,
-  Smartphone,
+    Calendar,
+    CreditCard,
+    Landmark,
+    Smartphone
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
@@ -149,14 +148,14 @@ export default function DashboardPage() {
       {
         title: "Total Donations",
         value: loading ? "..." : stats.totalDonations,
-        icon: Receipt,
+        icon: () => <span className="text-2xl font-bold">रु</span>,
         color: "text-blue-600",
         bgColor: "bg-blue-100",
       },
       {
         title: "Total Amount",
         value: loading ? "..." : formatCurrency(stats.totalAmount),
-        icon: IndianRupee,
+        icon: Landmark,
         color: "text-green-600",
         bgColor: "bg-green-100",
       },

@@ -1,8 +1,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import {
-  englishToNepaliDateFormatted,
-  englishToNepaliDateTime,
+    englishToNepaliDateFormatted,
+    englishToNepaliDateTime,
 } from "./nepali-date-utils";
 
 export function cn(...inputs: ClassValue[]) {
@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
-  return `रु ${new Intl.NumberFormat("en-IN").format(amount)}`;
+  return `Rs. ${new Intl.NumberFormat("en-IN").format(amount)}`;
 }
 
 // Updated to use Nepali dates by default

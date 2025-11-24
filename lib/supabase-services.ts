@@ -124,6 +124,8 @@ export const donorsService = {
       last_donation_date: donor.lastDonationDate
         ? new Date(donor.lastDonationDate).toISOString().split("T")[0]
         : null,
+      frequency: donor.frequency || null,
+      frequency_amount: donor.frequencyAmount || 0,
     };
 
     const { data, error } = await supabase
@@ -161,6 +163,9 @@ export const donorsService = {
         ? new Date(updates.lastDonationDate).toISOString().split("T")[0]
         : null;
     }
+    if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
+    if (updates.frequencyAmount !== undefined)
+      dbUpdates.frequency_amount = updates.frequencyAmount;
 
     dbUpdates.updated_at = new Date().toISOString();
 
@@ -323,11 +328,14 @@ export const donationsService = {
       return data;
     } finally {
       // Update donor's total donations and last donation date
+      // DISABLED: Database trigger 'trigger_update_donor_totals' handles this automatically
+      /*
       await donorsService.updateDonationStats(
         donation.donorId,
         donation.amount,
         new Date()
       );
+      */
     }
   },
 

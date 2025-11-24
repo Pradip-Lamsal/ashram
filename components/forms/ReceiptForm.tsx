@@ -58,6 +58,7 @@ const donationTypes: DonationType[] = [
   "Building Fund",
   "Festival Sponsorship",
   "Puja Sponsorship",
+  "Gau Seva",
 ];
 
 // Nepali labels for UI only — keep backend values unchanged
@@ -69,6 +70,7 @@ const DONATION_TYPE_LABELS: Record<string, string> = {
   "Building Fund": "भण्डारा",
   "Festival Sponsorship": "विशेष पूजा",
   "Puja Sponsorship": "आजीवन सदस्यता",
+  "Gau Seva": "गौ सेवा",
 };
 
 const paymentModes: PaymentMode[] = ["Online", "Offline", "QR Payment"];

@@ -13,6 +13,8 @@ export interface Donor {
   totalDonations: number;
   lastDonationDate?: Date | null;
   deletedAt?: Date | null;
+  frequency?: "Daily" | "Monthly" | "Yearly" | null;
+  frequencyAmount?: number | null;
 }
 
 export interface Donation {
@@ -95,7 +97,8 @@ export type DonationType =
   | "Vastra Danam"
   | "Building Fund"
   | "Festival Sponsorship"
-  | "Puja Sponsorship";
+  | "Puja Sponsorship"
+  | "Gau Seva";
 
 export type MembershipType = "Regular" | "Life" | "Special";
 

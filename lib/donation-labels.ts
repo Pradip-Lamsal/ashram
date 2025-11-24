@@ -7,6 +7,7 @@ export const DONATION_TYPE_LABELS: Record<string, string> = {
   "Building Fund": "भण्डारा",
   "Festival Sponsorship": "विशेष पूजा",
   "Puja Sponsorship": "आजीवन सदस्यता",
+  "Gau Seva": "गौ सेवा",
 };
 
 // Function to get display label for donation type

@@ -280,6 +280,7 @@ const DONATION_TYPE_LABELS: Record<string, string> = {
   "Building Fund": "भण्डारा",
   "Festival Sponsorship": "विशेष पूजा",
   "Puja Sponsorship": "आजीवन सदस्यता",
+  "Gau Seva": "गौ सेवा",
 };
 
 // Helper function to get display donation type
