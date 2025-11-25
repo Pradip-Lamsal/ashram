@@ -5,6 +5,7 @@ import { PerformanceProvider } from "@/components/providers/PerformanceProvider"
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./local-fonts.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="preload" href="/fonts/local-fonts.css" as="style" />
-        <link rel="stylesheet" href="/fonts/local-fonts.css" />
+
         <link
           rel="preload"
           href="/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf"

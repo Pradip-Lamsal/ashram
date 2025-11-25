@@ -55,6 +55,11 @@ interface DonorFormData {
   frequencyAmount: string;
 }
 
+export interface DonorSubmissionData extends Omit<DonorFormData, "frequencyAmount" | "frequency"> {
+  frequencyAmount?: number;
+  frequency?: "Daily" | "Monthly" | "Yearly" | null;
+}
+
 interface DonorFormError {
   name?: string;
   phone?: string;
@@ -69,7 +74,7 @@ interface DonorFormError {
 }
 
 interface DonorFormProps {
-  onSubmit: (data: DonorFormData) => void;
+  onSubmit: (data: DonorSubmissionData) => void;
   onCancel: () => void;
   initialData?: Partial<Donor>;
   isSubmitting?: boolean;
@@ -164,7 +169,7 @@ export default function DonorForm({
         frequencyAmount: formData.frequencyAmount
           ? Number(formData.frequencyAmount)
           : undefined,
-      } as any);
+      } as unknown as DonorSubmissionData);
     }
   };
 

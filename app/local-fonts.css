@@ -1,0 +1,186 @@
+/* Local Font Definitions for PDF and Print Support */
+
+/* Noto Sans Devanagari - Primary font for Nepali text */
+@font-face {
+  font-family: 'NotoSansDevanagari';
+  src: url('/fonts/NotoSansDevanagari-Regular.woff2') format('woff2'),
+       url('/Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NotoSansDevanagari';
+  src: url('/fonts/NotoSansDevanagari-Medium.woff2') format('woff2'),
+       url('/Noto_Sans_Devanagari/static/NotoSansDevanagari-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NotoSansDevanagari';
+  src: url('/fonts/NotoSansDevanagari-SemiBold.woff2') format('woff2'),
+       url('/Noto_Sans_Devanagari/static/NotoSansDevanagari-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NotoSansDevanagari';
+  src: url('/fonts/NotoSansDevanagari-Bold.woff2') format('woff2'),
+       url('/Noto_Sans_Devanagari/static/NotoSansDevanagari-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Poppins - Primary font for English text */
+@font-face {
+  font-family: 'PoppinsLocal';
+  src: url('/Poppins/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PoppinsLocal';
+  src: url('/Poppins/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PoppinsLocal';
+  src: url('/Poppins/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PoppinsLocal';
+  src: url('/Poppins/Poppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Montserrat - Alternative professional font */
+@font-face {
+  font-family: 'MontserratLocal';
+  src: url('/Montserrat/static/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MontserratLocal';
+  src: url('/Montserrat/static/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MontserratLocal';
+  src: url('/Montserrat/static/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MontserratLocal';
+  src: url('/Montserrat/static/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Mukta - Good fallback for Devanagari */
+@font-face {
+  font-family: 'MuktaLocal';
+  src: url('/Mukta/Mukta-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MuktaLocal';
+  src: url('/Mukta/Mukta-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MuktaLocal';
+  src: url('/Mukta/Mukta-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MuktaLocal';
+  src: url('/Mukta/Mukta-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Matangi - Unique display font */
+@font-face {
+  font-family: 'MatangiLocal';
+  src: url('/Matangi/static/Matangi-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MatangiLocal';
+  src: url('/Matangi/static/Matangi-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MatangiLocal';
+  src: url('/Matangi/static/Matangi-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MatangiLocal';
+  src: url('/Matangi/static/Matangi-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Font utility classes */
+.font-noto-local { font-family: 'NotoSansDevanagari', 'Noto Sans Devanagari', serif; }
+.font-poppins-local { font-family: 'PoppinsLocal', 'Poppins', sans-serif; }  
+.font-montserrat-local { font-family: 'MontserratLocal', 'Montserrat', sans-serif; }
+.font-mukta-local { font-family: 'MuktaLocal', 'Mukta', serif; }
+.font-matangi-local { font-family: 'MatangiLocal', 'Matangi', serif; }
+
+/* Primary font stacks for different text types */
+.nepali-text-local { 
+  font-family: 'NotoSansDevanagari', 'MuktaLocal', 'Noto Sans Devanagari', 'Mukta', serif;
+}
+
+.english-text-local { 
+  font-family: 'PoppinsLocal', 'MontserratLocal', 'Poppins', 'Montserrat', sans-serif;
+}
