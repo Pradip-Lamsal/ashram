@@ -92,7 +92,15 @@ export const donorsService = {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    // Transform snake_case to camelCase for consistency
+    const transformedData = (data || []).map((donor: any) => ({
+      ...donor,
+      frequencyAmount: donor.frequency_amount,
+      donationType: donor.donation_type,
+    }));
+
+    return transformedData;
   },
 
   async getById(id: string) {
@@ -163,7 +171,8 @@ export const donorsService = {
         ? new Date(updates.lastDonationDate).toISOString().split("T")[0]
         : null;
     }
-    if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
+    if (updates.frequency !== undefined)
+      dbUpdates.frequency = updates.frequency;
     if (updates.frequencyAmount !== undefined)
       dbUpdates.frequency_amount = updates.frequencyAmount;
 

@@ -46,6 +46,17 @@ interface DonorProfileModalProps {
   loadingHistory?: boolean;
 }
 
+// Helper to get frequency label in Nepali
+const getFrequencyLabel = (frequency?: string | null): string => {
+  if (!frequency) return "";
+  const labels: Record<string, string> = {
+    Daily: "दैनिक",
+    Monthly: "मासिक",
+    Yearly: "वार्षिक",
+  };
+  return labels[frequency] || frequency;
+};
+
 export default function DonorProfileModal({
   donor,
   isOpen,
@@ -229,6 +240,34 @@ export default function DonorProfileModal({
                   </p>
                 </div>
               </div>
+
+              {/* Frequency Commitment - Show if donor has set a commitment */}
+              {donor.frequency && donor.frequencyAmount && (
+                <div className="p-3 mt-3 border-2 border-indigo-200 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 sm:p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-indigo-900 sm:text-sm">
+                        💝 Commitment (प्रतिबद्धता)
+                      </p>
+                      <p className="mt-1 text-base font-bold text-indigo-800 sm:text-lg">
+                        {formatCurrency(donor.frequencyAmount)}{" "}
+                        {getFrequencyLabel(donor.frequency)}
+                      </p>
+                      <p className="mt-1 text-xs text-indigo-600">
+                        {donor.frequency === "Daily" &&
+                          "Every day / प्रत्येक दिन"}
+                        {donor.frequency === "Monthly" &&
+                          "Every month / प्रत्येक महिना"}
+                        {donor.frequency === "Yearly" &&
+                          "Every year / प्रत्येक वर्ष"}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center w-10 h-10 bg-indigo-200 rounded-full sm:w-12 sm:h-12">
+                      <Calendar className="w-5 h-5 text-indigo-700 sm:w-6 sm:h-6" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

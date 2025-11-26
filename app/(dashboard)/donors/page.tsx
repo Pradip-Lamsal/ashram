@@ -80,6 +80,8 @@ interface Donor {
   notes?: string;
   total_donations: number;
   last_donation_date?: string;
+  frequency?: string | null;
+  frequency_amount?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -250,6 +252,8 @@ export default function DonorsPage() {
     donationType: string;
     membership: string;
     notes: string;
+    frequency?: "Daily" | "Monthly" | "Yearly" | null;
+    frequencyAmount?: number;
   }) => {
     if (!donorToEdit) return;
 
@@ -266,6 +270,8 @@ export default function DonorsPage() {
         donationType: donorData.donationType as DonationType,
         membership: donorData.membership as MembershipType,
         notes: donorData.notes,
+        frequency: donorData.frequency || null,
+        frequencyAmount: donorData.frequencyAmount || null,
       });
 
       // Update the donor in the local state with the data returned from the database
@@ -296,6 +302,8 @@ export default function DonorsPage() {
     donationType: string;
     membership: string;
     notes: string;
+    frequency?: "Daily" | "Monthly" | "Yearly" | null;
+    frequencyAmount?: number;
   }) => {
     setIsSubmittingDonor(true);
     try {
@@ -312,6 +320,8 @@ export default function DonorsPage() {
         notes: donorData.notes || undefined,
         totalDonations: 0,
         lastDonationDate: null,
+        frequency: donorData.frequency || null,
+        frequencyAmount: donorData.frequencyAmount || null,
       });
 
       // Add the new donor returned from the database to the top of the list
@@ -663,6 +673,9 @@ export default function DonorsPage() {
                     <TableHead className="min-w-[140px]">
                       Total Contributions
                     </TableHead>
+                    <TableHead className="min-w-[130px] hidden xl:table-cell">
+                      Commitment
+                    </TableHead>
                     <TableHead className="min-w-[120px] hidden md:table-cell">
                       Last Donation
                     </TableHead>
@@ -735,6 +748,24 @@ export default function DonorsPage() {
                         <p className="text-sm font-medium sm:text-base">
                           {formatCurrency(Number(donor.total_donations || 0))}
                         </p>
+                      </TableCell>
+                      <TableCell className="min-w-[130px] hidden xl:table-cell">
+                        {donor.frequency && donor.frequency_amount ? (
+                          <div className="text-sm">
+                            <p className="font-medium text-indigo-700">
+                              {formatCurrency(Number(donor.frequency_amount))}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {donor.frequency === "Daily" && "दैनिक"}
+                              {donor.frequency === "Monthly" && "मासिक"}
+                              {donor.frequency === "Yearly" && "वार्षिक"}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            No commitment
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="min-w-[120px] hidden md:table-cell">
                         {donor.last_donation_date ? (

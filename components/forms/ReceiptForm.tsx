@@ -14,8 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getDonationTypeLabel } from "@/lib/donation-labels";
+import { formatCurrency } from "@/lib/utils";
 import { DonationType, Donor, PaymentMode } from "@/types";
-import { Loader2, Search } from "lucide-react";
+import { Calendar, Loader2, Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
 interface ReceiptFormData {
@@ -74,6 +76,17 @@ const DONATION_TYPE_LABELS: Record<string, string> = {
 };
 
 const paymentModes: PaymentMode[] = ["Online", "Offline", "QR Payment"];
+
+// Helper to get frequency label in Nepali
+function getFrequencyLabel(frequency?: string | null): string {
+  if (!frequency) return "";
+  const labels: Record<string, string> = {
+    Daily: "दैनिक",
+    Monthly: "मासिक",
+    Yearly: "वार्षिक",
+  };
+  return labels[frequency] || frequency;
+}
 
 const generateReceiptNumber = () => {
   const now = new Date();
@@ -179,12 +192,17 @@ export default function ReceiptForm({
 
   const handleDonorChange = (donorId: string) => {
     const selectedDonor = donors.find((d) => d.id === donorId);
+    console.log("Selected donor:", selectedDonor);
+    console.log("Frequency:", selectedDonor?.frequency);
+    console.log("Frequency Amount:", selectedDonor?.frequencyAmount);
     if (selectedDonor) {
       setFormData((prev) => ({
         ...prev,
         donorId,
         donorName: selectedDonor.name,
         donationType: selectedDonor.donationType,
+        // Auto-fill amount from commitment if available
+        amount: selectedDonor.frequencyAmount || prev.amount,
       }));
     }
   };
@@ -291,6 +309,46 @@ export default function ReceiptForm({
                 <p className="text-sm text-red-500">{errors.donorId}</p>
               )}
             </div>
+
+            {/* Commitment Reminder */}
+            {formData.donorId &&
+              (() => {
+                const selectedDonor = donors.find(
+                  (d) => d.id === formData.donorId
+                );
+                return selectedDonor?.frequency &&
+                  selectedDonor?.frequencyAmount ? (
+                  <div className="p-3 border-l-4 border-indigo-500 rounded-md bg-indigo-50">
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 mt-0.5 text-indigo-600" />
+                      <div className="flex-1">
+                        <p className="mb-1 text-sm font-semibold text-indigo-900">
+                          Donor Commitment (दाताको प्रतिबद्धता)
+                        </p>
+                        <div className="space-y-1 text-sm text-indigo-800">
+                          <p>
+                            <span className="font-medium">Amount:</span>{" "}
+                            {formatCurrency(selectedDonor.frequencyAmount)}
+                          </p>
+                          <p>
+                            <span className="font-medium">Frequency:</span>{" "}
+                            {getFrequencyLabel(selectedDonor.frequency)} (
+                            {selectedDonor.frequency})
+                          </p>
+                          <p>
+                            <span className="font-medium">Category:</span>{" "}
+                            {getDonationTypeLabel(selectedDonor.donationType)}
+                          </p>
+                        </div>
+                        <p className="mt-2 text-xs italic text-indigo-600">
+                          Amount has been pre-filled based on commitment. You
+                          can adjust if needed.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
             {/* Donation Details */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
