@@ -6,6 +6,26 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Database response type with snake_case fields
+interface DonorDbResponse {
+  id: string;
+  name: string;
+  date_of_birth?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  email?: string | null;
+  donation_type: string;
+  membership: string;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  total_donations: number;
+  last_donation_date?: string | null;
+  deleted_at?: string | null;
+  frequency?: string | null;
+  frequency_amount?: number | null;
+}
+
 // Users service
 export const usersService = {
   async getAll() {
@@ -94,7 +114,7 @@ export const donorsService = {
     if (error) throw error;
 
     // Transform snake_case to camelCase for consistency
-    const transformedData = (data || []).map((donor: any) => ({
+    const transformedData = (data || []).map((donor: DonorDbResponse) => ({
       ...donor,
       frequencyAmount: donor.frequency_amount,
       donationType: donor.donation_type,
