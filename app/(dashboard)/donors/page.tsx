@@ -51,7 +51,7 @@ import { getDonationTypeLabel } from "@/lib/donation-labels";
 import { englishToNepaliDateFormatted } from "@/lib/nepali-date-utils";
 import { donorsService, receiptsService } from "@/lib/supabase-services";
 import { formatCurrency } from "@/lib/utils";
-import { type DonationType, type MembershipType } from "@/types";
+import { type DonationType, type Donor, type MembershipType } from "@/types";
 import {
   Calendar,
   Edit,
@@ -67,24 +67,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
-
-interface Donor {
-  id: string;
-  name: string;
-  date_of_birth?: string;
-  phone?: string;
-  address?: string;
-  email?: string;
-  donation_type: string;
-  membership: string;
-  notes?: string;
-  total_donations: number;
-  last_donation_date?: string;
-  frequency?: string | null;
-  frequency_amount?: number | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export default function DonorsPage() {
   const { appUser } = useAuth();
@@ -160,8 +142,7 @@ export default function DonorsPage() {
       donor.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDonationType =
-      donationTypeFilter === "all" ||
-      donor.donation_type === donationTypeFilter;
+      donationTypeFilter === "all" || donor.donationType === donationTypeFilter;
 
     const matchesMembership =
       membershipFilter === "all" || donor.membership === membershipFilter;
@@ -361,17 +342,17 @@ export default function DonorsPage() {
         Name: donor.name,
         Phone: donor.phone || "N/A",
         Email: donor.email || "N/A",
-        "Date of Birth": donor.date_of_birth
-          ? englishToNepaliDateFormatted(new Date(donor.date_of_birth))
+        "Date of Birth": donor.dateOfBirth
+          ? englishToNepaliDateFormatted(new Date(donor.dateOfBirth))
           : "N/A",
         Address: donor.address || "N/A",
         "Membership Type": donor.membership,
-        "Donation Type": getDonationTypeLabel(donor.donation_type),
+        "Donation Type": getDonationTypeLabel(donor.donationType),
         "Total Contributions": `Rs. ${Number(
-          donor.total_donations || 0
+          donor.totalDonations || 0
         ).toLocaleString()}`,
-        "Last Donation Date": donor.last_donation_date
-          ? englishToNepaliDateFormatted(new Date(donor.last_donation_date))
+        "Last Donation Date": donor.lastDonationDate
+          ? englishToNepaliDateFormatted(new Date(donor.lastDonationDate))
           : "No donations",
         Notes: donor.notes || "N/A",
       }));
@@ -428,12 +409,12 @@ export default function DonorsPage() {
   const totalDonors = donors.length;
   const lifeMembers = donors.filter((d) => d.membership === "Life").length;
   const totalCollected = donors.reduce(
-    (sum, d) => sum + Number(d.total_donations || 0),
+    (sum, d) => sum + Number(d.totalDonations || 0),
     0
   );
   const activeThisMonth = donors.filter((d) => {
-    if (!d.last_donation_date) return false;
-    const lastDonation = new Date(d.last_donation_date);
+    if (!d.lastDonationDate) return false;
+    const lastDonation = new Date(d.lastDonationDate);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     return lastDonation > thirtyDaysAgo;
@@ -496,13 +477,13 @@ export default function DonorsPage() {
               <DonorForm
                 initialData={{
                   name: donorToEdit.name,
-                  dateOfBirth: donorToEdit.date_of_birth
-                    ? new Date(donorToEdit.date_of_birth)
+                  dateOfBirth: donorToEdit.dateOfBirth
+                    ? new Date(donorToEdit.dateOfBirth)
                     : undefined,
                   phone: donorToEdit.phone || "",
                   address: donorToEdit.address || "",
                   email: donorToEdit.email || "",
-                  donationType: donorToEdit.donation_type as DonationType,
+                  donationType: donorToEdit.donationType as DonationType,
                   membership: donorToEdit.membership as MembershipType,
                   notes: donorToEdit.notes || "",
                 }}
@@ -691,9 +672,9 @@ export default function DonorsPage() {
                             {donor.name}
                           </p>
                           <p className="text-xs text-gray-500 sm:text-sm">
-                            {donor.date_of_birth
+                            {donor.dateOfBirth
                               ? englishToNepaliDateFormatted(
-                                  new Date(donor.date_of_birth)
+                                  new Date(donor.dateOfBirth)
                                 )
                               : "N/A"}
                           </p>
@@ -741,19 +722,19 @@ export default function DonorsPage() {
                       </TableCell>
                       <TableCell className="min-w-[120px] hidden lg:table-cell">
                         <span className="text-sm">
-                          {getDonationTypeLabel(donor.donation_type)}
+                          {getDonationTypeLabel(donor.donationType)}
                         </span>
                       </TableCell>
                       <TableCell className="min-w-[140px]">
                         <p className="text-sm font-medium sm:text-base">
-                          {formatCurrency(Number(donor.total_donations || 0))}
+                          {formatCurrency(Number(donor.totalDonations || 0))}
                         </p>
                       </TableCell>
                       <TableCell className="min-w-[130px] hidden xl:table-cell">
-                        {donor.frequency && donor.frequency_amount ? (
+                        {donor.frequency && donor.frequencyAmount ? (
                           <div className="text-sm">
                             <p className="font-medium text-indigo-700">
-                              {formatCurrency(Number(donor.frequency_amount))}
+                              {formatCurrency(Number(donor.frequencyAmount))}
                             </p>
                             <p className="text-xs text-gray-500">
                               {donor.frequency === "Daily" && "दैनिक"}
@@ -768,11 +749,11 @@ export default function DonorsPage() {
                         )}
                       </TableCell>
                       <TableCell className="min-w-[120px] hidden md:table-cell">
-                        {donor.last_donation_date ? (
+                        {donor.lastDonationDate ? (
                           <div className="flex items-center text-sm">
                             <Calendar className="w-3 h-3 mr-2 text-gray-400" />
                             {englishToNepaliDateFormatted(
-                              new Date(donor.last_donation_date)
+                              new Date(donor.lastDonationDate)
                             )}
                           </div>
                         ) : (
@@ -848,21 +829,21 @@ export default function DonorsPage() {
           donor={{
             id: selectedDonor.id,
             name: selectedDonor.name,
-            dateOfBirth: selectedDonor.date_of_birth
-              ? new Date(selectedDonor.date_of_birth)
+            dateOfBirth: selectedDonor.dateOfBirth
+              ? new Date(selectedDonor.dateOfBirth)
               : undefined,
             phone: selectedDonor.phone,
             address: selectedDonor.address,
             email: selectedDonor.email,
-            donationType: selectedDonor.donation_type as "General Donation",
+            donationType: selectedDonor.donationType as "General Donation",
             membership: selectedDonor.membership as "Regular",
             notes: selectedDonor.notes,
-            totalDonations: Number(selectedDonor.total_donations || 0),
-            lastDonationDate: selectedDonor.last_donation_date
-              ? new Date(selectedDonor.last_donation_date)
+            totalDonations: Number(selectedDonor.totalDonations || 0),
+            lastDonationDate: selectedDonor.lastDonationDate
+              ? new Date(selectedDonor.lastDonationDate)
               : undefined,
-            createdAt: new Date(selectedDonor.created_at),
-            updatedAt: new Date(selectedDonor.updated_at),
+            createdAt: new Date(selectedDonor.createdAt),
+            updatedAt: new Date(selectedDonor.updatedAt),
           }}
           donorHistory={donorHistory}
           loadingHistory={loadingHistory}

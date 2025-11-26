@@ -114,11 +114,28 @@ export const donorsService = {
     if (error) throw error;
 
     // Transform snake_case to camelCase for consistency
-    const transformedData = (data || []).map((donor: DonorDbResponse) => ({
-      ...donor,
-      frequencyAmount: donor.frequency_amount,
-      donationType: donor.donation_type,
-    }));
+    const transformedData = (data || []).map(
+      (donor: DonorDbResponse): Donor => ({
+        id: donor.id,
+        name: donor.name,
+        dateOfBirth: donor.date_of_birth ? new Date(donor.date_of_birth) : null,
+        phone: donor.phone,
+        address: donor.address,
+        email: donor.email,
+        donationType: donor.donation_type as Donor["donationType"],
+        membership: donor.membership as Donor["membership"],
+        notes: donor.notes,
+        createdAt: new Date(donor.created_at),
+        updatedAt: new Date(donor.updated_at),
+        totalDonations: donor.total_donations,
+        lastDonationDate: donor.last_donation_date
+          ? new Date(donor.last_donation_date)
+          : null,
+        deletedAt: donor.deleted_at ? new Date(donor.deleted_at) : null,
+        frequency: donor.frequency as Donor["frequency"],
+        frequencyAmount: donor.frequency_amount,
+      })
+    );
 
     return transformedData;
   },
